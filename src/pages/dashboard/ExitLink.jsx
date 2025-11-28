@@ -13,6 +13,7 @@ function ExitLink({ projectId }) {
 
   const loadExitLinks = async () => {
     try {
+      // Get individual exit link clicks (limit 100)
       const response = await trafficAPI.getExitLinks(projectId)
       setExitLinks(response.data)
     } catch (error) {
@@ -189,21 +190,31 @@ function ExitLink({ projectId }) {
                 border: '2px solid #e2e8f0'
               }}>
                 <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '600', marginBottom: '12px' }}>
-                  📊 Statistics
+                  📊 Click Details
                 </div>
                 <div style={{ display: 'grid', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Total Clicks:</span>
+                    <span style={{ fontSize: '14px', color: '#64748b' }}>Clicked At:</span>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {selectedExit.click_count || 0}
+                      {selectedExit.clicked_at ? `${formatDate(selectedExit.clicked_at)} ${formatTime(selectedExit.clicked_at)}` : 'Unknown'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Last Clicked:</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {selectedExit.last_clicked ? formatDate(selectedExit.last_clicked) : 'Unknown'}
-                    </span>
-                  </div>
+                  {selectedExit.visitor_id && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '14px', color: '#64748b' }}>Visitor ID:</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', fontFamily: 'monospace' }}>
+                        {selectedExit.visitor_id.substring(0, 16)}...
+                      </span>
+                    </div>
+                  )}
+                  {selectedExit.session_id && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                      <span style={{ fontSize: '14px', color: '#64748b' }}>Session ID:</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', fontFamily: 'monospace' }}>
+                        {selectedExit.session_id.substring(0, 16)}...
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -303,90 +314,66 @@ function ExitLink({ projectId }) {
               exitLinks.map((exit, idx) => (
                 <div 
                   key={idx}
+                  onClick={(e) => handleExitClick(e, exit)}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 1fr',
                     padding: '16px 24px',
                     borderBottom: idx < exitLinks.length - 1 ? '1px solid #e2e8f0' : 'none',
                     alignItems: 'center',
-                    transition: 'background 0.2s'
+                    transition: 'all 0.2s',
+                    cursor: 'pointer'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.transform = 'translateX(4px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.transform = 'translateX(0)'
+                  }}
                 >
                   {/* Date */}
                   <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Search size={14} style={{ color: '#3b82f6' }} />
-                    {exit.last_clicked ? formatDate(exit.last_clicked) : 'Unknown'}
+                    <LogOut size={14} style={{ color: '#dc2626' }} />
+                    {exit.clicked_at ? formatDate(exit.clicked_at) : 'Unknown'}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b' }}>
-                    {exit.last_clicked ? formatTime(exit.last_clicked) : '--:--:--'}
+                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                    {exit.clicked_at ? formatTime(exit.clicked_at) : '--:--:--'}
                   </div>
 
-                  {/* Exit Link - Clickable */}
-                  <div 
-                    onClick={(e) => handleExitClick(e, exit)}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '8px',
-                      borderRadius: '6px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#fef2f2'
-                      e.currentTarget.style.transform = 'translateX(2px)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.transform = 'translateX(0)'
-                    }}
-                  >
-                    <a 
-                      href={exit.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ 
-                        fontSize: '14px', 
-                        color: '#dc2626',
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
+                  {/* Exit Link */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#dc2626',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    overflow: 'hidden'
+                  }}>
+                    <ExternalLink size={14} style={{ flexShrink: 0 }} />
+                    <span style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
                       {exit.url || 'Unknown'}
-                      <ExternalLink size={12} />
-                    </a>
+                    </span>
                   </div>
 
                   {/* Exit Page */}
-                  <div>
-                    <a 
-                      href={exit.from_page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ 
-                        fontSize: '14px', 
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {exit.from_page || 'Unknown'}
-                      <ExternalLink size={12} />
-                    </a>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#3b82f6',
+                    fontWeight: '500',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {exit.from_page || 'Unknown'}
                   </div>
                 </div>
               ))
