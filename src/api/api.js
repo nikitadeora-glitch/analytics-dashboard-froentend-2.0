@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api'
+  baseURL: import.meta.env.VITE_API_URL || 'http://15.206.33.41:8000/api'
 })
 
 export const projectsAPI = {
@@ -22,7 +22,7 @@ export const visitorsAPI = {
   getPath: (projectId, visitorId) => api.get(`/visitors/${projectId}/path/${visitorId}`),
   getMap: (projectId) => api.get(`/visitors/${projectId}/map`),
   getAllSessions: (projectId, visitorId) => api.get(`/visitors/${projectId}/visitor-sessions/${visitorId}`),
-  getVisitorsByPage: (projectId, pageUrl) => api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl }})
+  getVisitorsByPage: (projectId, pageUrl) => api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } })
 }
 
 export const pagesAPI = {
@@ -41,8 +41,8 @@ export const trafficAPI = {
 
 export const reportsAPI = {
   exportCSV: (projectId, days = 30) => api.get(`/reports/${projectId}/export/csv?days=${days}`),
-  getSummaryReport: (projectId, startDate, endDate) => 
-    api.get(`/reports/${projectId}/summary-report`, { params: { start_date: startDate, end_date: endDate }})
+  getSummaryReport: (projectId, startDate, endDate) =>
+    api.get(`/reports/${projectId}/summary-report`, { params: { start_date: startDate, end_date: endDate } })
 }
 
 export default api
