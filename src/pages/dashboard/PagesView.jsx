@@ -44,30 +44,102 @@ function PagesView({ projectId }) {
   return (
     <>
       <div className="header">
-        <h1>Pages</h1>
+        <h1>Pages View</h1>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          paddingRight: '40px',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            padding: '10px 20px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+          }}>
+            <Eye size={16} style={{ display: 'inline', marginRight: '8px' }} />
+            {visitors.length} Page Views
+          </div>
+        </div>
       </div>
 
       <div className="content">
+        {/* Stats Cards */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          marginBottom: '24px'
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #3b82f6'
+          }}>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+              Total Page Views
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
+              {visitors.length}
+            </div>
+          </div>
+          <div style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #10b981'
+          }}>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+              Unique Visitors
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
+              {new Set(visitors.map(v => v.visitor_id)).size}
+            </div>
+          </div>
+          <div style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #f59e0b'
+          }}>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+              Countries
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
+              {new Set(visitors.map(v => v.country)).size}
+            </div>
+          </div>
+        </div>
+
         <div className="chart-container" style={{ padding: 0 }}>
           {/* Table Header */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: '80px 100px 50px 200px 250px 1fr',
-            padding: '12px 16px',
-            background: '#f8fafc',
-            borderBottom: '2px solid #e2e8f0',
+            padding: '16px 20px',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+            borderBottom: '2px solid #cbd5e1',
             fontSize: '11px',
-            fontWeight: '600',
-            color: '#64748b',
+            fontWeight: '700',
+            color: '#475569',
             alignItems: 'center',
-            gap: '12px'
+            gap: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
           }}>
-            <div>Date</div>
-            <div>Time</div>
+            <div>📅 Date</div>
+            <div>🕐 Time</div>
             <div></div>
-            <div>System</div>
-            <div>Location / Language</div>
-            <div>Host Name/Web Page/Referrer</div>
+            <div>💻 System</div>
+            <div>🌍 Location</div>
+            <div>🔗 Page Details</div>
           </div>
 
           {/* Table Rows */}
