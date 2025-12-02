@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pagesAPI, visitorsAPI } from '../../api/api'
-import { TrendingUp, Clock, ExternalLink } from 'lucide-react'
+import { FileText, LogIn, LogOut, Eye } from 'lucide-react'
 import VisitorPathSimple from './VisitorPathSimple'
-import VisitorActivity from './VisitorActivity'
+import PagesSessionView from './PagesSessionView'
 
 function Pages({ projectId }) {
   const navigate = useNavigate()
@@ -16,7 +16,6 @@ function Pages({ projectId }) {
   const [selectedVisitorId, setSelectedVisitorId] = useState(null)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [selectedPageSessions, setSelectedPageSessions] = useState(null)
-  const [sessionDetails, setSessionDetails] = useState([])
 
   useEffect(() => {
     loadData()
@@ -39,16 +38,7 @@ function Pages({ projectId }) {
     }
   }
 
-  const loadVisitorDetails = async (visitorId) => {
-    try {
-      const response = await visitorsAPI.getActivity(projectId, 100)
-      const visitor = response.data.find(v => v.visitor_id === visitorId)
-      return visitor
-    } catch (error) {
-      console.error('Error loading visitor details:', error)
-      return null
-    }
-  }
+
 
   if (loading) return <div className="loading">Loading pages...</div>
 
@@ -61,9 +51,7 @@ function Pages({ projectId }) {
     }
   }
 
-  const handlePageClick = (page) => {
-    setSelectedPage(page)
-  }
+
 
   const handleVisitorClick = async (e, visitorId) => {
     e.stopPropagation()
@@ -75,28 +63,10 @@ function Pages({ projectId }) {
 
   const handleSessionsClick = async (e, page) => {
     e.stopPropagation()
-    // Show all sessions for this page
+    // Show all sessions for this page with complete journey
     if (page.visits && page.visits.length > 0) {
       setSelectedPageSessions(page)
       setShowAllSessions(true)
-      
-      // Load visitor details for all sessions
-      try {
-        const allVisitors = await visitorsAPI.getActivity(projectId, 200)
-        const details = page.visits.map(visit => {
-          const visitorData = allVisitors.data.find(v => v.visitor_id === visit.visitor_id)
-          // Preserve original visit timestamp, merge other data
-          return {
-            ...visitorData,
-            ...visit,  // visit data should come last to preserve session-specific data
-            visited_at: visit.visited_at  // Explicitly preserve the session's timestamp
-          }
-        })
-        setSessionDetails(details)
-      } catch (error) {
-        console.error('Error loading session details:', error)
-        setSessionDetails(page.visits)
-      }
     }
   }
 
@@ -116,169 +86,18 @@ function Pages({ projectId }) {
 
   const currentData = getCurrentData()
 
-  // Show all sessions view - Image format layout
+  // Show all sessions view with complete journey
   if (showAllSessions && selectedPageSessions) {
     return (
-      <>
-        <div className="header">
-          <button
-            onClick={() => {
-              setShowAllSessions(false)
-              setSelectedPageSessions(null)
-            }}
-            style={{
-              padding: '10px 20px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '16px',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-          >
-            ← Back to Pages
-          </button>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', margin: '16px 0' }}>
-            Sessions for: {selectedPageSessions.url || selectedPageSessions.page}
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '13px', marginTop: '8px' }}>
-           
-          </p>
-        </div>
-
-        <div className="content">
-          <div className="chart-container" style={{ padding: 0 }}>
-            {sessionDetails.map((session, idx) => {
-              // Parse the date properly
-              const visitDate = new Date(session.visited_at)
-              
-              const getCountryFlag = (country) => {
-                const flags = {
-                  'United States': '🇺🇸', 'India': '🇮🇳', 'United Kingdom': '🇬🇧',
-                  'Canada': '🇨🇦', 'Singapore': '🇸🇬', 'China': '🇨🇳'
-                }
-                return flags[country] || '🌍'
-              }
-              
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => handleVisitorClick(null, session.visitor_id)}
-                  style={{
-                    padding: '16px 24px',
-                    borderBottom: idx < sessionDetails.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    transition: 'background 0.2s',
-                    cursor: 'pointer',
-                    display: 'grid',
-                    gridTemplateColumns: '80px 100px 250px 200px 100px 120px 1fr',
-                    gap: '16px',
-                    alignItems: 'center'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  {/* Date */}
-                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '500' }}>
-                    {visitDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                  </div>
-
-                  {/* Time - User's local time (only time, no date) */}
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>
-                    {(() => {
-                      // If local_time_formatted has date, extract only time part
-                      if (session.local_time_formatted) {
-                        const timePart = session.local_time_formatted.split(',').pop().trim()
-                        return timePart
-                      }
-                      // Otherwise format from timestamp
-                      return visitDate.toLocaleTimeString('en-GB', { 
-                        hour: '2-digit', 
-                        minute: '2-digit', 
-                        second: '2-digit', 
-                        hour12: false
-                      })
-                    })()}
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
-                      {getCountryFlag(session.country)} {session.country || 'Unknown'}, {session.city || 'Unknown'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.ip_address || 'No IP'}
-                    </div>
-                  </div>
-
-                  {/* System */}
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
-                      {session.browser || 'Unknown Browser'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.os || 'Unknown OS'}
-                    </div>
-                  </div>
-
-                  {/* Time Spent */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#10b981' }}>
-                      {session.time_spent ? `${Math.floor(session.time_spent / 60)}m ${session.time_spent % 60}s` : '-'}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>
-                      Time
-                    </div>
-                  </div>
-
-                  {/* Session Badge */}
-                  <div>
-                    <span style={{
-                      padding: '4px 12px',
-                      background: '#eff6ff',
-                      color: '#3b82f6',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: '1px solid #bfdbfe'
-                    }}>
-                      Session #{session.session_id}
-                    </span>
-                  </div>
-
-                  {/* Page URL */}
-                  <div>
-                    <a 
-                      href={selectedPageSessions.url || selectedPageSessions.page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ 
-                        fontSize: '13px', 
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        display: 'block',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {selectedPageSessions.url || selectedPageSessions.page}
-                    </a>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </>
+      <PagesSessionView 
+        projectId={projectId}
+        selectedPageSessions={selectedPageSessions}
+        pageType={activeTab}
+        onBack={() => {
+          setShowAllSessions(false)
+          setSelectedPageSessions(null)
+        }}
+      />
     )
   }
 
@@ -295,6 +114,24 @@ function Pages({ projectId }) {
     <>
       <div className="header">
         <h1>Pages</h1>
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          paddingRight: '40px',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            padding: '8px 16px',
+            background: 'white',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: '#64748b',
+            border: '1px solid #e2e8f0'
+          }}>
+            <Eye size={14} style={{ display: 'inline', marginRight: '6px' }} />
+            {currentData.length} Pages
+          </div>
+        </div>
       </div>
 
       {/* Page Details Modal */}
@@ -464,57 +301,93 @@ function Pages({ projectId }) {
       )}
 
       <div className="content">
-        <div className="chart-container" style={{ padding: 0 }}>
-          <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
-            <button
-              onClick={() => setActiveTab('entry')}
-              style={{
-                padding: '16px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'entry' ? '3px solid #1e40af' : '3px solid transparent',
-                color: activeTab === 'entry' ? '#1e40af' : '#64748b',
-                fontWeight: activeTab === 'entry' ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Entry Pages
-            </button>
-            <button
-              onClick={() => setActiveTab('top')}
-              style={{
-                padding: '16px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'top' ? '3px solid #1e40af' : '3px solid transparent',
-                color: activeTab === 'top' ? '#1e40af' : '#64748b',
-                fontWeight: activeTab === 'top' ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Top Pages
-            </button>
-            <button
-              onClick={() => setActiveTab('exit')}
-              style={{
-                padding: '16px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'exit' ? '3px solid #1e40af' : '3px solid transparent',
-                color: activeTab === 'exit' ? '#1e40af' : '#64748b',
-                fontWeight: activeTab === 'exit' ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Exit Pages
-            </button>
+        {/* Tab Cards */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '16px',
+          marginBottom: '24px'
+        }}>
+          <div
+            onClick={() => setActiveTab('entry')}
+            style={{
+              padding: '20px',
+              background: activeTab === 'entry' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'white',
+              color: activeTab === 'entry' ? 'white' : '#64748b',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              boxShadow: activeTab === 'entry' ? '0 8px 20px rgba(16, 185, 129, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+              border: activeTab === 'entry' ? 'none' : '2px solid #e2e8f0',
+              transform: activeTab === 'entry' ? 'translateY(-4px)' : 'none'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <LogIn size={24} />
+              <span style={{ fontSize: '16px', fontWeight: '600' }}>Entry Pages</span>
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
+              {entryPages.length}
+            </div>
+            <div style={{ fontSize: '13px', opacity: 0.9 }}>
+              Where visitors start
+            </div>
           </div>
+
+          <div
+            onClick={() => setActiveTab('top')}
+            style={{
+              padding: '20px',
+              background: activeTab === 'top' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'white',
+              color: activeTab === 'top' ? 'white' : '#64748b',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              boxShadow: activeTab === 'top' ? '0 8px 20px rgba(59, 130, 246, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+              border: activeTab === 'top' ? 'none' : '2px solid #e2e8f0',
+              transform: activeTab === 'top' ? 'translateY(-4px)' : 'none'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <FileText size={24} />
+              <span style={{ fontSize: '16px', fontWeight: '600' }}>Top Pages</span>
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
+              {mostVisited.length}
+            </div>
+            <div style={{ fontSize: '13px', opacity: 0.9 }}>
+              Most viewed pages
+            </div>
+          </div>
+
+          <div
+            onClick={() => setActiveTab('exit')}
+            style={{
+              padding: '20px',
+              background: activeTab === 'exit' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'white',
+              color: activeTab === 'exit' ? 'white' : '#64748b',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              boxShadow: activeTab === 'exit' ? '0 8px 20px rgba(239, 68, 68, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+              border: activeTab === 'exit' ? 'none' : '2px solid #e2e8f0',
+              transform: activeTab === 'exit' ? 'translateY(-4px)' : 'none'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <LogOut size={24} />
+              <span style={{ fontSize: '16px', fontWeight: '600' }}>Exit Pages</span>
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
+              {exitPages.length}
+            </div>
+            <div style={{ fontSize: '13px', opacity: 0.9 }}>
+              Where visitors leave
+            </div>
+          </div>
+        </div>
+
+        <div className="chart-container" style={{ padding: 0 }}>
 
           <div style={{ padding: '20px' }}>
 
