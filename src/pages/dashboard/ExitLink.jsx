@@ -1,23 +1,29 @@
 import { useState, useEffect } from 'react'
-import { trafficAPI } from '../../api/api'
+import { trafficAPI, pagesAPI } from '../../api/api'
 import { Filter, Download, ExternalLink, LogOut, Search } from 'lucide-react'
 
 function ExitLink({ projectId }) {
+  const [activeTab, setActiveTab] = useState('external')
   const [exitLinks, setExitLinks] = useState([])
+  const [exitPages, setExitPages] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedExit, setSelectedExit] = useState(null)
 
   useEffect(() => {
-    loadExitLinks()
+    loadExitData()
   }, [projectId])
 
-  const loadExitLinks = async () => {
+  const loadExitData = async () => {
     try {
-      // Get individual exit link clicks (limit 100)
-      const response = await trafficAPI.getExitLinks(projectId)
-      setExitLinks(response.data)
+      // Get external exit links (clicks to external URLs)
+      const linksResponse = await trafficAPI.getExitLinks(projectId)
+      setExitLinks(linksResponse.data)
+      
+      // Get internal exit pages (pages where users left the site)
+      const pagesResponse = await pagesAPI.getExitPages(projectId)
+      setExitPages(pagesResponse.data)
     } catch (error) {
-      console.error('Error loading exit links:', error)
+      console.error('Error loading exit data:', error)
     } finally {
       setLoading(false)
     }
@@ -235,66 +241,51 @@ function ExitLink({ projectId }) {
       )}
 
       <div className="content">
-        {/* Filters and Export */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-          >
-            <Filter size={16} />
-            Add Filter
-          </button>
-
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#3b82f6'
-              e.currentTarget.style.color = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white'
-              e.currentTarget.style.color = '#3b82f6'
-            }}
-          >
-            <Download size={16} />
-            Export
-          </button>
+        {/* Tabs */}
+        <div className="chart-container" style={{ padding: 0, marginBottom: '20px' }}>
+          <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
+            <button
+              onClick={() => setActiveTab('external')}
+              style={{
+                padding: '16px 24px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'external' ? '3px solid #dc2626' : '3px solid transparent',
+                color: activeTab === 'external' ? '#dc2626' : '#64748b',
+                fontWeight: activeTab === 'external' ? '600' : '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              🔗 External Links ({exitLinks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('pages')}
+              style={{
+                padding: '16px 24px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'pages' ? '3px solid #dc2626' : '3px solid transparent',
+                color: activeTab === 'pages' ? '#dc2626' : '#64748b',
+                fontWeight: activeTab === 'pages' ? '600' : '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              📄 Exit Pages ({exitPages.length})
+            </button>
+          </div>
         </div>
 
-        {/* Exit Links Table */}
+        {/* Exit Links/Pages Table */}
         <div className="chart-container" style={{ padding: 0 }}>
           <div>
             {/* Table Header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '100px 120px 1fr 1fr',
+              gridTemplateColumns: activeTab === 'external' ? '100px 120px 1fr 1fr' : '100px 120px 1fr 120px',
               padding: '16px 24px',
               background: '#f8fafc',
               borderBottom: '2px solid #e2e8f0',
@@ -305,12 +296,12 @@ function ExitLink({ projectId }) {
             }}>
               <div>Date</div>
               <div>Time</div>
-              <div>Exit Link Clicked</div>
-              <div>Exit Page</div>
+              <div>{activeTab === 'external' ? 'Exit Link Clicked' : 'Exit Page URL'}</div>
+              <div>{activeTab === 'external' ? 'From Page' : 'Exits'}</div>
             </div>
 
-            {/* Table Rows */}
-            {exitLinks.length > 0 ? (
+            {/* Table Rows - External Links */}
+            {activeTab === 'external' && exitLinks.length > 0 ? (
               exitLinks.map((exit, idx) => (
                 <div 
                   key={idx}
@@ -377,13 +368,91 @@ function ExitLink({ projectId }) {
                   </div>
                 </div>
               ))
-            ) : (
+            ) : activeTab === 'external' ? (
               <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
                 <LogOut size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-                <p style={{ fontSize: '16px', fontWeight: '500' }}>No exit link data yet</p>
-                <p style={{ fontSize: '14px' }}>Start tracking visitors to see where they exit</p>
+                <p style={{ fontSize: '16px', fontWeight: '500' }}>No external exit links yet</p>
+                <p style={{ fontSize: '14px' }}>External link clicks will appear here</p>
               </div>
-            )}
+            ) : null}
+
+            {/* Table Rows - Exit Pages */}
+            {activeTab === 'pages' && exitPages.length > 0 ? (
+              exitPages.map((page, idx) => (
+                <div 
+                  key={idx}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '100px 120px 1fr 120px',
+                    padding: '16px 24px',
+                    borderBottom: idx < exitPages.length - 1 ? '1px solid #e2e8f0' : 'none',
+                    alignItems: 'center',
+                    transition: 'all 0.2s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.transform = 'translateX(4px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.transform = 'translateX(0)'
+                  }}
+                >
+                  {/* Date - Using first visit date */}
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <LogOut size={14} style={{ color: '#dc2626' }} />
+                    {page.visits && page.visits[0] ? formatDate(page.visits[0].visited_at) : 'Unknown'}
+                  </div>
+
+                  {/* Time */}
+                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                    {page.visits && page.visits[0] ? formatTime(page.visits[0].visited_at) : '--:--:--'}
+                  </div>
+
+                  {/* Exit Page URL */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#dc2626',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    overflow: 'hidden'
+                  }}>
+                    <ExternalLink size={14} style={{ flexShrink: 0 }} />
+                    <span style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {page.page || 'Unknown'}
+                    </span>
+                  </div>
+
+                  {/* Exit Count */}
+                  <div style={{ textAlign: 'center' }}>
+                    <span style={{
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      border: '1px solid #fecaca'
+                    }}>
+                      {page.exits || 0} exits
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : activeTab === 'pages' ? (
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                <LogOut size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                <p style={{ fontSize: '16px', fontWeight: '500' }}>No exit pages yet</p>
+                <p style={{ fontSize: '14px' }}>Pages where visitors leave will appear here</p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

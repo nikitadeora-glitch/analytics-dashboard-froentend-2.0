@@ -11,8 +11,28 @@ function Projects() {
   const [showTrackingCode, setShowTrackingCode] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [apiUrl, setApiUrl] = useState('http://127.0.0.1:8000')
   const navigate = useNavigate()
+  
+  // Auto-detect API URL based on environment
+  const getApiUrl = () => {
+    // Check if we have a custom API URL from environment variable
+    const envApiUrl = import.meta.env.VITE_API_URL
+    if (envApiUrl) {
+      return envApiUrl.replace('/api', '') // Remove /api suffix if present
+    }
+    
+    // Auto-detect based on current hostname
+    const hostname = window.location.hostname
+    
+    // Production detection
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      // If frontend is deployed, assume backend is on same domain or use env variable
+      return window.location.origin
+    }
+    
+    // Local development
+    return 'http://127.0.0.1:8000'
+  }
 
   useEffect(() => {
     loadProjects()
@@ -68,7 +88,13 @@ function Projects() {
 
   const getTrackingCode = (project) => {
     if (!project) return ''
-    return `<!-- State Counter Analytics Tracking Code -->\n<script src="${apiUrl}/analytics.js" data-project-id="${project.id}" data-api-url="${apiUrl}/api" data-debug="true"></script>\n<!-- End Analytics Code -->`
+    const apiUrl = getApiUrl()
+    const scriptUrl = `${apiUrl}/analytics.js`
+    const apiEndpoint = `${apiUrl}/api`
+    
+    return `<!-- State Counter Analytics Tracking Code -->
+<script src="${scriptUrl}" data-project-id="${project.id}" data-api-url="${apiEndpoint}"></script>
+<!-- End Analytics Code -->`
   }
 
   if (loading) return <div className="loading">Loading projects...</div>
@@ -123,36 +149,26 @@ function Projects() {
                   {selectedProject.name} - {selectedProject.domain}
                 </div>
                 
-                {/* API URL Configuration */}
+                {/* API URL Auto-detected */}
                 <div style={{ marginTop: '16px' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    fontSize: '13px', 
-                    fontWeight: '600', 
-                    color: '#475569',
-                    marginBottom: '8px' 
+                  <div style={{
+                    padding: '12px 16px',
+                    background: '#f0f9ff',
+                    border: '2px solid #bae6fd',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: '#0c4a6e'
                   }}>
-                    API URL (Change for production):
-                  </label>
-                  <input
-                    type="text"
-                    value={apiUrl}
-                    onChange={(e) => setApiUrl(e.target.value)}
-                    placeholder="http://127.0.0.1:8000"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                      📡 Auto-detected API URL:
+                    </div>
+                    <code style={{ 
+                      fontSize: '12px', 
                       fontFamily: 'monospace',
-                      transition: 'border-color 0.2s'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  />
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
-                    💡 For prpwebs.com, use ngrok or deploy backend to cloud
+                      color: '#0369a1'
+                    }}>
+                      {getApiUrl()}
+                    </code>
                   </div>
                 </div>
               </div>
@@ -252,54 +268,7 @@ function Projects() {
                 </button>
               </div>
             </div>
-
-            <div style={{
-              padding: '16px',
-              background: '#eff6ff',
-              borderRadius: '8px',
-              fontSize: '13px',
-              color: '#1e40af',
-              border: '1px solid #bfdbfe',
-              marginBottom: '16px'
-            }}>
-              <strong style={{ color: '#1e40af' }}>💡 Note:</strong> This tracking code is configured for Project ID: <strong>{selectedProject.id}</strong>. All analytics data will be tracked under this project.
-            </div>
-
-            <div style={{
-              padding: '16px',
-              background: '#fef3c7',
-              borderRadius: '8px',
-              fontSize: '13px',
-              color: '#92400e',
-              border: '1px solid #fde68a',
-              marginBottom: '12px'
-            }}>
-              <strong style={{ color: '#92400e' }}>⚠️ For External Websites (like prpwebs.com):</strong>
-              <ul style={{ margin: '8px 0 0 20px', paddingLeft: 0 }}>
-                <li>Localhost URL won't work on external sites</li>
-                <li>Use <strong>ngrok</strong> for testing: <code style={{ background: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>ngrok http 8000</code></li>
-                <li>For production: Deploy backend to cloud (Heroku, Railway, etc.)</li>
-                <li>Update API URL above with your public URL</li>
-              </ul>
-            </div>
-
-            <div style={{
-              padding: '16px',
-              background: '#dcfce7',
-              borderRadius: '8px',
-              fontSize: '13px',
-              color: '#166534',
-              border: '1px solid #bbf7d0'
-            }}>
-              <strong style={{ color: '#166534' }}>✅ Quick Setup with ngrok:</strong>
-              <ol style={{ margin: '8px 0 0 20px', paddingLeft: 0 }}>
-                <li>Install ngrok: <code style={{ background: '#86efac', padding: '2px 6px', borderRadius: '4px' }}>npm install -g ngrok</code></li>
-                <li>Run: <code style={{ background: '#86efac', padding: '2px 6px', borderRadius: '4px' }}>ngrok http 8000</code></li>
-                <li>Copy the https URL (e.g., https://abc123.ngrok.io)</li>
-                <li>Paste it in the API URL field above</li>
-                <li>Copy the updated tracking code</li>
-              </ol>
-            </div>
+           
           </div>
         </div>
       )}
