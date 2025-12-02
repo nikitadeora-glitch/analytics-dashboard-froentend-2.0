@@ -149,28 +149,7 @@ function Projects() {
                   {selectedProject.name} - {selectedProject.domain}
                 </div>
                 
-                {/* API URL Auto-detected */}
-                <div style={{ marginTop: '16px' }}>
-                  <div style={{
-                    padding: '12px 16px',
-                    background: '#f0f9ff',
-                    border: '2px solid #bae6fd',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    color: '#0c4a6e'
-                  }}>
-                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                      📡 Auto-detected API URL:
-                    </div>
-                    <code style={{ 
-                      fontSize: '12px', 
-                      fontFamily: 'monospace',
-                      color: '#0369a1'
-                    }}>
-                      {getApiUrl()}
-                    </code>
-                  </div>
-                </div>
+                
               </div>
               <button 
                 onClick={() => setShowTrackingCode(false)}
