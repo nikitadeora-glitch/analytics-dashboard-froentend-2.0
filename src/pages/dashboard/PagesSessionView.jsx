@@ -408,26 +408,59 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                                 </a>
                               </div>
 
-                              {/* Time Spent */}
+                              {/* Time Spent & Visit Time */}
                               <div style={{
-                                minWidth: '80px',
+                                minWidth: '140px',
                                 textAlign: 'right',
                                 flexShrink: 0
                               }}>
                                 <div style={{
-                                  fontSize: '16px',
+                                  fontSize: '20px',
                                   fontWeight: '700',
                                   color: '#10b981',
-                                  marginBottom: '2px'
+                                  marginBottom: '6px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'flex-end',
+                                  gap: '6px'
                                 }}>
-                                  {formatTimeSpent(page.time_spent || 0)}
+                                  ⏱️ {formatTimeSpent(page.time_spent || 0)}
                                 </div>
                                 <div style={{
-                                  fontSize: '10px',
-                                  color: '#64748b'
+                                  fontSize: '11px',
+                                  color: '#64748b',
+                                  fontWeight: '600',
+                                  marginBottom: '6px'
                                 }}>
                                   Time Spent
                                 </div>
+                                {page.viewed_at && (
+                                  <>
+                                    <div style={{
+                                      fontSize: '13px',
+                                      color: '#3b82f6',
+                                      fontWeight: '600',
+                                      background: '#eff6ff',
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      border: '1px solid #dbeafe',
+                                      marginBottom: '4px'
+                                    }}>
+                                      🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true
+                                      })}
+                                    </div>
+                                    <div style={{
+                                      fontSize: '10px',
+                                      color: '#94a3b8'
+                                    }}>
+                                      Visited at
+                                    </div>
+                                  </>
+                                )}
                               </div>
 
                               {/* Arrow to next page */}

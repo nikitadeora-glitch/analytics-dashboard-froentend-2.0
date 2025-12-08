@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { analyticsAPI } from '../../api/api'
 
 function Summary({ projectId }) {
@@ -16,12 +16,24 @@ function Summary({ projectId }) {
     loadSummary()
     const interval = setInterval(loadSummary, 30000)
     return () => clearInterval(interval)
-  }, [projectId])
+  }, [projectId, dateRange])
+
+  useEffect(() => {
+    console.log('✅ Page changed to:', currentPage)
+  }, [currentPage])
+
+  useEffect(() => {
+    console.log('📆 DateRange changed to:', dateRange)
+  }, [dateRange])
 
   const loadSummary = async () => {
     try {
-      const response = await analyticsAPI.getSummary(projectId)
+      console.log('🌐 API Call with dateRange:', dateRange)
+      const response = await analyticsAPI.getSummary(projectId, dateRange)
+      console.log('✅ API Response - daily_stats length:', response.data.daily_stats?.length)
+      console.log('📅 All dates from API:', response.data.daily_stats?.map(d => d.date))
       setData(response.data)
+      setCurrentPage(0)
     } catch (error) {
       console.error('Error loading summary:', error)
     } finally {
@@ -31,13 +43,16 @@ function Summary({ projectId }) {
 
   const handlePeriodChange = (e) => {
     setPeriod(e.target.value)
+    setCurrentPage(0) // Reset to first page when period changes
   }
 
   const handleDateRangeClick = () => {
     const ranges = [7, 30, 90]
     const currentIndex = ranges.indexOf(dateRange)
     const nextIndex = (currentIndex + 1) % ranges.length
-    setDateRange(ranges[nextIndex])
+    const newRange = ranges[nextIndex]
+    console.log('📅 Date range button clicked - changing from', dateRange, 'to', newRange)
+    setDateRange(newRange)
   }
 
   const getDateRangeLabel = () => {
@@ -47,23 +62,81 @@ function Summary({ projectId }) {
     return 'Last 30 Days'
   }
 
-  const handleNavigation = (direction) => {
-    if (direction === 'first') setCurrentPage(0)
-    else if (direction === 'prev') setCurrentPage(Math.max(0, currentPage - 1))
-    else if (direction === 'next') setCurrentPage(currentPage + 1)
-    else if (direction === 'last') setCurrentPage(Math.floor(data.daily_stats.length / 7))
-  }
+
+
+
 
   if (loading) return <div className="loading">Loading summary...</div>
   if (!data) return <div className="loading">No data available</div>
 
-  const getMaxValue = () => {
-    let values = []
-    if (showPageViews) values.push(...data.daily_stats.map(d => d.page_views))
-    if (showUniqueVisits) values.push(...data.daily_stats.map(d => d.unique_visits))
-    if (showReturningVisits) values.push(...data.daily_stats.map(d => d.returning_visits))
-    return Math.max(...values, 1)
+  // Get filtered data based on period
+  let filteredData = []
+  if (period === 'daily') {
+    filteredData = data.daily_stats || []
+  } else if (period === 'weekly') {
+    const weeks = []
+    const stats = data.daily_stats || []
+    for (let i = 0; i < stats.length; i += 7) {
+      const weekData = stats.slice(i, i + 7)
+      weeks.push({
+        date: `Week ${Math.floor(i / 7) + 1}`,
+        page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
+        unique_visits: weekData.reduce((sum, d) => sum + d.unique_visits, 0),
+        first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
+        returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
+      })
+    }
+    filteredData = weeks
+  } else if (period === 'monthly') {
+    const months = {}
+    ;(data.daily_stats || []).forEach(day => {
+      const monthKey = day.date.split(' ').slice(0, 2).join(' ')
+      if (!months[monthKey]) {
+        months[monthKey] = {
+          date: monthKey,
+          page_views: 0,
+          unique_visits: 0,
+          first_time_visits: 0,
+          returning_visits: 0
+        }
+      }
+      months[monthKey].page_views += day.page_views
+      months[monthKey].unique_visits += day.unique_visits
+      months[monthKey].first_time_visits += day.first_time_visits
+      months[monthKey].returning_visits += day.returning_visits
+    })
+    filteredData = Object.values(months)
   }
+
+  // Pagination
+  const itemsPerPage = 7
+  const start = currentPage * itemsPerPage
+  const end = start + itemsPerPage
+  
+  console.log('🔪 Slicing:', { 
+    currentPage,
+    start, 
+    end, 
+    filteredDataLength: filteredData.length,
+    allFilteredDates: filteredData.map(d => d.date)
+  })
+  
+  const displayData = filteredData.slice(start, end)
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
+  const isLastPage = currentPage >= totalPages - 1
+  const isFirstPage = currentPage === 0
+
+  console.log('📊 Result:', { 
+    displayDataLength: displayData.length,
+    displayDates: displayData.map(d => d.date)
+  })
+
+  // Max value for chart
+  let maxValues = []
+  if (showPageViews) maxValues.push(...displayData.map(d => d.page_views))
+  if (showUniqueVisits) maxValues.push(...displayData.map(d => d.unique_visits))
+  if (showReturningVisits) maxValues.push(...displayData.map(d => d.returning_visits))
+  const maxValue = Math.max(...maxValues, 1)
 
   const handleDateClick = (day) => {
     setSelectedDate(day)
@@ -73,12 +146,10 @@ function Summary({ projectId }) {
     setSelectedDate(null)
   }
 
-  const maxValue = getMaxValue()
-
   return (
     <>
       <div className="header">
-        <h1>Summary </h1>
+        <h1>Summary</h1>
       </div>
 
       {/* Date Details Modal */}
@@ -233,33 +304,103 @@ function Summary({ projectId }) {
               </select>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button 
-                  onClick={() => handleNavigation('first')}
-                  style={{ padding: '8px 12px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}
+                  type="button"
+                  onClick={() => {
+                    console.log('🔵 First clicked')
+                    if (!isFirstPage) setCurrentPage(0)
+                  }}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: isFirstPage ? '#64748b' : '#1e40af', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '14px',
+                    opacity: isFirstPage ? 0.6 : 1
+                  }}
                   title="First page"
                 >«</button>
                 <button 
-                  onClick={() => handleNavigation('prev')}
-                  disabled={currentPage === 0}
-                  style={{ padding: '8px 12px', background: currentPage === 0 ? '#64748b' : '#1e40af', color: 'white', border: 'none', borderRadius: '4px', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', fontSize: '14px' }}
+                  type="button"
+                  onClick={() => {
+                    console.log('🔵 Prev clicked, current:', currentPage)
+                    if (!isFirstPage) setCurrentPage(currentPage - 1)
+                  }}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: isFirstPage ? '#64748b' : '#1e40af', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '14px',
+                    opacity: isFirstPage ? 0.6 : 1
+                  }}
                   title="Previous"
                 >‹</button>
                 <button 
-                  onClick={() => handleNavigation('next')}
-                  style={{ padding: '8px 12px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}
+                  type="button"
+                  onClick={() => {
+                    console.log('🔵 Next clicked, current:', currentPage, 'isLastPage:', isLastPage)
+                    if (!isLastPage) setCurrentPage(currentPage + 1)
+                  }}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: isLastPage ? '#64748b' : '#1e40af', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '14px',
+                    opacity: isLastPage ? 0.6 : 1
+                  }}
                   title="Next"
                 >›</button>
                 <button 
-                  onClick={() => handleNavigation('last')}
-                  style={{ padding: '8px 12px', background: '#1e40af', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}
+                  type="button"
+                  onClick={() => {
+                    console.log('🔵 Last clicked, totalPages:', totalPages)
+                    if (!isLastPage) setCurrentPage(totalPages - 1)
+                  }}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: isLastPage ? '#64748b' : '#1e40af', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '14px',
+                    opacity: isLastPage ? 0.6 : 1
+                  }}
                   title="Last page"
                 >»</button>
               </div>
               <button 
                 onClick={handleDateRangeClick}
-                style={{ padding: '8px 12px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
+                style={{ 
+                  padding: '8px 12px', 
+                  background: '#f1f5f9', 
+                  color: '#475569', 
+                  border: '1px solid #cbd5e1', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer', 
+                  fontSize: '13px', 
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#e2e8f0'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9'
+                }}
               >
-                 {getDateRangeLabel()}
+                📅 {getDateRangeLabel()}
               </button>
+              <span style={{ padding: '8px 12px', fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
+                Page {currentPage + 1} of {totalPages}
+              </span>
             </div>
             <div style={{ display: 'flex', gap: '15px', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -292,15 +433,15 @@ function Summary({ projectId }) {
             </div>
           </div>
           
-          <div style={{ position: 'relative', padding: '20px 0' }}>
+          <div style={{ position: 'relative', padding: '20px 0' }} key={`page-${currentPage}`}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '300px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
-              {data.daily_stats.map((day, idx) => {
+              {displayData.map((day, idx) => {
                 const barWidth = showPageViews + showUniqueVisits + showReturningVisits
                 const barGap = 2
                 
                 return (
                   <div 
-                    key={idx} 
+                    key={`${currentPage}-${idx}-${day.date}`} 
                     onClick={() => handleDateClick(day)}
                     style={{ 
                       flex: 1, 
@@ -448,8 +589,8 @@ function Summary({ projectId }) {
               })}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
-              <span>{data.daily_stats[0]?.date.split(',')[0]}</span>
-              <span>{data.daily_stats[data.daily_stats.length - 1]?.date.split(',')[0]}</span>
+              <span>{displayData[0]?.date.split(',')[0]}</span>
+              <span>{displayData[displayData.length - 1]?.date.split(',')[0]}</span>
             </div>
           </div>
         </div>
@@ -485,7 +626,7 @@ function Summary({ projectId }) {
               </tr>
             </thead>
             <tbody>
-              {data.daily_stats.map((day, idx) => (
+              {filteredData.map((day, idx) => (
                 <tr 
                   key={idx} 
                   onClick={() => handleDateClick(day)}

@@ -13,7 +13,7 @@ export const projectsAPI = {
 }
 
 export const analyticsAPI = {
-  getSummary: (projectId) => api.get(`/analytics/${projectId}/summary`),
+  getSummary: (projectId, days = 30) => api.get(`/analytics/${projectId}/summary?days=${days}`),
   trackVisit: (projectId, data) => api.post(`/analytics/${projectId}/track`, data)
 }
 
@@ -26,9 +26,9 @@ export const visitorsAPI = {
 }
 
 export const pagesAPI = {
-  getMostVisited: (projectId, limit = 10) => api.get(`/pages/${projectId}/most-visited?limit=${limit}`),
-  getEntryPages: (projectId) => api.get(`/pages/${projectId}/entry-pages`),
-  getExitPages: (projectId) => api.get(`/pages/${projectId}/exit-pages`),
+  getMostVisited: (projectId, limit = 100) => api.get(`/pages/${projectId}/most-visited?limit=${limit}`),
+  getEntryPages: (projectId, limit = 100) => api.get(`/pages/${projectId}/entry-pages?limit=${limit}`),
+  getExitPages: (projectId, limit = 100) => api.get(`/pages/${projectId}/exit-pages?limit=${limit}`),
   getPageActivity: (projectId, hours = 24) => api.get(`/pages/${projectId}/page-activity?hours=${hours}`)
 }
 

@@ -359,17 +359,55 @@ function VisitorPath({ projectId }) {
                                   {page.url} <ExternalLink size={12} />
                                 </a>
                               </div>
-                              <div style={{ textAlign: 'right', marginLeft: '16px' }}>
-                                <div style={{ 
-                                  fontSize: '18px', 
-                                  fontWeight: '700', 
+                              <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
+                                {/* Actual Time - Primary */}
+                                {page.viewed_at && (
+                                  <>
+                                    <div style={{
+                                      fontSize: '20px',
+                                      color: '#3b82f6',
+                                      fontWeight: '700',
+                                      background: '#eff6ff',
+                                      padding: '8px 12px',
+                                      borderRadius: '8px',
+                                      border: '2px solid #bfdbfe',
+                                      marginBottom: '6px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px'
+                                    }}>
+                                      🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true
+                                      })}
+                                    </div>
+                                    <div style={{
+                                      fontSize: '11px',
+                                      color: '#64748b',
+                                      fontWeight: '600',
+                                      marginBottom: '8px'
+                                    }}>
+                                      Visited at
+                                    </div>
+                                  </>
+                                )}
+                                {/* Time Spent - Secondary */}
+                                <div style={{
+                                  fontSize: '16px',
+                                  fontWeight: '700',
                                   color: '#10b981',
                                   marginBottom: '4px'
                                 }}>
                                   ⏱️ {page.time_spent || 0}s
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                                  {new Date(page.viewed_at).toLocaleTimeString()}
+                                <div style={{
+                                  fontSize: '10px',
+                                  color: '#94a3b8'
+                                }}>
+                                  Time Spent
                                 </div>
                               </div>
                             </div>
@@ -737,17 +775,45 @@ function VisitorPath({ projectId }) {
                                     {page.url} <ExternalLink size={12} />
                                   </a>
                                 </div>
-                                <div style={{ textAlign: 'right', marginLeft: '16px' }}>
+                                <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
                                   <div style={{ 
-                                    fontSize: '18px', 
+                                    fontSize: '20px', 
                                     fontWeight: '700', 
                                     color: '#10b981',
-                                    marginBottom: '4px'
+                                    marginBottom: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    gap: '6px'
                                   }}>
                                     ⏱️ {page.time_spent || 0}s
                                   </div>
-                                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                                    {new Date(page.viewed_at).toLocaleTimeString()}
+                                  <div style={{ 
+                                    fontSize: '12px', 
+                                    color: '#64748b', 
+                                    fontWeight: '600',
+                                    marginBottom: '4px'
+                                  }}>
+                                    Time Spent
+                                  </div>
+                                  <div style={{ 
+                                    fontSize: '13px', 
+                                    color: '#3b82f6', 
+                                    fontWeight: '600',
+                                    background: '#eff6ff',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #dbeafe'
+                                  }}>
+                                    🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit',
+                                      second: '2-digit',
+                                      hour12: true 
+                                    })}
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                                    Visited at
                                   </div>
                                 </div>
                               </div>

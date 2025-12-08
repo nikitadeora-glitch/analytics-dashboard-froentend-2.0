@@ -28,9 +28,19 @@ function Pages({ projectId }) {
         pagesAPI.getEntryPages(projectId),
         pagesAPI.getExitPages(projectId)
       ])
-      setMostVisited(visited.data)
-      setEntryPages(entry.data)
-      setExitPages(exit.data)
+      // Backend returns array directly, not wrapped in {data: []}
+      const visitedData = Array.isArray(visited.data) ? visited.data : visited
+      const entryData = Array.isArray(entry.data) ? entry.data : entry
+      const exitData = Array.isArray(exit.data) ? exit.data : exit
+      
+      console.log('📊 Pages API Response:')
+      console.log('  Most Visited:', visitedData.length, 'pages')
+      console.log('  Entry Pages:', entryData.length, 'pages')
+      console.log('  Exit Pages:', exitData.length, 'pages')
+      
+      setMostVisited(visitedData)
+      setEntryPages(entryData)
+      setExitPages(exitData)
     } catch (error) {
       console.error('Error loading pages:', error)
     } finally {
@@ -387,12 +397,13 @@ function Pages({ projectId }) {
           </div>
         </div>
 
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ padding: 0, maxHeight: 'none', overflow: 'visible' }}>
 
           <div style={{ padding: '20px' }}>
 
             {currentData.length > 0 ? (
-              <div>
+              <div style={{ maxHeight: 'none', overflow: 'visible' }}>
+                {console.log(`🔍 Rendering ${currentData.length} pages in ${activeTab} tab`)}
                 {currentData.map((page, idx) => (
                   <div 
                     key={idx}
