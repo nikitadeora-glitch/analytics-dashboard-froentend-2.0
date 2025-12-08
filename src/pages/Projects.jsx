@@ -12,38 +12,38 @@ function Projects() {
   const [selectedProject, setSelectedProject] = useState(null)
   const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
-  
+
   // Auto-detect API URL based on environment
-  const getApiUrl = () => {
-    // Check if we have a custom API URL from environment variable
-    const envApiUrl = import.meta.env.VITE_API_URL
-    if (envApiUrl) {
-      return envApiUrl.replace('/api', '') // Remove /api suffix if present
-    }
-    
-    // Auto-detect based on current hostname
-    const hostname = window.location.hostname
-    
-    // Production detection
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // If frontend is deployed, assume backend is on same domain or use env variable
-      return window.location.origin
-    }
-    
-    // Local development
-    return 'http://127.0.0.1:8000'
-  }
+  // const getApiUrl = () => {
+  //   // Check if we have a custom API URL from environment variable
+  //   const envApiUrl = import.meta.env.VITE_API_URL
+  //   if (envApiUrl) {
+  //     return envApiUrl.replace('/api', '') // Remove /api suffix if present
+  //   }
+
+  //   // Auto-detect based on current hostname
+  //   const hostname = window.location.hostname
+
+  //   // Production detection
+  //   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+  //     // If frontend is deployed, assume backend is on same domain or use env variable
+  //     return window.location.origin
+  //   }
+
+  //   // Local development
+  //   return 'http://127.0.0.1:8000'
+  // }
 
   useEffect(() => {
     loadProjects()
     const interval = setInterval(loadProjects, 30000) // Refresh every 30s
-    
+
     const handleOpenAddProject = () => {
       setShowForm(true)
     }
-    
+
     window.addEventListener('openAddProject', handleOpenAddProject)
-    
+
     return () => {
       clearInterval(interval)
       window.removeEventListener('openAddProject', handleOpenAddProject)
@@ -88,10 +88,10 @@ function Projects() {
 
   const getTrackingCode = (project) => {
     if (!project) return ''
-    const apiUrl = getApiUrl()
-    const scriptUrl = `${apiUrl}/analytics.js`
-    const apiEndpoint = `${apiUrl}/api`
-    
+    // const apiUrl = getApiUrl()
+    const scriptUrl = `${import.meta.env.VITE_API_URL}analytics.js`
+    const apiEndpoint = `${import.meta.env.VITE_API_URL}`
+
     return `<!-- State Counter Analytics Tracking Code -->
 <script src="${scriptUrl}" data-project-id="${project.id}" data-api-url="${apiEndpoint}"></script>
 <!-- End Analytics Code -->`
@@ -112,7 +112,7 @@ function Projects() {
 
       {/* Tracking Code Modal */}
       {showTrackingCode && selectedProject && (
-        <div 
+        <div
           onClick={() => setShowTrackingCode(false)}
           style={{
             position: 'fixed',
@@ -128,7 +128,7 @@ function Projects() {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -148,10 +148,10 @@ function Projects() {
                 <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>
                   {selectedProject.name} - {selectedProject.domain}
                 </div>
-                
-                
+
+
               </div>
-              <button 
+              <button
                 onClick={() => setShowTrackingCode(false)}
                 style={{
                   background: '#f1f5f9',
@@ -183,15 +183,15 @@ function Projects() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ 
-                fontSize: '14px', 
-                color: '#475569', 
+              <div style={{
+                fontSize: '14px',
+                color: '#475569',
                 marginBottom: '12px',
                 fontWeight: '500'
               }}>
                 Copy and paste this code before the closing &lt;/head&gt; tag on your website:
               </div>
-              
+
               <div style={{ position: 'relative' }}>
                 <pre style={{
                   background: '#1e293b',
@@ -206,7 +206,7 @@ function Projects() {
                 }}>
                   {getTrackingCode(selectedProject)}
                 </pre>
-                
+
                 <button
                   onClick={handleCopyCode}
                   style={{
@@ -247,7 +247,7 @@ function Projects() {
                 </button>
               </div>
             </div>
-           
+
           </div>
         </div>
       )}
@@ -303,9 +303,9 @@ function Projects() {
             </thead>
             <tbody>
               {projects.map((project) => (
-                <tr 
-                  key={project.id} 
-                  style={{ 
+                <tr
+                  key={project.id}
+                  style={{
                     borderBottom: '1px solid #e2e8f0',
                     transition: 'background 0.2s'
                   }}
@@ -323,9 +323,9 @@ function Projects() {
                     </div>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <span style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       gap: '4px',
                       padding: '4px 12px',
                       background: '#dbeafe',
