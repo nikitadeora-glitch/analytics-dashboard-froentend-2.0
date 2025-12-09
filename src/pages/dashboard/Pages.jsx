@@ -130,17 +130,6 @@ function Pages({ projectId }) {
           paddingRight: '40px',
           alignItems: 'center'
         }}>
-          <div style={{
-            padding: '8px 16px',
-            background: 'white',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: '#64748b',
-            border: '1px solid #e2e8f0'
-          }}>
-            <Eye size={14} style={{ display: 'inline', marginRight: '6px' }} />
-            {currentData.length} Pages
-          </div>
         </div>
       </div>
 
@@ -311,163 +300,154 @@ function Pages({ projectId }) {
       )}
 
       <div className="content">
-        {/* Tab Cards */}
+        {/* Simple Tabs */}
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: '16px',
-          marginBottom: '24px'
+          display: 'flex', 
+          gap: '0',
+          marginBottom: '24px',
+          borderBottom: '2px solid #e2e8f0'
         }}>
           <div
             onClick={() => setActiveTab('entry')}
             style={{
-              padding: '20px',
-              background: activeTab === 'entry' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'white',
-              color: activeTab === 'entry' ? 'white' : '#64748b',
-              borderRadius: '12px',
+              padding: '16px 32px',
               cursor: 'pointer',
-              transition: 'all 0.3s',
-              boxShadow: activeTab === 'entry' ? '0 8px 20px rgba(16, 185, 129, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
-              border: activeTab === 'entry' ? 'none' : '2px solid #e2e8f0',
-              transform: activeTab === 'entry' ? 'translateY(-4px)' : 'none'
+              fontSize: '15px',
+              fontWeight: '600',
+              color: activeTab === 'entry' ? '#1e40af' : '#64748b',
+              borderBottom: activeTab === 'entry' ? '3px solid #1e40af' : '3px solid transparent',
+              marginBottom: '-2px',
+              transition: 'all 0.2s',
+              background: activeTab === 'entry' ? '#f8fafc' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'entry') e.currentTarget.style.background = '#f8fafc'
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'entry') e.currentTarget.style.background = 'transparent'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <LogIn size={24} />
-              <span style={{ fontSize: '16px', fontWeight: '600' }}>Entry Pages</span>
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
-              {entryPages.length}
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.9 }}>
-              Where visitors start
-            </div>
+            Entry Pages
           </div>
 
           <div
             onClick={() => setActiveTab('top')}
             style={{
-              padding: '20px',
-              background: activeTab === 'top' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'white',
-              color: activeTab === 'top' ? 'white' : '#64748b',
-              borderRadius: '12px',
+              padding: '16px 32px',
               cursor: 'pointer',
-              transition: 'all 0.3s',
-              boxShadow: activeTab === 'top' ? '0 8px 20px rgba(59, 130, 246, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
-              border: activeTab === 'top' ? 'none' : '2px solid #e2e8f0',
-              transform: activeTab === 'top' ? 'translateY(-4px)' : 'none'
+              fontSize: '15px',
+              fontWeight: '600',
+              color: activeTab === 'top' ? '#1e40af' : '#64748b',
+              borderBottom: activeTab === 'top' ? '3px solid #1e40af' : '3px solid transparent',
+              marginBottom: '-2px',
+              transition: 'all 0.2s',
+              background: activeTab === 'top' ? '#f8fafc' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'top') e.currentTarget.style.background = '#f8fafc'
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'top') e.currentTarget.style.background = 'transparent'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <FileText size={24} />
-              <span style={{ fontSize: '16px', fontWeight: '600' }}>Top Pages</span>
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
-              {mostVisited.length}
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.9 }}>
-              Most viewed pages
-            </div>
+            Top Pages
           </div>
 
           <div
             onClick={() => setActiveTab('exit')}
             style={{
-              padding: '20px',
-              background: activeTab === 'exit' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'white',
-              color: activeTab === 'exit' ? 'white' : '#64748b',
-              borderRadius: '12px',
+              padding: '16px 32px',
               cursor: 'pointer',
-              transition: 'all 0.3s',
-              boxShadow: activeTab === 'exit' ? '0 8px 20px rgba(239, 68, 68, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
-              border: activeTab === 'exit' ? 'none' : '2px solid #e2e8f0',
-              transform: activeTab === 'exit' ? 'translateY(-4px)' : 'none'
+              fontSize: '15px',
+              fontWeight: '600',
+              color: activeTab === 'exit' ? '#1e40af' : '#64748b',
+              borderBottom: activeTab === 'exit' ? '3px solid #1e40af' : '3px solid transparent',
+              marginBottom: '-2px',
+              transition: 'all 0.2s',
+              background: activeTab === 'exit' ? '#f8fafc' : 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'exit') e.currentTarget.style.background = '#f8fafc'
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'exit') e.currentTarget.style.background = 'transparent'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <LogOut size={24} />
-              <span style={{ fontSize: '16px', fontWeight: '600' }}>Exit Pages</span>
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
-              {exitPages.length}
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.9 }}>
-              Where visitors leave
-            </div>
+            Exit Pages
           </div>
         </div>
 
-        <div className="chart-container" style={{ padding: 0, maxHeight: 'none', overflow: 'visible' }}>
+        <div className="chart-container" style={{ padding: 0, maxHeight: 'none', overflow: 'hidden' }}>
 
-          <div style={{ padding: '20px' }}>
+          <div style={{ padding: '10px' }}>
 
             {currentData.length > 0 ? (
-              <div style={{ maxHeight: 'none', overflow: 'visible' }}>
+              <div>
                 {console.log(`🔍 Rendering ${currentData.length} pages in ${activeTab} tab`)}
                 {currentData.map((page, idx) => (
                   <div 
                     key={idx}
                     style={{
                       borderBottom: idx < currentData.length - 1 ? '1px solid #e2e8f0' : 'none',
-                      padding: '20px',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
+                      padding: '8px 20px'
+                    }}>
+              
                     {/* Page Info */}
                     <div 
                       style={{
-                        marginBottom: '12px',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s'
+                        marginBottom: '4px',
+                        padding: '4px',
+                        borderRadius: '6px'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>
-                            📄 {page.title || page.page || 'Untitled'}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', wordBreak: 'break-word' }}>
+                             {page.title || page.page || 'Untitled'}
                           </div>
-                          <div style={{ fontSize: '13px', color: '#64748b' }}>
+                          <a 
+                            href={page.url || page.page || '/'} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ 
+                              fontSize: '11px', 
+                              color: '#3b82f6', 
+                              textDecoration: 'none',
+                              wordBreak: 'break-all', 
+                              lineHeight: '1.3',
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                          >
                             {page.url || page.page || '/'}
-                          </div>
+                          </a>
                         </div>
-                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
                           {/* Sessions Number - Clickable */}
                           <div 
                             onClick={(e) => handleSessionsClick(e, page)}
                             style={{ 
                               textAlign: 'center',
                               cursor: page.visits && page.visits.length > 0 ? 'pointer' : 'default',
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              transition: 'all 0.2s',
-                              minWidth: '100px'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (page.visits && page.visits.length > 0) {
-                                e.currentTarget.style.background = '#eff6ff'
-                                e.currentTarget.style.transform = 'scale(1.05)'
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent'
-                              e.currentTarget.style.transform = 'scale(1)'
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              minWidth: '70px',
+                              userSelect: 'none'
                             }}
                           >
-                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>
+                            <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '1px' }}>
                               {activeTab === 'entry' ? 'Sessions' : activeTab === 'top' ? 'Views' : 'Exits'}
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '700', color: '#3b82f6' }}>
                               {page.total_page_views || page.total_views || page.sessions || page.exits || 0}
                             </div>
                           </div>
-                          <div style={{ textAlign: 'center', minWidth: '100px' }}>
-                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginBottom: '4px' }}>
+                          <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                            <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '1px' }}>
                               Bounce %
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: '700', color: page.bounce_rate > 70 ? '#ef4444' : '#10b981' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '700', color: page.bounce_rate > 70 ? '#ef4444' : '#10b981' }}>
                               {page.bounce_rate ? `${page.bounce_rate.toFixed(1)}%` : '0.0%'}
                             </div>
                           </div>

@@ -51,74 +51,15 @@ function PagesView({ projectId }) {
           paddingRight: '40px',
           alignItems: 'center'
         }}>
-          <div style={{
-            padding: '10px 20px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-          }}>
-            <Eye size={16} style={{ display: 'inline', marginRight: '8px' }} />
-            {visitors.length} Page Views
-          </div>
+         
         </div>
       </div>
 
       <div className="content">
-        {/* Stats Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            borderLeft: '4px solid #3b82f6'
-          }}>
-            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
-              Total Page Views
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
-              {visitors.length}
-            </div>
-          </div>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            borderLeft: '4px solid #10b981'
-          }}>
-            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
-              Unique Visitors
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
-              {new Set(visitors.map(v => v.visitor_id)).size}
-            </div>
-          </div>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            borderLeft: '4px solid #f59e0b'
-          }}>
-            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
-              Countries
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b' }}>
-              {new Set(visitors.map(v => v.country)).size}
-            </div>
-          </div>
-        </div>
+        
 
-        <div className="chart-container" style={{ padding: 0 }}>
+
+        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           {/* Table Header */}
           <div style={{
             display: 'grid',
@@ -132,14 +73,16 @@ function PagesView({ projectId }) {
             alignItems: 'center',
             gap: '12px',
             textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            letterSpacing: '0.5px',
+            minWidth: 0,
+            maxWidth: '100%'
           }}>
-            <div>📅 Date</div>
-            <div>🕐 Time</div>
+            <div> Date</div>
+            <div> Time</div>
             <div></div>
-            <div>💻 System</div>
-            <div>🌍 Location</div>
-            <div>🔗 Page Details</div>
+            <div> System</div>
+            <div>Location</div>
+            <div> Page Details</div>
           </div>
 
           {/* Table Rows */}
@@ -174,18 +117,18 @@ function PagesView({ projectId }) {
                     gridTemplateColumns: '80px 100px 50px 200px 250px 1fr',
                     padding: '14px 16px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #f1f5f9' : 'none',
-                    alignItems: 'center',
-                    transition: 'background 0.2s',
-                    gap: '12px'
+                    alignItems: 'start',
+                    gap: '12px',
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   {/* Date */}
                   <div style={{ 
                     fontSize: '13px', 
                     color: '#1e293b',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    paddingTop: '2px'
                   }}>
                     {visitDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </div>
@@ -193,7 +136,8 @@ function PagesView({ projectId }) {
                   {/* Time */}
                   <div style={{ 
                     fontSize: '13px', 
-                    color: '#64748b'
+                    color: '#64748b',
+                    paddingTop: '2px'
                   }}>
                     {timeDisplay}
                   </div>
@@ -201,15 +145,16 @@ function PagesView({ projectId }) {
                   {/* Icon (Browser/Device) */}
                   <div style={{ 
                     fontSize: '20px',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    paddingTop: '0px'
                   }}>
                     {deviceIcon}
                   </div>
 
                   {/* System (Browser + OS + Resolution) */}
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ 
-                      fontSize: '13px', 
+                      fontSize: '12px', 
                       fontWeight: '500', 
                       color: '#1e293b',
                       marginBottom: '2px'
@@ -217,13 +162,13 @@ function PagesView({ projectId }) {
                       {visitor.browser || 'Unknown Browser'}
                     </div>
                     <div style={{ 
-                      fontSize: '12px', 
+                      fontSize: '11px', 
                       color: '#64748b'
                     }}>
                       {visitor.os || 'Unknown OS'}
                     </div>
                     <div style={{ 
-                      fontSize: '11px', 
+                      fontSize: '10px', 
                       color: '#94a3b8'
                     }}>
                       {visitor.screen_resolution || 'Unknown'}
@@ -231,58 +176,69 @@ function PagesView({ projectId }) {
                   </div>
 
                   {/* Location / Language */}
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ 
-                      fontSize: '13px', 
+                      fontSize: '12px', 
                       fontWeight: '500', 
                       color: '#1e293b',
-                      marginBottom: '2px'
+                      marginBottom: '2px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {getCountryFlag(visitor.country)} {visitor.country || 'Unknown'},
                     </div>
                     <div style={{ 
-                      fontSize: '12px', 
-                      color: '#64748b'
+                      fontSize: '11px', 
+                      color: '#64748b',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
-                      {visitor.city || 'Unknown'} / {visitor.language || 'en-US'}
+                      {visitor.city || 'Unknown'} 
                     </div>
                   </div>
 
                   {/* Host Name/Web Page/Referrer */}
-                  <div>
+                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
                     <div style={{ 
-                      fontSize: '13px', 
+                      fontSize: '12px', 
                       fontWeight: '500', 
                       color: '#1e293b',
-                      marginBottom: '3px'
+                      marginBottom: '2px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'}
+                    </div>
+                    <div style={{ 
+                      fontSize: '10px', 
+                      color: referrerColor,
+                      marginBottom: '2px',
+                      wordBreak: 'break-all',
+                      lineHeight: '1.4'
+                    }}>
+                      {referrerText}
                     </div>
                     <a 
                       href={visitor.entry_page} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       style={{ 
-                        fontSize: '12px', 
+                        fontSize: '11px', 
                         color: '#3b82f6',
                         textDecoration: 'none',
-                        display: 'block',
-                        marginBottom: '3px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        display: 'inline-block',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
-                      {visitor.entry_page && visitor.entry_page.length > 70 
-                        ? visitor.entry_page.substring(0, 70) + '...' 
-                        : visitor.entry_page} ↗
+                      {visitor.entry_page} ↗
                     </a>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      color: referrerColor
-                    }}>
-                      {referrerText}
-                    </div>
                   </div>
                 </div>
               )

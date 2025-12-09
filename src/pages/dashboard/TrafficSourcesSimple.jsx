@@ -84,7 +84,6 @@ function TrafficSourcesSimple({ projectId }) {
             <div style={{ textAlign: 'center' }}>Sessions</div>
             <div style={{ textAlign: 'center' }}>Bounce %</div>
             <div style={{ textAlign: 'center' }}>Entire Log (2 weeks) Sessions</div>
-            <div style={{ textAlign: 'right' }}>Trends</div>
           </div>
 
           {/* Table Rows - Show all standard sources */}
@@ -220,38 +219,7 @@ function TrafficSourcesSimple({ projectId }) {
                     )}
                   </div>
 
-                  {/* Trends Button */}
-                  <div style={{ textAlign: 'right' }}>
-                    <button
-                      disabled={data.count === 0}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        color: data.count > 0 ? '#3b82f6' : '#cbd5e1',
-                        cursor: data.count > 0 ? 'pointer' : 'not-allowed',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (data.count > 0) {
-                          e.currentTarget.style.background = '#eff6ff'
-                          e.currentTarget.style.borderColor = '#3b82f6'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                        e.currentTarget.style.borderColor = '#e2e8f0'
-                      }}
-                    >
-                      <TrendingUp size={14} /> Trends
-                    </button>
-                  </div>
+              
                 </div>
               )
             })}

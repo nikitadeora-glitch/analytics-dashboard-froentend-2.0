@@ -54,16 +54,24 @@ function VisitorPath({ projectId }) {
     setSelectedVisitorSessions(null)
   }
 
-  const getCountryFlag = (country) => {
-    const flags = {
-      'United States': '🇺🇸',
-      'India': '🇮🇳',
-      'United Kingdom': '🇬🇧',
-      'Canada': '🇨🇦',
-      'Singapore': '🇸🇬',
-      'China': '🇨🇳'
+  const getCountryCode = (country) => {
+    const codes = {
+      'United States': 'US',
+      'India': 'IN',
+      'United Kingdom': 'UK',
+      'Canada': 'CA',
+      'Singapore': 'SG',
+      'China': 'CN',
+      'Bangladesh': 'BD',
+      'Pakistan': 'PK',
+      'Australia': 'AU',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Japan': 'JP',
+      'Brazil': 'BR',
+      'Russia': 'RU'
     }
-    return flags[country] || '🌍'
+    return codes[country] || 'XX'
   }
 
   const getDeviceIcon = (device) => {
@@ -122,18 +130,19 @@ function VisitorPath({ projectId }) {
           </button>
         </div>
 
-        <div className="content">
+        <div className="content" style={{ overflowX: 'hidden' }}>
           {/* Simple Table Layout */}
-          <div className="chart-container" style={{ padding: 0 }}>
+          <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
             {selectedVisitorSessions.sessions.map((session, sessionIdx) => (
               <div 
                 key={sessionIdx}
                 className="chart-container"
                 style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                  padding: '24px',
-                  border: '3px solid #e2e8f0',
-                  transition: 'all 0.3s'
+                  padding: '14px',
+                  border: '2px solid #e2e8f0',
+                  transition: 'all 0.3s',
+                  overflowX: 'hidden'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = '#3b82f6'
@@ -567,8 +576,8 @@ function VisitorPath({ projectId }) {
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    marginBottom: '20px',
-                    paddingBottom: '16px',
+                    marginBottom: '16px',
+                    paddingBottom: '12px',
                     borderBottom: '2px solid #e2e8f0'
                   }}>
                     <div>
@@ -682,13 +691,13 @@ function VisitorPath({ projectId }) {
                   {/* Page Journey Timeline */}
                   <div>
                     <h4 style={{ 
-                      fontSize: '16px', 
+                      fontSize: '14px', 
                       fontWeight: '700', 
                       color: '#1e293b', 
-                      marginBottom: '16px',
+                      marginBottom: '12px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '6px'
                     }}>
                       📍 Page Journey Timeline
                     </h4>
@@ -711,24 +720,24 @@ function VisitorPath({ projectId }) {
                             key={pageIdx}
                             style={{
                               position: 'relative',
-                              marginBottom: '20px'
+                              marginBottom: '12px'
                             }}
                           >
                             {/* Timeline dot with number */}
                             <div style={{
                               position: 'absolute',
                               left: '-32px',
-                              top: '14px',
-                              width: '26px',
-                              height: '26px',
+                              top: '10px',
+                              width: '24px',
+                              height: '24px',
                               background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
                               borderRadius: '50%',
-                              border: '4px solid white',
-                              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)',
+                              border: '3px solid white',
+                              boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '11px',
+                              fontSize: '10px',
                               fontWeight: '700',
                               color: 'white',
                               zIndex: 1
@@ -738,9 +747,9 @@ function VisitorPath({ projectId }) {
 
                             <div style={{
                               background: 'white',
-                              padding: '16px',
-                              borderRadius: '12px',
-                              border: '2px solid #e2e8f0',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0',
                               transition: 'all 0.2s'
                             }}
                             onMouseEnter={(e) => {
@@ -753,9 +762,9 @@ function VisitorPath({ projectId }) {
                               e.currentTarget.style.transform = 'translateX(0)'
                               e.currentTarget.style.boxShadow = 'none'
                             }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', marginBottom: '6px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ width: '100%' }}>
+                                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '3px', wordBreak: 'break-word' }}>
                                     📄 {page.title || 'Untitled Page'}
                                   </div>
                                   <a 
@@ -763,16 +772,16 @@ function VisitorPath({ projectId }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{ 
-                                      fontSize: '12px', 
+                                      fontSize: '10px', 
                                       color: '#3b82f6', 
                                       textDecoration: 'none',
-                                      wordBreak: 'break-all',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
+                                      wordBreak: 'break-word',
+                                      display: 'block',
+                                      overflowWrap: 'anywhere',
+                                      lineHeight: '1.4'
                                     }}
                                   >
-                                    {page.url} <ExternalLink size={12} />
+                                    {page.url} 
                                   </a>
                                 </div>
                                 <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
@@ -1036,163 +1045,89 @@ function VisitorPath({ projectId }) {
         </div>
       )}
 
-      <div className="content">
+      <div className="content" style={{ overflowX: 'hidden' }}>
         {/* Filters and Export */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              padding: '10px 16px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-          >
-            <Filter size={16} />
-            Add Filter
-          </button>
-
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#3b82f6'
-              e.currentTarget.style.color = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white'
-              e.currentTarget.style.color = '#3b82f6'
-            }}
-          >
-            <Download size={16} />
-            Export
-          </button>
+         
         </div>
 
         {/* Visitor List */}
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden', width: '100%' }}>
           {visitors.length > 0 ? (
             <div>
               {visitors.map((visitor, idx) => (
                 <div 
                   key={idx}
                   style={{
-                    padding: '20px 24px',
+                    padding: '16px 20px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    transition: 'all 0.2s ease',
                     display: 'grid',
-                    gridTemplateColumns: '40px 200px 150px 1fr 200px',
-                    alignItems: 'center',
-                    gap: '16px'
-                  }}
-                >
-                  {/* Expand Icon */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      background: '#eff6ff',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #bfdbfe'
-                    }}>
-                      <ChevronRight size={16} style={{ color: '#3b82f6' }} />
-                    </div>
-                  </div>
+                    gridTemplateColumns: '140px 110px 1fr 190px',
+                    gap: '20px',
+                    alignItems: 'start',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflowX: 'hidden'
+                  }}>
 
                   {/* Location */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '20px' }}>{getCountryFlag(visitor.country)}</span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                        {visitor.country || 'Unknown'}
-                      </span>
+                  <div style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getCountryCode(visitor.country)} {visitor.country || 'Unknown'}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {visitor.city || 'Unknown City'}
                     </div>
                   </div>
 
                   {/* Session */}
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#3b82f6', marginBottom: '4px' }}>
+                  <div style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#3b82f6', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       Session #{visitor.id}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#10b981' }}>
+                    <div style={{ fontSize: '10px', color: '#10b981', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {visitor.referrer && visitor.referrer !== 'direct' ? '(referring link)' : '(No referring link)'}
                     </div>
                   </div>
 
-                  {/* Entry Page - Clickable */}
-                  <div 
-                    onClick={(e) => handleReferrerClick(e, visitor)}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#eff6ff'
-                      e.currentTarget.style.transform = 'scale(1.02)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.transform = 'scale(1)'
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🔗 {visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : 'Direct'}
+                  {/* Entry Page - Clickable Link Only */}
+                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                      🔗 {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring' : 'Direct'}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      color: '#3b82f6', 
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontWeight: '500'
-                    }}>
+                    <a
+                      href={visitor.entry_page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ 
+                        fontSize: '11px', 
+                        color: '#3b82f6', 
+                        fontWeight: '500',
+                        textDecoration: 'none',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer',
+                        display: 'block'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
                       {visitor.entry_page || 'Unknown'}
-                      <ExternalLink size={12} />
-                    </div>
+                    </a>
                   </div>
 
                   {/* Device & Time */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '20px' }}>{getDeviceIcon(visitor.device)}</span>
-                      <span style={{ fontSize: '20px' }}>🌐</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'start', minWidth: 0, maxWidth: '100%' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, paddingTop: '2px' }}>
+                      <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
+                      <span style={{ fontSize: '18px', lineHeight: 1 }}>🌐</span>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                    <div style={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {visitor.device || 'Unknown'}, {visitor.browser || 'Unknown'}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      <div style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {formatDate(visitor.visited_at)} {formatTime(visitor.visited_at)}
                       </div>
                     </div>

@@ -4,8 +4,6 @@ import { visitorsAPI } from '../../api/api'
 function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack }) {
   const [sessionDetails, setSessionDetails] = useState([])
   const [loading, setLoading] = useState(true)
-  const [expandedSession, setExpandedSession] = useState(null)
-  const isExitPage = pageType === 'exit'
 
   useEffect(() => {
     loadSessionDetails()
@@ -84,21 +82,30 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
   }
 
-  const getCountryFlag = (country) => {
-    const flags = {
-      'United States': '🇺🇸', 'India': '🇮🇳', 'United Kingdom': '🇬🇧',
-      'Canada': '🇨🇦', 'Singapore': '🇸🇬', 'China': '🇨🇳'
+  const getCountryCode = (country) => {
+    const codes = {
+      'United States': 'US',
+      'India': 'IN',
+      'United Kingdom': 'UK',
+      'Canada': 'CA',
+      'Singapore': 'SG',
+      'China': 'CN',
+      'Bangladesh': 'BD',
+      'Pakistan': 'PK',
+      'Australia': 'AU',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Japan': 'JP',
+      'Brazil': 'BR',
+      'Russia': 'RU',
+      'South Korea': 'KR',
+      'Mexico': 'MX',
+      'Italy': 'IT',
+      'Spain': 'ES',
+      'Netherlands': 'NL',
+      'Switzerland': 'CH'
     }
-    return flags[country] || '🌍'
-  }
-
-  const handleSessionClick = (session) => {
-    // Toggle expanded session
-    if (expandedSession === session.session_id) {
-      setExpandedSession(null)
-    } else {
-      setExpandedSession(session.session_id)
-    }
+    return codes[country] || 'XX'
   }
 
   if (loading) return <div className="loading">Loading session details...</div>
@@ -106,44 +113,28 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
   return (
     <>
       <div className="header">
-        <div style={{ paddingRight: '40px' }}>
-          <button
+        <div>
+          <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
+          <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
+          
+          </div>
+          <button 
             onClick={onBack}
             style={{
-              padding: '10px 20px',
+              padding: '8px 16px',
               background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: '600',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '16px',
+              color: '#010812ff',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#3b82f6'
-              e.currentTarget.style.color = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white'
-              e.currentTarget.style.color = '#3b82f6'
-            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
           >
-            ← Back to Pages
+            ← Back
           </button>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '8px 0' }}>
-            {isExitPage ? '🚶 Exit Sessions' : '🛤️ Session Journey'}
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-            {isExitPage 
-              ? 'Showing exit time and duration spent on this page before leaving'
-              : 'Complete visitor journey for each session'
-            }
-          </p>
         </div>
       </div>
 
@@ -161,325 +152,259 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             </div>
           ) : sessionDetails.map((session, idx) => {
             const visitDate = new Date(session.visited_at)
-            const isExpanded = expandedSession === session.session_id
             
             return (
               <div 
                 key={idx}
                 style={{
-                  padding: '24px',
-                  borderBottom: idx < sessionDetails.length - 1 ? '2px solid #e2e8f0' : 'none'
+                  padding: '10px 20px',
+                  borderBottom: idx < sessionDetails.length - 1 ? '1px solid #e2e8f0' : 'none',
+                  transition: 'background 0.2s'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                {/* Session Header - Clickable */}
-                <div 
-                  onClick={() => handleSessionClick(session)}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '80px 100px 250px 200px 100px 1fr',
-                    gap: '16px',
-                    alignItems: 'center',
-                    marginBottom: isExpanded ? '20px' : '0',
-                    padding: '16px',
-                    background: isExpanded ? '#eff6ff' : '#f8fafc',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    border: isExpanded ? '2px solid #3b82f6' : '2px solid transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isExpanded) {
-                      e.currentTarget.style.background = '#f1f5f9'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isExpanded) {
-                      e.currentTarget.style.background = '#f8fafc'
-                    }
-                  }}
-                >
-                  {/* Date */}
-                  <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '500' }}>
-                    {visitDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                  </div>
-
-                  {/* Time */}
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>
-                    {session.local_time_formatted 
-                      ? session.local_time_formatted.split(',').pop().trim()
-                      : visitDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                    }
-                  </div>
-
-                  {/* Location */}
+                {/* Main Row */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '280px 1fr 140px 240px',
+                  alignItems: 'start',
+                  gap: '20px'
+                }}>
+                  {/* Location & IP */}
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
-                      {getCountryFlag(session.country)} {session.country || 'Unknown'}, {session.city || 'Unknown'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
+                        {getCountryCode(session.country)} {session.city || 'Unknown'}, {session.country || 'Unknown'}
+                      </span>
+                      {session.referrer_source && (
+                        <span style={{ 
+                          fontSize: '9px', 
+                          fontWeight: '600',
+                          color: '#dc2626',
+                          background: '#fee2e2',
+                          padding: '1px 4px',
+                          borderRadius: '3px'
+                        }}>
+                          {session.referrer_source}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.ip_address || 'No IP'}
+                    <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
+                      {session.ip_address || 'Unknown IP'}
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#10b981', fontWeight: '500' }}>
+                      {session.referrer && session.referrer !== 'direct' ? '(referring link)' : '(No referring link)'}
                     </div>
                   </div>
 
-                  {/* System */}
+                  {/* Date, Time & URLs */}
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
-                      {session.browser || 'Unknown Browser'}
+                    <div style={{ fontSize: '11px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
+                      {session.local_time_formatted ? (
+                        <>
+                          {new Date(session.local_time_formatted).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          <span style={{ marginLeft: '8px' }}>
+                            {session.local_time_formatted.split(',').pop().trim()}
+                          </span>
+                          <span style={{ marginLeft: '4px', fontSize: '9px', color: '#64748b' }}>
+                            ({session.timezone || session.timezone_offset || 'Local'})
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          {visitDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          <span style={{ marginLeft: '8px' }}>
+                            {visitDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                          </span>
+                        </>
+                      )}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.os || 'Unknown OS'}
-                    </div>
+                    <a 
+                      href={selectedPageSessions.url || selectedPageSessions.page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ 
+                        fontSize: '10px', 
+                        color: '#3b82f6', 
+                        textDecoration: 'none',
+                        display: 'block',
+                        marginBottom: '2px'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                      {selectedPageSessions.url || selectedPageSessions.page} 
+                    </a>
+                    {session.referrer && session.referrer !== 'direct' ? (
+                      <a 
+                        href={session.referrer}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ 
+                          fontSize: '10px', 
+                          color: '#10b981', 
+                          textDecoration: 'none',
+                          display: 'block'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                      >
+                        {session.referrer}
+                      </a>
+                    ) : (
+                      <div style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
+                        Direct visit
+                      </div>
+                    )}
                   </div>
 
-                  {/* Total Time */}
+                  {/* Session Number */}
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#10b981' }}>
-                      {formatTimeSpent(session.total_time || session.time_spent || 0)}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>
-                      Total Time
+                    <div style={{ 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                     
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'black'}}>
+                        Session #{String(session.session_id).substring(0, 8)}
+                      </span>
+                      
                     </div>
                   </div>
 
-                  {/* Session Badge with Expand Indicator */}
-                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-                    <span style={{
-                      padding: '6px 14px',
-                      background: isExpanded ? '#3b82f6' : '#eff6ff',
-                      color: isExpanded ? 'white' : '#3b82f6',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: isExpanded ? 'none' : '1px solid #bfdbfe',
-                      transition: 'all 0.2s'
-                    }}>
-                      Session #{String(session.session_id || '').substring(0, 8) || 'N/A'}
-                    </span>
-                    <span style={{ 
-                      fontSize: '18px', 
-                      color: '#3b82f6',
-                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s'
-                    }}>
-                      ▼
-                    </span>
+                  {/* Device & Browser */}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginBottom: '3px' }}>
+                      <span style={{ fontSize: '14px' }}>💻</span>
+                      <span style={{ fontSize: '14px' }}>🌐</span>
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e293b', marginBottom: '2px' }}>
+                      {session.os || 'Unknown OS'}, {session.browser || 'Unknown'} {session.browser_version || ''}
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#64748b' }}>
+                      {session.screen_resolution || 'Unknown Resolution'}
+                    </div>
                   </div>
                 </div>
 
-                {/* Expanded Journey - Show only when clicked */}
-                {isExpanded && (
-                  <div style={{ marginTop: '20px' }}>
-                    {/* Exit Page Info - Show only for exit pages */}
-                    {isExitPage ? (
-                      <div style={{
-                        marginLeft: '40px',
-                        padding: '20px',
-                        background: '#fef2f2',
-                        borderRadius: '12px',
-                        border: '2px solid #fca5a5'
-                      }}>
+                {/* Visitor Journey - Show only for entry and top pages, not for exit pages */}
+                {pageType !== 'exit' && session.path && session.path.length > 0 && (
+                  <div style={{ 
+                    marginTop: '16px',
+                    paddingLeft: '20px',
+                    
+                  }}>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      color: '#64748b',
+                      marginBottom: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                     
+                    </div>
+                    
+                    {session.path.map((page, pidx) => (
+                      <div 
+                        key={pidx}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '40px 1fr 120px',
+                          alignItems: 'center',
+                          gap: '12px',
+                          marginBottom: '8px',
+                          padding: '8px 5px',
+                          
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Step Number */}
                         <div style={{
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          color: '#dc2626',
-                          marginBottom: '12px',
+                          minWidth: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+    
+                          color: 'white',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px'
+                          justifyContent: 'center',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          flexShrink: 0
                         }}>
-                          🚶 Exit Information
+                         
                         </div>
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '16px'
-                        }}>
-                          <div>
-                            <div style={{ fontSize: '11px', color: '#991b1b', marginBottom: '4px', fontWeight: '600' }}>
-                              EXIT PAGE
-                            </div>
-                            <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '500', wordBreak: 'break-all' }}>
-                              {selectedPageSessions.url || selectedPageSessions.page}
-                            </div>
+
+                        {/* Page Info */}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '10px',
+                            color: pidx === 0 ? '#059669' : pidx === session.path.length - 1 ? '#dc2626' : '#64748b',
+                            fontWeight: '600',
+                            marginBottom: '2px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {pidx === 0 ? ' Entry' : pidx === session.path.length - 1 ? ' Exit' : `Step ${pidx + 1}`}
                           </div>
-                          <div>
-                            <div style={{ fontSize: '11px', color: '#991b1b', marginBottom: '4px', fontWeight: '600' }}>
-                              TIME SPENT ON THIS PAGE
-                            </div>
-                            <div style={{ fontSize: '20px', color: '#dc2626', fontWeight: '700' }}>
-                              {formatTimeSpent(session.time_spent || 0)}
-                            </div>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            marginBottom: '2px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {page.title || 'Untitled Page'}
                           </div>
+                          <a 
+                            href={page.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '10px',
+                              color: '#3b82f6',
+                              textDecoration: 'none',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              display: 'block'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                          >
+                            {page.url}
+                          </a>
                         </div>
+
+                        {/* Time Spent */}
                         <div style={{
-                          marginTop: '16px',
-                          padding: '12px',
-                          background: 'white',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          color: '#64748b'
-                        }}>
-                          💡 <strong>Note:</strong> Visitor exited from this page at the time shown above
-                        </div>
-                      </div>
-                    ) : (
-                      /* Visitor Journey Path - Only show if data exists and not exit page */
-                      session.path && session.path.length > 0 && (
-                        <div style={{
-                          marginLeft: '40px',
-                          paddingLeft: '20px',
-                          borderLeft: '3px solid #e2e8f0'
+                          textAlign: 'right',
+                          flexShrink: 0
                         }}>
                           <div style={{
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#64748b',
-                            marginBottom: '12px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: (page.time_spent || page.timeSpent || page.duration) ? '#10b981' : '#94a3b8',
+                            marginBottom: '2px'
                           }}>
-                            🛤️ Visitor Journey ({session.path.length} pages)
+                             {(page.time_spent || page.timeSpent || page.duration) ? formatTimeSpent(page.time_spent || page.timeSpent || page.duration) : 'N/A'}
                           </div>
-                        
-                          {session.path.map((page, pidx) => (
-                            <div 
-                              key={pidx}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '12px',
-                                marginBottom: '12px',
-                                padding: '12px',
-                                background: pidx === 0 ? '#f0fdf4' : pidx === session.path.length - 1 ? '#fef2f2' : '#f8fafc',
-                                borderRadius: '8px',
-                                border: pidx === 0 ? '2px solid #86efac' : pidx === session.path.length - 1 ? '2px solid #fca5a5' : '1px solid #e2e8f0',
-                                position: 'relative'
-                              }}
-                            >
-                              {/* Step Number */}
-                              <div style={{
-                                minWidth: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: pidx === 0 ? '#10b981' : pidx === session.path.length - 1 ? '#ef4444' : '#3b82f6',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '13px',
-                                fontWeight: '700',
-                                flexShrink: 0
-                              }}>
-                                {pidx === 0 ? '🚪' : pidx === session.path.length - 1 ? '🚶' : pidx + 1}
-                              </div>
-
-                              {/* Page Info */}
-                              <div style={{ flex: 1 }}>
-                                <div style={{
-                                  fontSize: '11px',
-                                  color: pidx === 0 ? '#059669' : pidx === session.path.length - 1 ? '#dc2626' : '#64748b',
-                                  fontWeight: '600',
-                                  marginBottom: '4px',
-                                  textTransform: 'uppercase'
-                                }}>
-                                  {pidx === 0 ? '🟢 Entry Page' : pidx === session.path.length - 1 ? '🔴 Exit Page' : `Page ${pidx + 1}`}
-                                </div>
-                                <div style={{
-                                  fontSize: '13px',
-                                  fontWeight: '600',
-                                  color: '#1e293b',
-                                  marginBottom: '4px',
-                                  wordBreak: 'break-all'
-                                }}>
-                                  {page.title || 'Untitled Page'}
-                                </div>
-                                <a 
-                                  href={page.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{
-                                    fontSize: '12px',
-                                    color: '#3b82f6',
-                                    textDecoration: 'none',
-                                    wordBreak: 'break-all'
-                                  }}
-                                >
-                                  {page.url}
-                                </a>
-                              </div>
-
-                              {/* Time Spent & Visit Time */}
-                              <div style={{
-                                minWidth: '140px',
-                                textAlign: 'right',
-                                flexShrink: 0
-                              }}>
-                                <div style={{
-                                  fontSize: '20px',
-                                  fontWeight: '700',
-                                  color: '#10b981',
-                                  marginBottom: '6px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'flex-end',
-                                  gap: '6px'
-                                }}>
-                                  ⏱️ {formatTimeSpent(page.time_spent || 0)}
-                                </div>
-                                <div style={{
-                                  fontSize: '11px',
-                                  color: '#64748b',
-                                  fontWeight: '600',
-                                  marginBottom: '6px'
-                                }}>
-                                  Time Spent
-                                </div>
-                                {page.viewed_at && (
-                                  <>
-                                    <div style={{
-                                      fontSize: '13px',
-                                      color: '#3b82f6',
-                                      fontWeight: '600',
-                                      background: '#eff6ff',
-                                      padding: '4px 8px',
-                                      borderRadius: '6px',
-                                      border: '1px solid #dbeafe',
-                                      marginBottom: '4px'
-                                    }}>
-                                      🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit',
-                                        hour12: true
-                                      })}
-                                    </div>
-                                    <div style={{
-                                      fontSize: '10px',
-                                      color: '#94a3b8'
-                                    }}>
-                                      Visited at
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-
-                              {/* Arrow to next page */}
-                              {pidx < session.path.length - 1 && (
-                                <div style={{
-                                  position: 'absolute',
-                                  left: '28px',
-                                  bottom: '-18px',
-                                  fontSize: '20px',
-                                  color: '#94a3b8'
-                                }}>
-                                  ↓
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                          <div style={{
+                            fontSize: '9px',
+                            color: '#64748b'
+                          }}>
+                            Time Spent
+                          </div>
                         </div>
-                      )
-                    )}
+
+                       
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

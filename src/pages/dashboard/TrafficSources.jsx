@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { trafficAPI } from '../../api/api'
-import { TrendingUp, Globe, Search, Link as LinkIcon, BarChart3 } from 'lucide-react'
+import { Globe, Search, Link as LinkIcon, BarChart3 } from 'lucide-react'
 
 function TrafficSources({ projectId }) {
   const [sources, setSources] = useState([])

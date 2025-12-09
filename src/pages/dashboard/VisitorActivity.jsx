@@ -51,59 +51,7 @@ function VisitorActivity({ projectId }) {
       </div>
 
       <div className="content">
-        {/* Filters and Export */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              padding: '10px 16px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-          >
-            <Filter size={16} />
-            Add Filter
-          </button>
-
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#3b82f6'
-              e.currentTarget.style.color = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white'
-              e.currentTarget.style.color = '#3b82f6'
-            }}
-          >
-            <Download size={16} />
-            Export
-          </button>
-        </div>
+        
 
         {/* Visitor List */}
         <div className="chart-container" style={{ padding: 0 }}>
@@ -113,40 +61,33 @@ function VisitorActivity({ projectId }) {
                 <div 
                   key={idx}
                   style={{
-                    padding: '24px',
+                    padding: '12px 20px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    transition: 'all 0.2s ease',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   {/* Two Column Layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     
                     {/* Left Column */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       
                       {/* Page Views */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Page Views:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                           {visitor.page_views || 'N/A'}
                         </div>
                       </div>
 
                       {/* Local Time (Visitor's Timezone) */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Visit Time {visitor.local_time_formatted ? '(Local)' : '(Server)'}:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: visitor.local_time_formatted ? '#10b981' : '#f59e0b' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: visitor.local_time_formatted ? '#10b981' : '#f59e0b' }}>
                           {visitor.local_time_formatted || (visitor.visited_at ? new Date(visitor.visited_at).toLocaleString('en-US', {
                             year: 'numeric',
                             month: '2-digit',
@@ -157,18 +98,13 @@ function VisitorActivity({ projectId }) {
                             hour12: false
                           }) : 'N/A')}
                           {visitor.timezone_offset && (
-                            <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>
+                            <span style={{ fontSize: '9px', color: '#64748b', marginLeft: '4px' }}>
                               (UTC{visitor.timezone_offset})
-                            </span>
-                          )}
-                          {!visitor.local_time_formatted && visitor.visited_at && (
-                            <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>
-                              (UTC)
                             </span>
                           )}
                         </div>
                         {visitor.timezone && (
-                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                          <div style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>
                             🌍 {visitor.timezone}
                           </div>
                         )}
@@ -176,22 +112,22 @@ function VisitorActivity({ projectId }) {
 
                       {/* Resolution */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Resolution:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                           {visitor.screen_resolution || 'Unknown'}
                         </div>
                       </div>
 
                       {/* System */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           System:
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '20px' }}>{getDeviceIcon(visitor.device)}</span>
-                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '16px' }}>{getDeviceIcon(visitor.device)}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                             {visitor.os || 'Unknown'}
                           </span>
                         </div>
@@ -200,26 +136,26 @@ function VisitorActivity({ projectId }) {
                     </div>
 
                     {/* Right Column */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       
                       {/* Total Sessions */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Total Sessions:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#3b82f6' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#3b82f6' }}>
                           {visitor.total_sessions || 'N/A'}
                         </div>
                       </div>
 
                       {/* Location */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Location:
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '20px' }}>{getCountryFlag(visitor.country)}</span>
-                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '16px' }}>{getCountryFlag(visitor.country)}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                             {[visitor.city, visitor.state, visitor.country].filter(Boolean).join(', ') || 'Unknown'}
                           </span>
                         </div>
@@ -227,37 +163,60 @@ function VisitorActivity({ projectId }) {
 
                       {/* ISP / IP Address */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           ISP / IP Address:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                           {visitor.isp || 'Unknown'} ({visitor.ip_address || 'N/A'})
                         </div>
                       </div>
 
                       {/* Referring URL */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Referring URL:
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b' }}>
                           {visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '(No referring link)'}
                         </div>
                       </div>
 
-                      {/* Visit Page */}
+                      {/* Visit Page - Clickable */}
                       <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Visit Page:
                         </div>
-                        <div style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '600', 
-                          color: '#1e293b',
-                          fontStyle: visitor.entry_page ? 'normal' : 'italic'
-                        }}>
-                          {visitor.entry_page || 'Unknown'}
-                        </div>
+                        {visitor.entry_page ? (
+                          <a
+                            href={`/project/${projectId}/visitor-path`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              // Navigate to visitor path with visitor_id
+                              window.location.href = `/project/${projectId}/visitor-path?visitor_id=${visitor.visitor_id}`
+                            }}
+                            style={{ 
+                              fontSize: '12px', 
+                              fontWeight: '600', 
+                              color: '#3b82f6',
+                              textDecoration: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-block'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                          >
+                            {visitor.entry_page} →
+                          </a>
+                        ) : (
+                          <div style={{ 
+                            fontSize: '12px', 
+                            fontWeight: '600', 
+                            color: '#64748b',
+                            fontStyle: 'italic'
+                          }}>
+                            Unknown
+                          </div>
+                        )}
                       </div>
 
                     </div>

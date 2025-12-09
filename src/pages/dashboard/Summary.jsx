@@ -11,6 +11,8 @@ function Summary({ projectId }) {
   const [showUniqueVisits, setShowUniqueVisits] = useState(false)
   const [showReturningVisits, setShowReturningVisits] = useState(false)
   const [selectedDate, setSelectedDate] = useState(null)
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
+  const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
   useEffect(() => {
     loadSummary()
@@ -46,21 +48,7 @@ function Summary({ projectId }) {
     setCurrentPage(0) // Reset to first page when period changes
   }
 
-  const handleDateRangeClick = () => {
-    const ranges = [7, 30, 90]
-    const currentIndex = ranges.indexOf(dateRange)
-    const nextIndex = (currentIndex + 1) % ranges.length
-    const newRange = ranges[nextIndex]
-    console.log('📅 Date range button clicked - changing from', dateRange, 'to', newRange)
-    setDateRange(newRange)
-  }
 
-  const getDateRangeLabel = () => {
-    if (dateRange === 7) return 'Last 7 Days'
-    if (dateRange === 30) return 'Last 30 Days'
-    if (dateRange === 90) return 'Last 90 Days'
-    return 'Last 30 Days'
-  }
 
 
 
@@ -184,7 +172,7 @@ function Summary({ projectId }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                📅 {selectedDate.date}
+                 {selectedDate.date}
               </h2>
               <button 
                 onClick={closeModal}
@@ -291,17 +279,102 @@ function Summary({ projectId }) {
 
       <div className="content">
         <div className="chart-container" style={{ marginBottom: '30px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 0', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <select 
-                value={period} 
-                onChange={handlePeriodChange}
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#1e40af', color: 'white', fontWeight: '500', fontSize: '13px', cursor: 'pointer' }}
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ 
+                  padding: '8px 40px 8px 16px', 
+                  borderRadius: '6px', 
+                  border: '1px solid #cbd5e1', 
+                  background: '#1e40af', 
+                  color: 'white', 
+                  fontWeight: '500', 
+                  fontSize: '13px',
+                  minWidth: '120px',
+                  position: 'relative',
+                  userSelect: 'none'
+                }}>
+                  {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
+                </div>
+                <div 
+                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                  style={{
+                    position: 'absolute',
+                    right: '0',
+                    top: '0',
+                    bottom: '0',
+                    width: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white',
+                    fontSize: '12px',
+                    borderRadius: '0 6px 6px 0',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ▼
+                </div>
+                {showPeriodDropdown && (
+                  <>
+                    <div 
+                      onClick={() => setShowPeriodDropdown(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 999
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: '4px',
+                      background: 'white',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      minWidth: '120px',
+                      zIndex: 1000,
+                      overflow: 'hidden'
+                    }}>
+                      {['daily', 'weekly', 'monthly'].map((option) => (
+                        <div
+                          key={option}
+                          onClick={() => {
+                            setPeriod(option)
+                            setShowPeriodDropdown(false)
+                            setCurrentPage(0)
+                          }}
+                          style={{
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            background: period === option ? '#eff6ff' : 'white',
+                            color: period === option ? '#1e40af' : '#1e293b',
+                            fontWeight: period === option ? '600' : '500',
+                            fontSize: '13px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (period !== option) e.currentTarget.style.background = '#f8fafc'
+                          }}
+                          onMouseLeave={(e) => {
+                            if (period !== option) e.currentTarget.style.background = 'white'
+                          }}
+                        >
+                          {option.charAt(0).toUpperCase() + option.slice(1)}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button 
                   type="button"
@@ -317,6 +390,7 @@ function Summary({ projectId }) {
                     borderRadius: '4px', 
                     cursor: 'pointer', 
                     fontSize: '14px',
+                    right:'12px',
                     opacity: isFirstPage ? 0.6 : 1
                   }}
                   title="First page"
@@ -376,31 +450,99 @@ function Summary({ projectId }) {
                   title="Last page"
                 >»</button>
               </div>
-              <button 
-                onClick={handleDateRangeClick}
-                style={{ 
-                  padding: '8px 12px', 
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ 
+                  padding: '8px 40px 8px 16px', 
                   background: '#f1f5f9', 
                   color: '#475569', 
                   border: '1px solid #cbd5e1', 
-                  borderRadius: '4px', 
-                  cursor: 'pointer', 
+                  borderRadius: '6px', 
                   fontSize: '13px', 
                   fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                }}
-              >
-                📅 {getDateRangeLabel()}
-              </button>
-              <span style={{ padding: '8px 12px', fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
-                Page {currentPage + 1} of {totalPages}
-              </span>
+                  minWidth: '160px',
+                  position: 'relative',
+                  userSelect: 'none'
+                }}>
+                 Last {dateRange} Days
+                </div>
+                <div 
+                  onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
+                  style={{
+                    position: 'absolute',
+                    right: '0',
+                    top: '0',
+                    bottom: '0',
+                    width: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#475569',
+                    fontSize: '12px',
+                    borderRadius: '0 6px 6px 0',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ▼
+                </div>
+                {showDateRangeDropdown && (
+                  <>
+                    <div 
+                      onClick={() => setShowDateRangeDropdown(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 999
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: '4px',
+                      background: 'white',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      minWidth: '160px',
+                      zIndex: 1000,
+                      overflow: 'hidden'
+                    }}>
+                      {[7, 30, 90].map((days) => (
+                        <div
+                          key={days}
+                          onClick={() => {
+                            setDateRange(days)
+                            setShowDateRangeDropdown(false)
+                          }}
+                          style={{
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            background: dateRange === days ? '#eff6ff' : 'white',
+                            color: dateRange === days ? '#1e40af' : '#1e293b',
+                            fontWeight: dateRange === days ? '600' : '500',
+                            fontSize: '13px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (dateRange !== days) e.currentTarget.style.background = '#f8fafc'
+                          }}
+                          onMouseLeave={(e) => {
+                            if (dateRange !== days) e.currentTarget.style.background = 'white'
+                          }}
+                        >
+                        Last {days} Days
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '15px', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -588,9 +730,28 @@ function Summary({ projectId }) {
                 )
               })}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
-              <span>{displayData[0]?.date.split(',')[0]}</span>
-              <span>{displayData[displayData.length - 1]?.date.split(',')[0]}</span>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginTop: '16px'
+            }}>
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
+                {displayData[0]?.date.split(',')[0]}
+              </span>
+              
+              <span style={{ 
+                padding: '6px 16px', 
+                fontSize: '12px', 
+                color: '#64748b', 
+                fontWeight: '600',
+              }}>
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
+                {displayData[displayData.length - 1]?.date.split(',')[0]}
+              </span>
             </div>
           </div>
         </div>

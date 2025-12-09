@@ -17,11 +17,21 @@ function ExitLink({ projectId }) {
     try {
       // Get external exit links (clicks to external URLs)
       const linksResponse = await trafficAPI.getExitLinks(projectId)
-      setExitLinks(linksResponse.data)
+      // Sort by date descending (newest first)
+      const sortedLinks = linksResponse.data.sort((a, b) => 
+        new Date(b.clicked_at) - new Date(a.clicked_at)
+      )
+      setExitLinks(sortedLinks)
       
       // Get internal exit pages (pages where users left the site)
       const pagesResponse = await pagesAPI.getExitPages(projectId)
-      setExitPages(pagesResponse.data)
+      // Sort by date descending (newest first)
+      const sortedPages = pagesResponse.data.sort((a, b) => {
+        const dateA = a.visits && a.visits[0] ? new Date(a.visits[0].visited_at) : new Date(0)
+        const dateB = b.visits && b.visits[0] ? new Date(b.visits[0].visited_at) : new Date(0)
+        return dateB - dateA
+      })
+      setExitPages(sortedPages)
     } catch (error) {
       console.error('Error loading exit data:', error)
     } finally {
@@ -280,7 +290,7 @@ function ExitLink({ projectId }) {
         </div>
 
         {/* Exit Links/Pages Table */}
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           <div>
             {/* Table Header */}
             <div style={{
@@ -292,7 +302,10 @@ function ExitLink({ projectId }) {
               fontWeight: '600',
               fontSize: '13px',
               color: '#475569',
-              alignItems: 'center'
+              alignItems: 'center',
+              gap: '12px',
+              minWidth: 0,
+              maxWidth: '100%'
             }}>
               <div>Date</div>
               <div>Time</div>
@@ -305,66 +318,83 @@ function ExitLink({ projectId }) {
               exitLinks.map((exit, idx) => (
                 <div 
                   key={idx}
-                  onClick={(e) => handleExitClick(e, exit)}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 1fr',
                     padding: '16px 24px',
                     borderBottom: idx < exitLinks.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    alignItems: 'center',
-                    transition: 'all 0.2s',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc'
-                    e.currentTarget.style.transform = 'translateX(4px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.transform = 'translateX(0)'
+                    alignItems: 'start',
+                    gap: '12px',
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}
                 >
                   {/* Date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
                     <LogOut size={14} style={{ color: '#dc2626' }} />
                     {exit.clicked_at ? formatDate(exit.clicked_at) : 'Unknown'}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
                     {exit.clicked_at ? formatTime(exit.clicked_at) : '--:--:--'}
                   </div>
 
-                  {/* Exit Link */}
+                  {/* Exit Link - Clickable */}
                   <div style={{
-                    fontSize: '14px',
-                    color: '#dc2626',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    overflow: 'hidden'
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}>
-                    <ExternalLink size={14} style={{ flexShrink: 0 }} />
-                    <span style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <a
+                      href={exit.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: '14px',
+                        color: '#dc2626',
+                        fontWeight: '500',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        textDecoration: 'none',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                      <ExternalLink size={14} style={{ flexShrink: 0 }} />
                       {exit.url || 'Unknown'}
-                    </span>
+                    </a>
                   </div>
 
-                  {/* Exit Page */}
+                  {/* From Page - Clickable */}
                   <div style={{
-                    fontSize: '14px',
-                    color: '#3b82f6',
-                    fontWeight: '500',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}>
-                    {exit.from_page || 'Unknown'}
+                    <a
+                      href={exit.from_page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: '14px',
+                        color: '#3b82f6',
+                        fontWeight: '500',
+                        textDecoration: 'none',
+                        display: 'inline-block',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                      {exit.from_page || 'Unknown'}
+                    </a>
                   </div>
                 </div>
               ))
@@ -386,52 +416,54 @@ function ExitLink({ projectId }) {
                     gridTemplateColumns: '100px 120px 1fr 120px',
                     padding: '16px 24px',
                     borderBottom: idx < exitPages.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    alignItems: 'center',
-                    transition: 'all 0.2s',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc'
-                    e.currentTarget.style.transform = 'translateX(4px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.transform = 'translateX(0)'
+                    alignItems: 'start',
+                    gap: '12px',
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}
                 >
                   {/* Date - Using first visit date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
                     <LogOut size={14} style={{ color: '#dc2626' }} />
                     {page.visits && page.visits[0] ? formatDate(page.visits[0].visited_at) : 'Unknown'}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
                     {page.visits && page.visits[0] ? formatTime(page.visits[0].visited_at) : '--:--:--'}
                   </div>
 
-                  {/* Exit Page URL */}
+                  {/* Exit Page URL - Clickable Link */}
                   <div style={{
-                    fontSize: '14px',
-                    color: '#dc2626',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    overflow: 'hidden'
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}>
-                    <ExternalLink size={14} style={{ flexShrink: 0 }} />
-                    <span style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <a
+                      href={page.page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '14px',
+                        color: '#dc2626',
+                        fontWeight: '500',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        textDecoration: 'none',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                      <ExternalLink size={14} style={{ flexShrink: 0 }} />
                       {page.page || 'Unknown'}
-                    </span>
+                    </a>
                   </div>
 
                   {/* Exit Count */}
-                  <div style={{ textAlign: 'center' }}>
+                  <div style={{ textAlign: 'center', paddingTop: '2px' }}>
                     <span style={{
                       background: '#fef2f2',
                       color: '#dc2626',

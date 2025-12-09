@@ -220,61 +220,10 @@ function CameFrom({ projectId }) {
       )}
 
       <div className="content">
-        {/* Filters and Export */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-          >
-            <Filter size={16} />
-            Add Filter
-          </button>
-
-          <button 
-            style={{
-              padding: '10px 16px',
-              background: 'white',
-              color: '#3b82f6',
-              border: '2px solid #3b82f6',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#3b82f6'
-              e.currentTarget.style.color = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white'
-              e.currentTarget.style.color = '#3b82f6'
-            }}
-          >
-            <Download size={16} />
-            Export
-          </button>
-        </div>
+        
 
         {/* Referrer Table */}
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           {visitors.length > 0 ? (
             <div>
               {/* Table Header */}
@@ -287,7 +236,10 @@ function CameFrom({ projectId }) {
                 fontWeight: '600',
                 fontSize: '13px',
                 color: '#475569',
-                alignItems: 'center'
+                alignItems: 'center',
+                gap: '12px',
+                minWidth: 0,
+                maxWidth: '100%'
               }}>
                 <div>Date</div>
                 <div>Time</div>
@@ -304,41 +256,25 @@ function CameFrom({ projectId }) {
                     gridTemplateColumns: '100px 120px 1fr 1fr',
                     padding: '16px 24px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    alignItems: 'center',
-                    transition: 'background 0.2s'
+                    alignItems: 'start',
+                    gap: '12px',
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   {/* Date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
                     <Search size={14} style={{ color: '#3b82f6' }} />
                     {formatDate(visitor.visited_at)}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b' }}>
+                  <div style={{ fontSize: '14px', color: '#64748b', paddingTop: '2px' }}>
                     {formatTime(visitor.visited_at)}
                   </div>
 
                   {/* Referrer - Clickable */}
-                  <div 
-                    onClick={(e) => handleReferrerClick(e, visitor)}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '8px',
-                      borderRadius: '6px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#eff6ff'
-                      e.currentTarget.style.transform = 'translateX(2px)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.transform = 'translateX(0)'
-                    }}
-                  >
+                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
                     <a 
                       href={visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '#'}
                       target={visitor.referrer && visitor.referrer !== 'direct' ? '_blank' : '_self'}
@@ -347,18 +283,25 @@ function CameFrom({ projectId }) {
                         if (!visitor.referrer || visitor.referrer === 'direct') {
                           e.preventDefault()
                         }
-                        e.stopPropagation()
                       }}
                       style={{ 
                         fontSize: '14px', 
                         color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b',
                         textDecoration: 'none',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: visitor.referrer && visitor.referrer !== 'direct' ? 'pointer' : 'default'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (visitor.referrer && visitor.referrer !== 'direct') {
+                          e.currentTarget.style.textDecoration = 'underline'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.textDecoration = 'none'
                       }}
                     >
                       {visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '(No referring link)'}
@@ -367,23 +310,24 @@ function CameFrom({ projectId }) {
                   </div>
 
                   {/* Entry Page */}
-                  <div>
+                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
                     <a 
                       href={visitor.entry_page}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
                       style={{ 
                         fontSize: '14px', 
                         color: '#3b82f6',
                         textDecoration: 'none',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        wordBreak: 'break-all',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
                       {visitor.entry_page || 'Unknown'}
                       <ExternalLink size={12} />
