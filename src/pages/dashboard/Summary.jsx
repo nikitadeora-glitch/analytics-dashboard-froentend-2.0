@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { analyticsAPI } from '../../api/api'
+import BarChart from '../../components/BarChart'
 
 function Summary({ projectId }) {
   const [data, setData] = useState(null)
@@ -119,12 +120,7 @@ function Summary({ projectId }) {
     displayDates: displayData.map(d => d.date)
   })
 
-  // Max value for chart
-  let maxValues = []
-  if (showPageViews) maxValues.push(...displayData.map(d => d.page_views))
-  if (showUniqueVisits) maxValues.push(...displayData.map(d => d.unique_visits))
-  if (showReturningVisits) maxValues.push(...displayData.map(d => d.returning_visits))
-  const maxValue = Math.max(...maxValues, 1)
+  // Chart.js handles scaling automatically
 
   const handleDateClick = (day) => {
     setSelectedDate(day)
@@ -282,22 +278,25 @@ function Summary({ projectId }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <div style={{ 
-                  padding: '8px 40px 8px 16px', 
-                  borderRadius: '6px', 
-                  border: '1px solid #cbd5e1', 
-                  background: '#1e40af', 
-                  color: 'white', 
-                  fontWeight: '500', 
-                  fontSize: '13px',
-                  minWidth: '120px',
-                  position: 'relative',
-                  userSelect: 'none'
-                }}>
+                <div 
+                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                  style={{ 
+                    padding: '8px 40px 8px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid #cbd5e1', 
+                    background: '#1e40af', 
+                    color: 'white', 
+                    fontWeight: '500', 
+                    fontSize: '13px',
+                    minWidth: '120px',
+                    position: 'relative',
+                    userSelect: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
                   {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
                 </div>
                 <div 
-                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   style={{
                     position: 'absolute',
                     right: '0',
@@ -311,10 +310,9 @@ function Summary({ projectId }) {
                     color: 'white',
                     fontSize: '12px',
                     borderRadius: '0 6px 6px 0',
-                    transition: 'background 0.2s'
+                    transition: 'background 0.2s',
+                    pointerEvents: 'none'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   ▼
                 </div>
@@ -378,95 +376,169 @@ function Summary({ projectId }) {
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button 
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     console.log('🔵 First clicked')
-                    if (!isFirstPage) setCurrentPage(0)
+                    setCurrentPage(0)
                   }}
+                  disabled={isFirstPage}
                   style={{ 
                     padding: '8px 12px', 
                     background: isFirstPage ? '#64748b' : '#1e40af', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    cursor: 'pointer', 
+                    cursor: isFirstPage ? 'not-allowed' : 'pointer', 
                     fontSize: '14px',
-                    right:'12px',
-                    opacity: isFirstPage ? 0.6 : 1
+                    opacity: isFirstPage ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isFirstPage) {
+                      e.currentTarget.style.background = '#1d4ed8'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isFirstPage) {
+                      e.currentTarget.style.background = '#1e40af'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
                   }}
                   title="First page"
                 >«</button>
                 <button 
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     console.log('🔵 Prev clicked, current:', currentPage)
                     if (!isFirstPage) setCurrentPage(currentPage - 1)
                   }}
+                  disabled={isFirstPage}
                   style={{ 
                     padding: '8px 12px', 
                     background: isFirstPage ? '#64748b' : '#1e40af', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    cursor: 'pointer', 
+                    cursor: isFirstPage ? 'not-allowed' : 'pointer', 
                     fontSize: '14px',
-                    opacity: isFirstPage ? 0.6 : 1
+                    opacity: isFirstPage ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isFirstPage) {
+                      e.currentTarget.style.background = '#1d4ed8'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isFirstPage) {
+                      e.currentTarget.style.background = '#1e40af'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
                   }}
                   title="Previous"
                 >‹</button>
                 <button 
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     console.log('🔵 Next clicked, current:', currentPage, 'isLastPage:', isLastPage)
                     if (!isLastPage) setCurrentPage(currentPage + 1)
                   }}
+                  disabled={isLastPage}
                   style={{ 
                     padding: '8px 12px', 
                     background: isLastPage ? '#64748b' : '#1e40af', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    cursor: 'pointer', 
+                    cursor: isLastPage ? 'not-allowed' : 'pointer', 
                     fontSize: '14px',
-                    opacity: isLastPage ? 0.6 : 1
+                    opacity: isLastPage ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLastPage) {
+                      e.currentTarget.style.background = '#1d4ed8'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLastPage) {
+                      e.currentTarget.style.background = '#1e40af'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
                   }}
                   title="Next"
                 >›</button>
                 <button 
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     console.log('🔵 Last clicked, totalPages:', totalPages)
                     if (!isLastPage) setCurrentPage(totalPages - 1)
                   }}
+                  disabled={isLastPage}
                   style={{ 
                     padding: '8px 12px', 
                     background: isLastPage ? '#64748b' : '#1e40af', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '4px', 
-                    cursor: 'pointer', 
+                    cursor: isLastPage ? 'not-allowed' : 'pointer', 
                     fontSize: '14px',
-                    opacity: isLastPage ? 0.6 : 1
+                    opacity: isLastPage ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLastPage) {
+                      e.currentTarget.style.background = '#1d4ed8'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLastPage) {
+                      e.currentTarget.style.background = '#1e40af'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
                   }}
                   title="Last page"
                 >»</button>
               </div>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <div style={{ 
-                  padding: '8px 40px 8px 16px', 
-                  background: '#f1f5f9', 
-                  color: '#475569', 
-                  border: '1px solid #cbd5e1', 
-                  borderRadius: '6px', 
-                  fontSize: '13px', 
-                  fontWeight: '500',
-                  minWidth: '160px',
-                  position: 'relative',
-                  userSelect: 'none'
-                }}>
+                <div 
+                  onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
+                  style={{ 
+                    padding: '8px 40px 8px 16px', 
+                    background: '#f1f5f9', 
+                    color: '#475569', 
+                    border: '1px solid #cbd5e1', 
+                    borderRadius: '6px', 
+                    fontSize: '13px', 
+                    fontWeight: '500',
+                    minWidth: '160px',
+                    position: 'relative',
+                    userSelect: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
                  Last {dateRange} Days
                 </div>
                 <div 
-                  onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
                   style={{
                     position: 'absolute',
                     right: '0',
@@ -480,10 +552,9 @@ function Summary({ projectId }) {
                     color: '#475569',
                     fontSize: '12px',
                     borderRadius: '0 6px 6px 0',
-                    transition: 'background 0.2s'
+                    transition: 'background 0.2s',
+                    pointerEvents: 'none'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   ▼
                 </div>
@@ -576,159 +647,18 @@ function Summary({ projectId }) {
           </div>
           
           <div style={{ position: 'relative', padding: '20px 0' }} key={`page-${currentPage}`}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '300px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
-              {displayData.map((day, idx) => {
-                const barWidth = showPageViews + showUniqueVisits + showReturningVisits
-                const barGap = 2
-                
-                return (
-                  <div 
-                    key={`${currentPage}-${idx}-${day.date}`} 
-                    onClick={() => handleDateClick(day)}
-                    style={{ 
-                      flex: 1, 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center', 
-                      gap: '8px', 
-                      position: 'relative',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '8px',
-                      transition: 'background 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f8fafc'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                    }}
-                  >
-                    <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: '100%', gap: `${barGap}px` }}>
-                      {showPageViews && (
-                        <div style={{
-                          width: `${70 / barWidth}%`,
-                          height: `${(day.page_views / maxValue) * 250}px`,
-                          background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
-                          borderRadius: '6px 6px 0 0',
-                          position: 'relative',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.2)',
-                          animation: 'slideUp 0.6s ease-out'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scaleY(1.02)'
-                          e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(16, 185, 129, 0.4), 0 4px 6px -2px rgba(16, 185, 129, 0.3)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scaleY(1)'
-                          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.2)'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            top: '-26px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#10b981',
-                            background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)',
-                            whiteSpace: 'nowrap',
-                            border: '1px solid #d1fae5'
-                          }}>
-                            {day.page_views}
-                          </div>
-                        </div>
-                      )}
-                      {showUniqueVisits && (
-                        <div style={{
-                          width: `${70 / barWidth}%`,
-                          height: `${(day.unique_visits / maxValue) * 250}px`,
-                          background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-                          borderRadius: '6px 6px 0 0',
-                          position: 'relative',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)',
-                          animation: 'slideUp 0.6s ease-out 0.1s backwards'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scaleY(1.02)'
-                          e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -2px rgba(59, 130, 246, 0.3)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scaleY(1)'
-                          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            top: '-26px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#3b82f6',
-                            background: 'linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)',
-                            whiteSpace: 'nowrap',
-                            border: '1px solid #dbeafe'
-                          }}>
-                            {day.unique_visits}
-                          </div>
-                        </div>
-                      )}
-                      {showReturningVisits && (
-                        <div style={{
-                          width: `${70 / barWidth}%`,
-                          height: `${(day.returning_visits / maxValue) * 250}px`,
-                          background: 'linear-gradient(180deg, #f59e0b 0%, #d97706 100%)',
-                          borderRadius: '6px 6px 0 0',
-                          position: 'relative',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 6px -1px rgba(245, 158, 11, 0.3), 0 2px 4px -1px rgba(245, 158, 11, 0.2)',
-                          animation: 'slideUp 0.6s ease-out 0.2s backwards'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px) scaleY(1.02)'
-                          e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(245, 158, 11, 0.4), 0 4px 6px -2px rgba(245, 158, 11, 0.3)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scaleY(1)'
-                          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(245, 158, 11, 0.3), 0 2px 4px -1px rgba(245, 158, 11, 0.2)'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            top: '-26px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#f59e0b',
-                            background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)',
-                            whiteSpace: 'nowrap',
-                            border: '1px solid #fef3c7'
-                          }}>
-                            {day.returning_visits}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500', marginTop: '8px' }}>
-                      {day.date.split(' ')[1]}
-                    </div>
-                  </div>
-                )
-              })}
+            <div style={{ 
+              borderBottom: '2px solid #e2e8f0', 
+              paddingBottom: '20px',
+              marginBottom: '8px'
+            }}>
+              <BarChart 
+                displayData={displayData}
+                showPageViews={showPageViews}
+                showUniqueVisits={showUniqueVisits}
+                showReturningVisits={showReturningVisits}
+                period={period}
+              />
             </div>
             <div style={{ 
               display: 'flex', 
@@ -787,7 +717,7 @@ function Summary({ projectId }) {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((day, idx) => (
+              {(data.all_daily_stats || data.daily_stats || []).map((day, idx) => (
                 <tr 
                   key={idx} 
                   onClick={() => handleDateClick(day)}

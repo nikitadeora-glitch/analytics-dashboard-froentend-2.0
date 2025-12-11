@@ -11,6 +11,7 @@ function Projects() {
   const [showTrackingCode, setShowTrackingCode] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const navigate = useNavigate()
 
   // Auto-detect API URL based on environment
@@ -97,13 +98,129 @@ function Projects() {
 <!-- End Analytics Code -->`
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      // Create CSV content matching table structure
+      const csvHeaders = [
+        'Project ID',
+        'Project Name', 
+        'Domain', 
+        'Traffic (Page Views)', 
+        'Today Views', 
+        'Yesterday Views', 
+        'This Month Views', 
+        'Total Views',
+        'Unique Visitors',
+        'Live Visitors',
+        'Created Date',
+        'Last Updated',
+        'Status'
+      ]
+      const csvRows = projects.map(project => [
+        project.id || 'N/A',
+        project.name || 'N/A',
+        project.domain || 'N/A',
+        project.page_views || 0,
+        project.today || 0,
+        project.yesterday || 0,
+        project.month || 0,
+        project.total || 0,
+        project.unique_visitors || 0,
+        project.live_visitors || 0,
+        project.created_at ? new Date(project.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : 'N/A',
+        project.updated_at ? new Date(project.updated_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : 'N/A',
+        project.status || 'Active'
+      ])
+
+      // Add summary row
+      const totalProjects = projects.length
+      const totalPageViews = projects.reduce((sum, p) => sum + (p.page_views || 0), 0)
+      const totalToday = projects.reduce((sum, p) => sum + (p.today || 0), 0)
+      const totalYesterday = projects.reduce((sum, p) => sum + (p.yesterday || 0), 0)
+      const totalMonth = projects.reduce((sum, p) => sum + (p.month || 0), 0)
+      const totalAll = projects.reduce((sum, p) => sum + (p.total || 0), 0)
+      const totalUniqueVisitors = projects.reduce((sum, p) => sum + (p.unique_visitors || 0), 0)
+      const totalLiveVisitors = projects.reduce((sum, p) => sum + (p.live_visitors || 0), 0)
+
+      const summaryRow = [
+        'TOTAL',
+        `${totalProjects} Projects`,
+        'All Domains',
+        totalPageViews,
+        totalToday,
+        totalYesterday,
+        totalMonth,
+        totalAll,
+        totalUniqueVisitors,
+        totalLiveVisitors,
+        new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        'Export Generated',
+        'Summary'
+      ]
+
+      // Convert to CSV format
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(field => `"${field}"`).join(',')),
+        '', // Empty row before summary
+        summaryRow.map(field => `"${field}"`).join(',')
+      ].join('\n')
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `projects-export-${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Export failed. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   if (loading) return <div className="loading">Loading projects...</div>
 
   return (
     <div className="main-content">
-      <div className="header">
-        <h1>Projects</h1>
-        <div style={{ display: 'flex', gap: '12px' }}>
+      <div className="header" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginTop: '20px',
+        marginBottom: '24px',
+        padding: '0 20px'
+      }}>
+        <h1 style={{ margin: 0 }}>Projects</h1>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px',
+          alignItems: 'center'
+        }}>
           <button 
             onClick={() => setShowForm(true)}
             className="btn btn-primary" 
@@ -112,13 +229,53 @@ function Projects() {
               color: 'white',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              padding: '10px 16px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
           >
             <Plus size={16} /> Add Project
           </button>
-          <button className="btn" style={{ background: '#f1f5f9', color: '#475569' }}>
-            <Download size={16} /> Export
+          <button 
+            onClick={handleExport}
+            disabled={exporting || projects.length === 0}
+            className="btn" 
+            style={{ 
+              background: exporting ? '#e2e8f0' : '#f1f5f9', 
+              color: exporting ? '#94a3b8' : '#475569',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
+              cursor: exporting || projects.length === 0 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              opacity: exporting || projects.length === 0 ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!exporting && projects.length > 0) {
+                e.currentTarget.style.background = '#e2e8f0'
+                e.currentTarget.style.borderColor = '#cbd5e1'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!exporting && projects.length > 0) {
+                e.currentTarget.style.background = '#f1f5f9'
+                e.currentTarget.style.borderColor = '#e2e8f0'
+              }
+            }}
+          >
+            <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
@@ -469,9 +626,12 @@ function Projects() {
         </div>
       )}
 
-      <div className="content">
-
-        <div className="chart-container" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="content" style={{ padding: '0 20px' }}>
+        <div className="chart-container" style={{ 
+          padding: 0, 
+          overflow: 'visible',
+          marginTop: '0'
+        }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>

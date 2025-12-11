@@ -74,6 +74,26 @@ function VisitorPath({ projectId }) {
     return codes[country] || 'XX'
   }
 
+  const getCountryFlag = (country) => {
+    const flags = {
+      'United States': '🇺🇸',
+      'India': '🇮🇳',
+      'United Kingdom': '🇬🇧',
+      'Canada': '🇨🇦',
+      'Singapore': '🇸🇬',
+      'China': '🇨🇳',
+      'Bangladesh': '🇧🇩',
+      'Pakistan': '🇵🇰',
+      'Australia': '🇦🇺',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'Japan': '🇯🇵',
+      'Brazil': '🇧🇷',
+      'Russia': '🇷🇺'
+    }
+    return flags[country] || '🌍'
+  }
+
   const getDeviceIcon = (device) => {
     if (device?.toLowerCase().includes('mobile')) return '📱'
     if (device?.toLowerCase().includes('tablet')) return '📱'
@@ -210,7 +230,7 @@ function VisitorPath({ projectId }) {
                     <div style={{ fontSize: '12px', color: '#065f46', fontWeight: '600', marginBottom: '8px' }}>
                       🚪 ENTRY PAGE
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#047857', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#047857', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
                       {session.entry_page || 'Unknown'}
                     </div>
                   </div>
@@ -225,7 +245,7 @@ function VisitorPath({ projectId }) {
                     <div style={{ fontSize: '12px', color: '#7f1d1d', fontWeight: '600', marginBottom: '8px' }}>
                       🚪 EXIT PAGE
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#991b1b', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#991b1b', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
                       {session.exit_page || 'Still browsing...'}
                     </div>
                   </div>
@@ -360,12 +380,13 @@ function VisitorPath({ projectId }) {
                                     color: '#3b82f6', 
                                     textDecoration: 'none',
                                     wordBreak: 'break-all',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
+                                    overflowWrap: 'anywhere',
+                                    display: 'block',
+                                    lineHeight: '1.4',
+                                    maxWidth: '100%'
                                   }}
                                 >
-                                  {page.url} <ExternalLink size={12} />
+                                  {page.url} <ExternalLink size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
                                 </a>
                               </div>
                               <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
@@ -626,7 +647,7 @@ function VisitorPath({ projectId }) {
                       <div style={{ fontSize: '12px', color: '#065f46', fontWeight: '600', marginBottom: '8px' }}>
                         🚪 ENTRY PAGE
                       </div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#047857', wordBreak: 'break-all' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#047857', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
                         {session.entry_page || 'Unknown'}
                       </div>
                     </div>
@@ -641,7 +662,7 @@ function VisitorPath({ projectId }) {
                       <div style={{ fontSize: '12px', color: '#7f1d1d', fontWeight: '600', marginBottom: '8px' }}>
                         🚪 EXIT PAGE
                       </div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#991b1b', wordBreak: 'break-all' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#991b1b', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
                         {session.exit_page || 'Still browsing...'}
                       </div>
                     </div>
@@ -775,10 +796,12 @@ function VisitorPath({ projectId }) {
                                       fontSize: '10px', 
                                       color: '#3b82f6', 
                                       textDecoration: 'none',
-                                      wordBreak: 'break-word',
-                                      display: 'block',
+                                      wordBreak: 'break-all',
                                       overflowWrap: 'anywhere',
-                                      lineHeight: '1.4'
+                                      display: 'block',
+                                      lineHeight: '1.4',
+                                      maxWidth: '100%',
+                                      whiteSpace: 'normal'
                                     }}
                                   >
                                     {page.url} 
@@ -965,7 +988,7 @@ function VisitorPath({ projectId }) {
                 <div style={{ fontSize: '13px', color: '#065f46', fontWeight: '600', marginBottom: '8px' }}>
                   🚪 Entry Page
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: '#047857', marginBottom: '8px', wordBreak: 'break-all' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: '#047857', marginBottom: '8px', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
                   {selectedReferrer.entry_page || 'Unknown'}
                 </div>
                 {selectedReferrer.entry_page && (
@@ -1085,15 +1108,15 @@ function VisitorPath({ projectId }) {
                     <div style={{ fontSize: '13px', fontWeight: '600', color: '#3b82f6', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       Session #{visitor.id}
                     </div>
-                    <div style={{ fontSize: '10px', color: '#10b981', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {visitor.referrer && visitor.referrer !== 'direct' ? '(referring link)' : '(No referring link)'}
+                    <div style={{ fontSize: '10px', color: '#0c0c0cff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring link:' : 'No referring link:'}
                     </div>
                   </div>
 
                   {/* Entry Page - Clickable Link Only */}
                   <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
-                      🔗 {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring' : 'Direct'}
+                    <div style={{ fontSize: '11px', color: 'rgba(1, 6, 13, 0.89)', marginBottom: '4px' }}>
+                      {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring' : 'Direct'}
                     </div>
                     <a
                       href={visitor.entry_page}
@@ -1106,9 +1129,12 @@ function VisitorPath({ projectId }) {
                         fontWeight: '500',
                         textDecoration: 'none',
                         wordBreak: 'break-all',
+                        overflowWrap: 'anywhere',
                         lineHeight: '1.4',
                         cursor: 'pointer',
-                        display: 'block'
+                        display: 'block',
+                        maxWidth: '100%',
+                        whiteSpace: 'normal'
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                       onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
@@ -1119,7 +1145,7 @@ function VisitorPath({ projectId }) {
 
                   {/* Device & Time */}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'start', minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, paddingTop: '2px' }}>
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0, paddingTop: '2px' }}>
                       <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
                       <span style={{ fontSize: '18px', lineHeight: 1 }}>🌐</span>
                     </div>

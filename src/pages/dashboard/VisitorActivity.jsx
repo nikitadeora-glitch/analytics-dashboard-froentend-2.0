@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
-import { Filter, Download } from 'lucide-react'
 
 function VisitorActivity({ projectId }) {
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showFilters, setShowFilters] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadVisitors()
@@ -15,10 +14,12 @@ function VisitorActivity({ projectId }) {
 
   const loadVisitors = async () => {
     try {
+      setError(null)
       const response = await visitorsAPI.getActivity(projectId)
       setVisitors(response.data)
     } catch (error) {
       console.error('Error loading visitors:', error)
+      setError('Failed to load visitor activity. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -42,7 +43,49 @@ function VisitorActivity({ projectId }) {
     return '💻'
   }
 
-  if (loading) return <div className="loading">Loading visitor activity...</div>
+  if (loading) {
+    return (
+      <>
+        <div className="header">
+          <h1>Visitor Activity</h1>
+        </div>
+        <div className="content">
+          <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', color: '#64748b' }}>Loading visitor activity...</div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <div className="header">
+          <h1>Visitor Activity</h1>
+        </div>
+        <div className="content">
+          <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', color: '#ef4444', marginBottom: '10px' }}>{error}</div>
+            <button 
+              onClick={loadVisitors}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -51,10 +94,12 @@ function VisitorActivity({ projectId }) {
       </div>
 
       <div className="content">
-        
-
         {/* Visitor List */}
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ 
+          padding: 0,
+          overflowX: 'hidden',
+          width: '100%'
+        }}>
           {visitors.length > 0 ? (
             <div>
               {visitors.map((visitor, idx) => (
@@ -65,12 +110,26 @@ function VisitorActivity({ projectId }) {
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
                     transition: 'all 0.2s ease'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {/* Two Column Layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr', 
+                    gap: '16px',
+                    overflow: 'hidden',
+                    width: '100%'
+                  }}>
                     
                     {/* Left Column */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '10px',
+                      minWidth: 0,
+                      overflow: 'hidden'
+                    }}>
                       
                       {/* Page Views */}
                       <div>
@@ -136,7 +195,13 @@ function VisitorActivity({ projectId }) {
                     </div>
 
                     {/* Right Column */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '10px',
+                      minWidth: 0,
+                      overflow: 'hidden'
+                    }}>
                       
                       {/* Total Sessions */}
                       <div>
@@ -166,7 +231,14 @@ function VisitorActivity({ projectId }) {
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           ISP / IP Address:
                         </div>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '600', 
+                          color: '#1e293b',
+                          wordBreak: 'break-word',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
                           {visitor.isp || 'Unknown'} ({visitor.ip_address || 'N/A'})
                         </div>
                       </div>
@@ -176,7 +248,15 @@ function VisitorActivity({ projectId }) {
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Referring URL:
                         </div>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b' }}>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '600', 
+                          color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b',
+                          wordBreak: 'break-word',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
                           {visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '(No referring link)'}
                         </div>
                       </div>
@@ -200,7 +280,11 @@ function VisitorActivity({ projectId }) {
                               color: '#3b82f6',
                               textDecoration: 'none',
                               cursor: 'pointer',
-                              display: 'inline-block'
+                              display: 'block',
+                              wordBreak: 'break-word',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                             onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
@@ -226,8 +310,24 @@ function VisitorActivity({ projectId }) {
             </div>
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
-              <p style={{ fontSize: '16px', fontWeight: '500' }}>No visitor activity yet</p>
-              <p style={{ fontSize: '14px' }}>Start tracking visitors to see their activity</p>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
+              <p style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>No visitor activity yet</p>
+              <p style={{ fontSize: '14px', color: '#64748b' }}>Start tracking visitors to see their activity here</p>
+              <button 
+                onClick={loadVisitors}
+                style={{
+                  marginTop: '16px',
+                  padding: '8px 16px',
+                  backgroundColor: '#f1f5f9',
+                  color: '#475569',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Refresh
+              </button>
             </div>
           )}
         </div>

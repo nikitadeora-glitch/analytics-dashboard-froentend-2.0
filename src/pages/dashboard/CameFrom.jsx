@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, Search } from 'lucide-react'
+import { ExternalLink, Search } from 'lucide-react'
 
 function CameFrom({ projectId }) {
   const [visitors, setVisitors] = useState([])
@@ -14,7 +14,11 @@ function CameFrom({ projectId }) {
   const loadVisitors = async () => {
     try {
       const response = await visitorsAPI.getActivity(projectId, 100)
-      setVisitors(response.data)
+      // Filter to show only referral traffic (exclude direct traffic)
+      const referralVisitors = response.data.filter(visitor => 
+        visitor.referrer && visitor.referrer !== 'direct' && visitor.referrer.trim() !== ''
+      )
+      setVisitors(referralVisitors)
     } catch (error) {
       console.error('Error loading visitors:', error)
     } finally {
@@ -22,10 +26,7 @@ function CameFrom({ projectId }) {
     }
   }
 
-  const handleReferrerClick = (e, visitor) => {
-    e.stopPropagation()
-    setSelectedReferrer(visitor)
-  }
+
 
   const closeModal = () => {
     setSelectedReferrer(null)
@@ -46,7 +47,7 @@ function CameFrom({ projectId }) {
   return (
     <>
       <div className="header">
-        <h1>Came From</h1>
+        <h1>Came From </h1>
       </div>
 
       {/* Referrer Details Modal */}
@@ -82,7 +83,7 @@ function CameFrom({ projectId }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div style={{ flex: 1 }}>
                 <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
-                  🔗 Referrer Details
+                  Referrer Details
                 </h2>
                 <div style={{ fontSize: '14px', color: '#64748b' }}>
                   {formatDate(selectedReferrer.visited_at)} at {formatTime(selectedReferrer.visited_at)}
@@ -231,11 +232,11 @@ function CameFrom({ projectId }) {
                 display: 'grid',
                 gridTemplateColumns: '100px 120px 1fr 1fr',
                 padding: '16px 24px',
-                background: '#f8fafc',
+                background: '#fdfdfdff',
                 borderBottom: '2px solid #e2e8f0',
                 fontWeight: '600',
                 fontSize: '13px',
-                color: '#475569',
+                color: '#0e0e0eff',
                 alignItems: 'center',
                 gap: '12px',
                 minWidth: 0,
@@ -264,7 +265,7 @@ function CameFrom({ projectId }) {
                 >
                   {/* Date */}
                   <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
-                    <Search size={14} style={{ color: '#3b82f6' }} />
+                    
                     {formatDate(visitor.visited_at)}
                   </div>
 
@@ -273,40 +274,21 @@ function CameFrom({ projectId }) {
                     {formatTime(visitor.visited_at)}
                   </div>
 
-                  {/* Referrer - Clickable */}
+                  {/* Referrer - Non-clickable */}
                   <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <a 
-                      href={visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '#'}
-                      target={visitor.referrer && visitor.referrer !== 'direct' ? '_blank' : '_self'}
-                      rel="noopener noreferrer"
-                      onClick={(e) => {
-                        if (!visitor.referrer || visitor.referrer === 'direct') {
-                          e.preventDefault()
-                        }
-                      }}
+                    <div
                       style={{ 
                         fontSize: '14px', 
-                        color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b',
-                        textDecoration: 'none',
+                        color: '#30ad51d1',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
                         wordBreak: 'break-all',
-                        lineHeight: '1.4',
-                        cursor: visitor.referrer && visitor.referrer !== 'direct' ? 'pointer' : 'default'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (visitor.referrer && visitor.referrer !== 'direct') {
-                          e.currentTarget.style.textDecoration = 'underline'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.textDecoration = 'none'
+                        lineHeight: '1.4'
                       }}
                     >
-                      {visitor.referrer && visitor.referrer !== 'direct' ? visitor.referrer : '(No referring link)'}
-                      {visitor.referrer && visitor.referrer !== 'direct' && <ExternalLink size={12} />}
-                    </a>
+                      {visitor.referrer}
+                    </div>
                   </div>
 
                   {/* Entry Page */}
@@ -326,7 +308,7 @@ function CameFrom({ projectId }) {
                         lineHeight: '1.4',
                         cursor: 'pointer'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                     
                       onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
                       {visitor.entry_page || 'Unknown'}
@@ -339,8 +321,8 @@ function CameFrom({ projectId }) {
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
               <Search size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-              <p style={{ fontSize: '16px', fontWeight: '500' }}>No referrer data yet</p>
-              <p style={{ fontSize: '14px' }}>Start tracking visitors to see where they came from</p>
+              <p style={{ fontSize: '16px', fontWeight: '500' }}>No referral traffic yet</p>
+              <p style={{ fontSize: '14px' }}>Only visitors from external referrers are shown here</p>
             </div>
           )}
         </div>

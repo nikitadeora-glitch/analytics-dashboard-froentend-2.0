@@ -1,85 +1,56 @@
-import { useState, useEffect } from 'react'
-import { visitorsAPI } from '../../api/api'
+import { useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchSessionDetails, clearSessionDetails } from '../../store/slices/sessionSlice'
 
 function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack }) {
-  const [sessionDetails, setSessionDetails] = useState([])
-  const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch()
+  const { sessionDetails, loading, error } = useSelector(state => state.session)
 
   useEffect(() => {
-    loadSessionDetails()
-  }, [selectedPageSessions])
-
-  const loadSessionDetails = async () => {
-    console.log('=== PagesSessionView loadSessionDetails ===')
-    console.log('selectedPageSessions:', selectedPageSessions)
-    console.log('visits:', selectedPageSessions?.visits)
-    
-    if (!selectedPageSessions?.visits || selectedPageSessions.visits.length === 0) {
-      console.error('No visits data available')
-      setLoading(false)
-      return
+    if (selectedPageSessions) {
+      dispatch(fetchSessionDetails({ projectId, selectedPageSessions }))
     }
+    
+    // Cleanup on unmount
+    return () => {
+      dispatch(clearSessionDetails())
+    }
+  }, [dispatch, projectId, selectedPageSessions])
 
-    try {
-      console.log('Loading session details for', selectedPageSessions.visits.length, 'visits')
-      
-      // Get all visitors first
-      const allVisitors = await visitorsAPI.getActivity(projectId, 1000)
-      
-      // For each session, get complete path
-      const detailsPromises = selectedPageSessions.visits.map(async (visit) => {
-        console.log('Processing visit:', visit)
-        const visitorData = allVisitors.data.find(v => v.visitor_id === visit.visitor_id)
-        
-        // Get visitor's complete path for this session
-        try {
-          const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
-          console.log('Path response for', visit.visitor_id, ':', pathResponse.data)
-          
-          // Backend returns { sessions: [...] }, find matching session
-          const sessions = pathResponse.data.sessions || []
-          console.log('All sessions for visitor:', sessions)
-          console.log('Looking for session_id:', visit.session_id)
-          const sessionData = sessions.find(s => s.session_number === visit.session_id)
-          console.log('Session data found:', sessionData)
-          console.log('Page journey:', sessionData?.page_journey)
-          
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: sessionData?.page_journey || [],
-            entry_page: sessionData?.entry_page,
-            exit_page: sessionData?.exit_page,
-            total_time: sessionData?.session_duration || visit.time_spent || 0
-          }
-        } catch (error) {
-          console.error('Error loading path for visitor:', visit.visitor_id, error)
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: []
-          }
-        }
-      })
-      
-      const details = await Promise.all(detailsPromises)
-      console.log('Final session details:', details)
-      
-      setSessionDetails(details)
-    } catch (error) {
-      console.error('Error loading session details:', error)
-    } finally {
-      setLoading(false)
+  // Enhanced time formatting with better validation
+  const formatTimeSpent = (seconds) => {
+    console.log('Formatting time for:', seconds, 'Type:', typeof seconds)
+    
+    // Handle null, undefined, or invalid values
+    if (seconds === null || seconds === undefined || seconds === '' || isNaN(seconds)) {
+      return '0s'
+    }
+    
+    const totalSeconds = Math.floor(Number(seconds))
+    console.log('Processed seconds:', totalSeconds)
+    
+    if (totalSeconds <= 0) return '0s'
+    
+    const hours = Math.floor(totalSeconds / 3600)
+    const mins = Math.floor((totalSeconds % 3600) / 60)
+    const secs = totalSeconds % 60
+    
+    if (hours > 0) {
+      return `${hours}h ${mins}m ${secs}s`
+    } else if (mins > 0) {
+      return `${mins}m ${secs}s`
+    } else {
+      return `${secs}s`
     }
   }
 
-  const formatTimeSpent = (seconds) => {
-    if (!seconds) return '0s'
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+  // Calculate total session time
+  const calculateSessionTime = (path) => {
+    if (!path || path.length === 0) return 0
+    return path.reduce((total, page) => {
+      const timeSpent = Number(page.time_spent) || 0
+      return total + timeSpent
+    }, 0)
   }
 
   const getCountryCode = (country) => {
@@ -109,6 +80,11 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
   }
 
   if (loading) return <div className="loading">Loading session details...</div>
+  
+  if (error) {
+    console.error('Session loading error:', error)
+    return <div className="loading">Error loading session details: {error}</div>
+  }
 
   return (
     <>
@@ -144,7 +120,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             <div style={{
               padding: '60px 20px',
               textAlign: 'center',
-              color: '#94a3b8'
+            
             }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛤️</div>
               <p style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>No Journey Data Available</p>
@@ -152,6 +128,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             </div>
           ) : sessionDetails.map((session, idx) => {
             const visitDate = new Date(session.visited_at)
+            const totalSessionTime = calculateSessionTime(session.path)
             
             return (
               <div 
@@ -259,19 +236,31 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     )}
                   </div>
 
-                  {/* Session Number */}
+                  {/* Session Number & Total Time */}
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ 
                       display: 'inline-flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '4px',
                       padding: '6px 12px',
-                     
                     }}>
                       <span style={{ fontSize: '13px', fontWeight: '600', color: 'black'}}>
                         Session #{String(session.session_id).substring(0, 8)}
                       </span>
-                      
+                      {totalSessionTime > 0 && (
+                        <div style={{
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: '#10b981',
+                          background: '#f0fdf4',
+                          padding: '2px 6px',
+                          borderRadius: '10px',
+                          border: '1px solid #bbf7d0'
+                        }}>
+                          Total: {formatTimeSpent(totalSessionTime)}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -290,6 +279,35 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   </div>
                 </div>
 
+                {/* Session Stats - Only show if there's meaningful time data */}
+                {session.path && session.path.length > 0 && totalSessionTime > 0 && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '8px 16px',
+                    background: '#f8fafc',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    color: '#64748b',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span>
+                      <strong>{session.path.length}</strong> pages visited
+                    </span>
+                    <span>
+                      Avg: <strong style={{ color: '#10b981' }}>
+                        {formatTimeSpent(totalSessionTime / session.path.length)}
+                      </strong> per page
+                    </span>
+                    <span>
+                      Longest: <strong style={{ color: '#3b82f6' }}>
+                        {formatTimeSpent(Math.max(...session.path.map(p => Number(p.time_spent) || 0)))}
+                      </strong>
+                    </span>
+                  </div>
+                )}
+
                 {/* Visitor Journey - Show only for entry and top pages, not for exit pages */}
                 {pageType !== 'exit' && session.path && session.path.length > 0 && (
                   <div style={{ 
@@ -305,7 +323,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px'
                     }}>
-                     
+                      User Journey ({session.path.length} pages)
                     </div>
                     
                     {session.path.map((page, pidx) => (
@@ -327,7 +345,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           minWidth: '28px',
                           height: '28px',
                           borderRadius: '50%',
-    
+                          background: pidx === 0 ? '#059669' : pidx === session.path.length - 1 ? '#dc2626' : '#3b82f6',
                           color: 'white',
                           display: 'flex',
                           alignItems: 'center',
@@ -336,7 +354,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           fontWeight: '700',
                           flexShrink: 0
                         }}>
-                         
+                          {pidx + 1}
                         </div>
 
                         {/* Page Info */}
@@ -381,18 +399,36 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           </a>
                         </div>
 
-                        {/* Time Spent */}
+                        {/* Time Spent - Enhanced Display */}
                         <div style={{
                           textAlign: 'right',
                           flexShrink: 0
                         }}>
+                          {/* Debug info for time_spent */}
+                          {console.log(`Page ${pidx + 1} time_spent:`, {
+                            raw: page.time_spent,
+                            type: typeof page.time_spent,
+                            number: Number(page.time_spent),
+                            formatted: formatTimeSpent(page.time_spent)
+                          })}
+                          
                           <div style={{
                             fontSize: '16px',
                             fontWeight: '700',
-                            color: (page.time_spent || page.timeSpent || page.duration) ? '#10b981' : '#94a3b8',
+                            color: page.time_spent && Number(page.time_spent) > 0 ? '#10b981' : '#94a3b8',
                             marginBottom: '2px'
                           }}>
-                             {(page.time_spent || page.timeSpent || page.duration) ? formatTimeSpent(page.time_spent || page.timeSpent || page.duration) : 'N/A'}
+                            {formatTimeSpent(page.time_spent)}
+                            {page.time_spent_calculated && (
+                              <span style={{
+                                fontSize: '8px',
+                                color: '#f59e0b',
+                                marginLeft: '4px',
+                                fontWeight: '500'
+                              }}>
+                                *
+                              </span>
+                            )}
                           </div>
                           <div style={{
                             fontSize: '9px',
@@ -400,6 +436,32 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           }}>
                             Time Spent
                           </div>
+                          
+                          {/* Raw time_spent value for debugging */}
+                          <div style={{
+                            fontSize: '7px',
+                            color: '#94a3b8',
+                            marginTop: '1px'
+                          }}>
+                            {page.time_spent_calculated ? 'Calc' : 'Raw'}: {page.time_spent}s
+                            {page.time_spent_original !== undefined && page.time_spent_calculated && (
+                              <span style={{ marginLeft: '4px' }}>
+                                (Orig: {page.time_spent_original})
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Percentage of session */}
+                          {page.time_spent && Number(page.time_spent) > 0 && totalSessionTime > 0 && (
+                            <div style={{
+                              fontSize: '8px',
+                              color: '#10b981',
+                              marginTop: '2px',
+                              fontWeight: '500'
+                            }}>
+                              {((Number(page.time_spent) / totalSessionTime) * 100).toFixed(1)}% of session
+                            </div>
+                          )}
                         </div>
 
                        
