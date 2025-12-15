@@ -89,9 +89,10 @@ function Projects() {
 
   const getTrackingCode = (project) => {
     if (!project) return ''
-    // const apiUrl = getApiUrl()
-    const scriptUrl = `${import.meta.env.VITE_API_URL}/analytics.js`
-    const apiEndpoint = `${import.meta.env.VITE_API_URL}`
+    // Remove trailing /api if present and add analytics.js
+    const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+    const scriptUrl = `${baseUrl}/api/analytics.js`
+    const apiEndpoint = `${baseUrl}/api`
 
     return `<!-- State Counter Analytics Tracking Code -->
 <script src="${scriptUrl}" data-project-id="${project.id}" data-api-url="${apiEndpoint}"></script>

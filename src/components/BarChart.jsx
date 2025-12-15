@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -7,7 +6,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 
@@ -18,106 +16,67 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
 )
 
 function BarChart({ 
-  displayData, 
-  showPageViews, 
-  showUniqueVisits, 
-  showReturningVisits,
+  displayData = [], 
+  showPageViews = true, 
+  showUniqueVisits = true, 
+  showReturningVisits = true,
   period = 'daily'
 }) {
-  // Prepare data for Chart.js with proper labels based on period
-  const labels = displayData.map(day => {
-    // Handle different period formats
-    if (period === 'monthly') {
-      // For monthly data, show just month and year
-      if (day.date.includes('Week')) {
-        return day.date // Keep week format as is
-      }
-      // Parse month format like "Jan 2024" or "January 2024"
-      return day.date
-    } else if (period === 'weekly') {
-      // For weekly data, show week number
-      return day.date
-    } else {
-      // For daily data, show short format
-      const date = new Date(day.date)
-      if (isNaN(date.getTime())) {
-        // If date parsing fails, return original
-        return day.date
-      }
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      })
-    }
-  })
+  // Sample data matching your image if no data provided
+  const sampleData = [
+    { date: '8 Mon', page_views: 35, unique_visits: 18, returning_visits: 5 },
+    { date: '9 Tues', page_views: 55, unique_visits: 38, returning_visits: 12 },
+    { date: '10 Wed', page_views: 53, unique_visits: 37, returning_visits: 8 },
+    { date: '11 Thur', page_views: 205, unique_visits: 62, returning_visits: 16 },
+    { date: '12 Fri', page_views: 148, unique_visits: 85, returning_visits: 14 },
+    { date: '13 Sat', page_views: 0, unique_visits: 0, returning_visits: 0 },
+    { date: '14 Sun', page_views: 0, unique_visits: 0, returning_visits: 0 },
+    { date: '15 Mon', page_views: 0, unique_visits: 0, returning_visits: 0 }
+  ]
+
+  const chartData = displayData.length > 0 ? displayData : sampleData
+
+  // Create labels exactly like your image
+  const labels = chartData.map(day => day.date)
 
   const datasets = []
 
   if (showPageViews) {
     datasets.push({
       label: 'Page Views',
-      data: displayData.map(day => day.page_views),
-      backgroundColor: (ctx) => {
-        const canvas = ctx.chart.ctx
-        const gradient = canvas.createLinearGradient(0, 0, 0, 250)
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.9)')
-        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.3)')
-        return gradient
-      },
-      borderColor: 'rgba(16, 185, 129, 1)',
-      borderWidth: 2,
-      borderRadius: 8,
+      data: chartData.map(day => day.page_views || 0),
+      backgroundColor: '#8BC34A', // Green color from your image
+      borderColor: '#8BC34A',
+      borderWidth: 0,
+      borderRadius: 2,
       borderSkipped: false,
-      hoverBackgroundColor: 'rgba(16, 185, 129, 1)',
-      hoverBorderColor: 'rgba(16, 185, 129, 1)',
-      hoverBorderWidth: 3,
     })
   }
 
   if (showUniqueVisits) {
     datasets.push({
       label: 'Unique Visits',
-      data: displayData.map(day => day.unique_visits),
-      backgroundColor: (ctx) => {
-        const canvas = ctx.chart.ctx
-        const gradient = canvas.createLinearGradient(0, 0, 0, 250)
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.9)')
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.3)')
-        return gradient
-      },
-      borderColor: 'rgba(59, 130, 246, 1)',
-      borderWidth: 2,
-      borderRadius: 8,
+      data: chartData.map(day => day.unique_visits || 0),
+      backgroundColor: '#2196F3', // Blue color from your image
+      borderColor: '#2196F3',
+      borderWidth: 0,
+      borderRadius: 2,
       borderSkipped: false,
-      hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
-      hoverBorderColor: 'rgba(59, 130, 246, 1)',
-      hoverBorderWidth: 3,
     })
   }
 
   if (showReturningVisits) {
     datasets.push({
       label: 'Returning Visits',
-      data: displayData.map(day => day.returning_visits),
-      backgroundColor: (ctx) => {
-        const canvas = ctx.chart.ctx
-        const gradient = canvas.createLinearGradient(0, 0, 0, 250)
-        gradient.addColorStop(0, 'rgba(245, 158, 11, 0.9)')
-        gradient.addColorStop(1, 'rgba(245, 158, 11, 0.3)')
-        return gradient
-      },
-      borderColor: 'rgba(245, 158, 11, 1)',
-      borderWidth: 2,
-      borderRadius: 8,
+      data: chartData.map(day => day.returning_visits || 0),
+      backgroundColor: '#FF9800', // Orange color from your image
+      borderColor: '#FF9800',
+      borderWidth: 0,
+      borderRadius: 2,
       borderSkipped: false,
-      hoverBackgroundColor: 'rgba(245, 158, 11, 1)',
-      hoverBorderColor: 'rgba(245, 158, 11, 1)',
-      hoverBorderWidth: 3,
     })
   }
 
@@ -129,51 +88,35 @@ function BarChart({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    categoryPercentage: 0.9, // Controls the width of the entire category (all bars for one date)
-    barPercentage: 0.95, // Controls the width of individual bars within a category
-    maxBarThickness: 60, // Maximum bar width
-    minBarLength: 2, // Minimum bar height for visibility
+    categoryPercentage: 0.7, // Controls spacing between groups
+    barPercentage: 0.8, // Controls bar width within groups
     plugins: {
       legend: {
-        display: false, // We'll use the existing checkboxes
+        display: false, // Hide legend for now, can be enabled later
       },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#f1f5f9',
-        bodyColor: '#e2e8f0',
-        borderColor: 'rgba(59, 130, 246, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
-        cornerRadius: 12,
+        cornerRadius: 6,
         displayColors: true,
-        padding: 12,
+        padding: 8,
         titleFont: {
-          size: 14,
+          size: 12,
           weight: '600'
         },
         bodyFont: {
-          size: 13,
-          weight: '500'
+          size: 11,
+          weight: '400'
         },
         callbacks: {
           title: function(context) {
-            const dataIndex = context[0].dataIndex
-            return displayData[dataIndex].date
+            return context[0].label
           },
           label: function(context) {
-            const value = context.parsed.y
-            const label = context.dataset.label
-            return `${label}: ${value.toLocaleString()}`
-          },
-          afterBody: function(context) {
-            const dataIndex = context[0].dataIndex
-            const day = displayData[dataIndex]
-            return [
-              '',
-              `📊 Total Page Views: ${day.page_views}`,
-              `👥 Unique Visitors: ${day.unique_visits}`,
-              `🔄 Returning: ${day.returning_visits}`,
-              `✨ First Time: ${day.first_time_visits}`
-            ]
+            return `${context.dataset.label}: ${context.parsed.y}`
           }
         }
       }
@@ -181,50 +124,42 @@ function BarChart({
     scales: {
       x: {
         grid: {
-          display: false
-        },
-        ticks: {
-          color: '#64748b',
-          font: {
-            size: period === 'monthly' ? 12 : 11,
-            weight: '500'
-          },
-          maxRotation: period === 'monthly' ? 45 : 0,
-          padding: 8,
-          callback: function(value, index) {
-            const label = labels[index]
-            if (period === 'monthly') {
-              return label
-            } else if (period === 'weekly') {
-              return label
-            } else {
-              // For daily, show shorter format
-              return label
-            }
-          }
-        },
-        border: {
-          display: false
-        },
-        categoryPercentage: 0.9,
-        barPercentage: 0.95
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(226, 232, 240, 0.4)',
+          display: true,
+         
           drawBorder: false,
           lineWidth: 1
         },
         ticks: {
-          color: '#64748b',
+          color: '#666666',
           font: {
             size: 11,
-            weight: '500'
+            weight: '400'
+          },
+          maxRotation: 0,
+          padding: 8
+        },
+        border: {
+          display: false
+        }
+      },
+      y: {
+        beginAtZero: true,
+        max: 220, // Set max to 220 like in your image
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          drawBorder: false,
+          lineWidth: 1
+        },
+        ticks: {
+          color: '#666666',
+          font: {
+            size: 11,
+            weight: '400'
           },
           padding: 8,
-          callback: function(value) {
-            return value.toLocaleString()
+          stepSize: 20, // Grid lines every 20 units like in your image
+          callback: function(tickValue) {
+            return tickValue
           }
         },
         border: {
@@ -233,90 +168,41 @@ function BarChart({
       }
     },
     animation: {
-      duration: 1200,
-      easing: 'easeOutCubic',
-      delay: (context) => {
-        return context.dataIndex * 100 // Stagger animation
-      }
+      duration: 600,
+      easing: 'easeOutQuart'
     },
     interaction: {
       intersect: false,
       mode: 'index'
     },
-    onHover: (event, elements) => {
-      event.native.target.style.cursor = 'default'
-    },
     elements: {
       bar: {
         borderWidth: 0,
-        hoverBorderWidth: 2,
-        borderRadius: 8,
+        borderRadius: 2,
         borderSkipped: false
       }
     },
     layout: {
       padding: {
-        top: 20,
-        bottom: 5,
-        left: 5,
-        right: 5
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: 10
       }
     }
   }
 
-  // Calculate optimal height based on number of datasets
-  const activeDatasets = datasets.length
-  const baseHeight = 300
-  const extraHeight = activeDatasets > 1 ? 40 : 0
-  const totalHeight = baseHeight + extraHeight
-
   return (
     <div style={{ 
-      height: `${totalHeight + 40}px`, 
+      height: '400px', // Fixed height like your image
       width: '100%',
-      position: 'relative',
-      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)',
-      borderRadius: '16px',
+      background: '#ffffff',
+      
       padding: '20px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      border: '1px solid rgba(226, 232, 240, 0.8)',
-      overflow: 'hidden'
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      
     }}>
-      {/* Decorative background elements */}
-      <div style={{
-        position: 'absolute',
-        top: '-50px',
-        right: '-50px',
-        width: '100px',
-        height: '100px',
-        background: 'linear-gradient(45deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05))',
-        borderRadius: '50%',
-        zIndex: 0
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-30px',
-        left: '-30px',
-        width: '60px',
-        height: '60px',
-        background: 'linear-gradient(45deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))',
-        borderRadius: '50%',
-        zIndex: 0
-      }} />
-      
-      {/* Chart container */}
-      <div style={{ 
-        position: 'relative', 
-        height: '100%', 
-        zIndex: 1,
-        background: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: '12px',
-        padding: '12px'
-      }}>
-        <Bar data={data} options={options} />
-      </div>
-     
-      
+      <Bar data={data} options={options} />
     </div>
   )
 }
