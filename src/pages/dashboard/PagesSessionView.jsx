@@ -17,17 +17,14 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     }
   }, [dispatch, projectId, selectedPageSessions])
 
-  // Enhanced time formatting with better validation
+  // Optimized time formatting
   const formatTimeSpent = (seconds) => {
-    console.log('Formatting time for:', seconds, 'Type:', typeof seconds)
-    
     // Handle null, undefined, or invalid values
     if (seconds === null || seconds === undefined || seconds === '' || isNaN(seconds)) {
       return '0s'
     }
     
     const totalSeconds = Math.floor(Number(seconds))
-    console.log('Processed seconds:', totalSeconds)
     
     if (totalSeconds <= 0) return '0s'
     
@@ -79,7 +76,37 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     return codes[country] || 'XX'
   }
 
-  if (loading) return <div className="loading">Loading session details...</div>
+  if (loading) return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '300px',
+      fontSize: '16px',
+      color: '#64748b'
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '4px solid #f3f4f6',
+        borderTop: '4px solid #3b82f6',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        marginBottom: '16px'
+      }}></div>
+      <div>Loading session details...</div>
+      <div style={{ fontSize: '12px', marginTop: '8px', color: '#94a3b8' }}>
+        Processing visitor journeys and calculating time spent
+      </div>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  )
   
   if (error) {
     console.error('Session loading error:', error)
@@ -284,10 +311,10 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   <div style={{
                     marginTop: '12px',
                     padding: '8px 16px',
-                    background: '#f8fafc',
+               
                     borderRadius: '6px',
                     fontSize: '10px',
-                    color: '#64748b',
+               
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -404,13 +431,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           textAlign: 'right',
                           flexShrink: 0
                         }}>
-                          {/* Debug info for time_spent */}
-                          {console.log(`Page ${pidx + 1} time_spent:`, {
-                            raw: page.time_spent,
-                            type: typeof page.time_spent,
-                            number: Number(page.time_spent),
-                            formatted: formatTimeSpent(page.time_spent)
-                          })}
+                          {/* Optimized - removed excessive logging */}
                           
                           <div style={{
                             fontSize: '16px',

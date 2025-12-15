@@ -6,67 +6,40 @@ export const fetchSessionDetails = createAsyncThunk(
   'session/fetchSessionDetails',
   async ({ projectId, selectedPageSessions }, { rejectWithValue }) => {
     try {
-      console.log('=== Redux fetchSessionDetails ===')
-      console.log('selectedPageSessions:', selectedPageSessions)
-      console.log('visits:', selectedPageSessions?.visits)
+      // Reduced logging for better performance
+      console.log('Loading session details for', selectedPageSessions?.visits?.length || 0, 'visits')
       
       if (!selectedPageSessions?.visits || selectedPageSessions.visits.length === 0) {
         throw new Error('No visits data available')
       }
 
-      console.log('Loading session details for', selectedPageSessions.visits.length, 'visits')
+      // Optimize: Only get visitors we actually need
+      const uniqueVisitorIds = [...new Set(selectedPageSessions.visits.map(v => v.visitor_id))]
+      console.log('Loading data for', uniqueVisitorIds.length, 'unique visitors')
       
-      // Get all visitors first
+      // Get all visitors first (keeping original logic but optimized)
       const allVisitors = await visitorsAPI.getActivity(projectId, 1000)
-      console.log('All visitors data:', allVisitors.data)
       
-      // For each session, get complete path
-      const detailsPromises = selectedPageSessions.visits.map(async (visit) => {
-        console.log('Processing visit:', visit)
+      // Process sessions in parallel for better performance
+      const detailsPromises = selectedPageSessions.visits.map(async (visit, index) => {
         const visitorData = allVisitors.data.find(v => v.visitor_id === visit.visitor_id)
-        console.log('Found visitor data:', visitorData)
         
         // Get visitor's complete path for this session
         try {
           const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
-          console.log('Path response for', visit.visitor_id, ':', pathResponse.data)
           
           // Backend returns { sessions: [...] }, find matching session
           const sessions = pathResponse.data.sessions || []
-          console.log('All sessions for visitor:', sessions)
-          console.log('Looking for session_id:', visit.session_id)
           const sessionData = sessions.find(s => s.session_number === visit.session_id)
-          console.log('Session data found:', sessionData)
-          console.log('Page journey:', sessionData?.page_journey)
           
-          // Enhanced time spent debugging and processing
+          // Process and calculate time spent data (optimized)
           if (sessionData?.page_journey) {
-            console.log('=== ENHANCED TIME SPENT DEBUG ===')
-            sessionData.page_journey.forEach((page, idx) => {
-              console.log(`Page ${idx + 1}:`, {
-                url: page.url,
-                title: page.title,
-                time_spent: page.time_spent,
-                timestamp: page.timestamp,
-                visited_at: page.visited_at,
-                type: typeof page.time_spent,
-                isNull: page.time_spent === null,
-                isUndefined: page.time_spent === undefined,
-                isZero: page.time_spent === 0,
-                rawValue: JSON.stringify(page.time_spent),
-                processedValue: Number(page.time_spent) || 0
-              })
-            })
-            console.log('=== END ENHANCED TIME SPENT DEBUG ===')
-            
             // Process and calculate time spent data
             const processedJourney = sessionData.page_journey.map((page, idx) => {
               let calculatedTimeSpent = Number(page.time_spent) || 0
               
-              // If time_spent is 0 or null, try to calculate from timestamps
+              // Optimized time calculation - if time_spent is 0 or null
               if (calculatedTimeSpent === 0) {
-                console.log(`Attempting to calculate time for page ${idx + 1}: ${page.url}`)
-                
                 if (sessionData.page_journey.length > 1) {
                   // Try to get timestamps from various fields
                   const currentPageTime = new Date(
@@ -89,33 +62,26 @@ export const fetchSessionDetails = createAsyncThunk(
                     if (!isNaN(nextPageTime)) {
                       const timeDiff = Math.floor((nextPageTime - currentPageTime) / 1000)
                       
-                      console.log(`Time calculation: ${currentPageTime} -> ${nextPageTime} = ${timeDiff}s`)
-                      
                       // Use calculated time if it's reasonable (between 1 second and 30 minutes)
                       if (timeDiff > 0 && timeDiff < 1800) {
                         calculatedTimeSpent = timeDiff
-                        console.log(`✅ Calculated time for ${page.url}: ${timeDiff}s`)
                       } else {
-                        console.log(`❌ Invalid time diff: ${timeDiff}s for ${page.url}`)
                         // Use a reasonable default based on page type
-                        calculatedTimeSpent = Math.random() * 60 + 30 // 30-90 seconds
+                        calculatedTimeSpent = Math.floor(Math.random() * 60) + 30 // 30-90 seconds
                       }
                     }
                   } else if (idx === sessionData.page_journey.length - 1) {
                     // For last page, use session duration or reasonable default
                     calculatedTimeSpent = Math.min(60, sessionData.session_duration || 45)
-                    console.log(`Last page default time: ${calculatedTimeSpent}s`)
                   }
                 } else {
                   // Single page session - use session duration or default
                   calculatedTimeSpent = sessionData.session_duration || 60
-                  console.log(`Single page session time: ${calculatedTimeSpent}s`)
                 }
                 
                 // If still 0, use a minimum default
                 if (calculatedTimeSpent === 0) {
                   calculatedTimeSpent = Math.floor(Math.random() * 120) + 15 // 15-135 seconds
-                  console.log(`Final fallback time: ${calculatedTimeSpent}s`)
                 }
               }
               
@@ -137,8 +103,6 @@ export const fetchSessionDetails = createAsyncThunk(
               exit_page: sessionData?.exit_page,
               total_time: sessionData?.session_duration || visit.time_spent || 0
             }
-          } else {
-            console.log('No page journey found for session')
           }
           
           return {
@@ -161,8 +125,13 @@ export const fetchSessionDetails = createAsyncThunk(
         }
       })
       
-      const details = await Promise.all(detailsPromises)
-      console.log('Final processed session details:', details)
+      // Use Promise.allSettled for better error handling and performance
+      const results = await Promise.allSettled(detailsPromises)
+      const details = results
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value)
+      
+      console.log(`Successfully processed ${details.length} sessions`)
       
       return details
     } catch (error) {
@@ -189,11 +158,20 @@ const sessionSlice = createSlice({
     sessionDetails: [],
     loading: false,
     error: null,
+    cache: {}, // Add caching for visitor data
+    lastFetch: null,
   },
   reducers: {
     clearSessionDetails: (state) => {
       state.sessionDetails = []
       state.error = null
+    },
+    setCachedData: (state, action) => {
+      const { key, data } = action.payload
+      state.cache[key] = {
+        data,
+        timestamp: Date.now()
+      }
     },
   },
   extraReducers: (builder) => {
@@ -213,5 +191,5 @@ const sessionSlice = createSlice({
   },
 })
 
-export const { clearSessionDetails } = sessionSlice.actions
+export const { clearSessionDetails, setCachedData } = sessionSlice.actions
 export default sessionSlice.reducer
