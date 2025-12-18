@@ -1,41 +1,42 @@
 import { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { visitorsAPI } from '../../api/api'
-import { ExternalLink, MapPin, Monitor, Globe } from 'lucide-react'
+import { ArrowLeft, Clock, Eye, MapPin, Monitor, Globe } from 'lucide-react'
 
 function VisitorPathSimple({ projectId, visitorId, onBack }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [sessionData, setSessionData] = useState(null)
+  const [visitorData, setVisitorData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const vidToLoad = visitorId || location.state?.selectedVisitorId
-    if (vidToLoad) {
-      loadVisitorSession(vidToLoad)
-    }
-  }, [projectId, visitorId, location.state])
+    loadVisitorPath()
+  }, [projectId, visitorId])
 
-  const loadVisitorSession = async (vid) => {
-    setLoading(true)
+  const loadVisitorPath = async () => {
     try {
-      const response = await visitorsAPI.getAllSessions(projectId, vid)
-      setSessionData(response.data)
+      setLoading(true)
+      setError(null)
+      
+      // Get visitor's complete session data
+      const response = await visitorsAPI.getAllSessions(projectId, visitorId)
+      setVisitorData(response.data)
     } catch (error) {
-      console.error('Error loading visitor session:', error)
+      console.error('Error loading visitor path:', error)
+      setError(error.message || 'Failed to load visitor data')
     } finally {
       setLoading(false)
     }
   }
 
-  const formatDate = (date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
-  }
-
-  const formatTime = (date) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds === 0) return '0s'
+    
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    
+    if (mins > 0) {
+      return `${mins}m ${secs}s`
+    }
+    return `${secs}s`
   }
 
   const getCountryFlag = (country) => {
@@ -45,159 +46,387 @@ function VisitorPathSimple({ projectId, visitorId, onBack }) {
       'United Kingdom': '🇬🇧',
       'Canada': '🇨🇦',
       'Singapore': '🇸🇬',
-      'China': '🇨🇳'
+      'China': '🇨🇳',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'Japan': '🇯🇵',
+      'Australia': '🇦🇺'
     }
     return flags[country] || '🌍'
   }
 
-  if (loading) return <div className="loading">Loading...</div>
-
-  if (!sessionData || !sessionData.sessions || sessionData.sessions.length === 0) {
-    return <div className="loading">No session data found</div>
+  const getDeviceIcon = (device) => {
+    if (device?.toLowerCase().includes('mobile')) return '📱'
+    if (device?.toLowerCase().includes('tablet')) return '📱'
+    return '💻'
   }
 
-  const session = sessionData.sessions[0]
+  if (loading) {
+    return (
+      <div>
+        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to Pages
+          </button>
+          <h1>Loading Visitor Path...</h1>
+        </div>
 
-  return (
-    <>
-      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1>Entry Page</h1>
-          <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
-            {session.entry_page || '/'}
+        <div className="content">
+          <div className="chart-container">
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', color: '#64748b' }}>
+                Loading visitor journey for {visitorId}...
+              </div>
+            </div>
           </div>
         </div>
-        <button 
-          onClick={() => onBack ? onBack() : navigate(-1)}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div>
+        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to Pages
+          </button>
+          <h1>Error Loading Visitor</h1>
+        </div>
+
+        <div className="content">
+          <div className="chart-container">
+            <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>
+              <div style={{ fontSize: '16px', marginBottom: '8px' }}>
+                Failed to load visitor data
+              </div>
+              <div style={{ fontSize: '14px', color: '#64748b' }}>
+                {error}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!visitorData || !visitorData.sessions || visitorData.sessions.length === 0) {
+    return (
+      <div>
+        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to Pages
+          </button>
+          <h1>Visitor: {visitorId}</h1>
+        </div>
+
+        <div className="content">
+          <div className="chart-container">
+            <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+              <Eye size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+              <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>
+                No session data available
+              </div>
+              <div style={{ fontSize: '14px' }}>
+                This visitor doesn't have any recorded sessions.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const firstSession = visitorData.sessions[0]
+
+  return (
+    <div>
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <button
+          onClick={onBack}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             padding: '8px 16px',
-            background: 'white',
-            border: '1px solid #e2e8f0',
+            background: '#f1f5f9',
+            border: '1px solid #cbd5e1',
             borderRadius: '6px',
+            color: '#475569',
             cursor: 'pointer',
             fontSize: '14px',
-            color: '#64748b',
+            fontWeight: '500',
             transition: 'all 0.2s'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#e2e8f0'
+            e.currentTarget.style.borderColor = '#94a3b8'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#f1f5f9'
+            e.currentTarget.style.borderColor = '#cbd5e1'
+          }}
         >
-          ← Back
+          <ArrowLeft size={16} />
+          Back to Pages
         </button>
+        <h1>Visitor Journey: {visitorId}</h1>
       </div>
 
       <div className="content">
-        <div className="chart-container" style={{ padding: 0 }}>
-          {/* Table Layout */}
-          {session.page_journey && session.page_journey.length > 0 ? (
-            <div>
-              {session.page_journey.map((page, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '60px 200px 1fr 150px 200px',
-                    alignItems: 'center',
-                    padding: '16px 24px',
-                    borderBottom: idx < session.page_journey.length - 1 ? '1px solid #f1f5f9' : 'none',
-                    transition: 'background 0.2s',
-                    gap: '16px'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  {/* Play Icon */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      background: '#eff6ff',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #bfdbfe'
-                    }}>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#3b82f6' }}>▶</span>
-                    </div>
+        {/* Visitor Summary */}
+        <div className="chart-container" style={{ marginBottom: '20px' }}>
+          <div style={{ 
+            padding: '20px', 
+            borderBottom: '1px solid #e2e8f0',
+            background: '#f8fafc'
+          }}>
+            <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '24px' }}>
+                  {getDeviceIcon(firstSession.device)}
+                </div>
+                <div>
+                  <div style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                    {visitorData.visitor_id}
                   </div>
+                  <div style={{ fontSize: '14px', color: '#64748b', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={14} />
+                      {getCountryFlag(firstSession.country)} {firstSession.country}, {firstSession.city}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Monitor size={14} />
+                      {firstSession.browser} on {firstSession.os}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6' }}>
+                  {visitorData.total_sessions}
+                </div>
+                <div style={{ fontSize: '14px', color: '#64748b' }}>
+                  Total Sessions
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                  {/* Location & Session Info */}
+        {/* Sessions List */}
+        <div className="chart-container">
+          <div style={{ padding: '20px 0' }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              color: '#1e293b',
+              marginBottom: '20px',
+              paddingLeft: '20px'
+            }}>
+              Session History ({visitorData.sessions.length})
+            </h3>
+            
+            {visitorData.sessions.map((session, sessionIdx) => (
+              <div 
+                key={session.session_id || sessionIdx}
+                style={{
+                  borderBottom: sessionIdx < visitorData.sessions.length - 1 ? '1px solid #f1f5f9' : 'none',
+                  padding: '20px'
+                }}
+              >
+                {/* Session Header */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '16px'
+                }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '18px' }}>{getCountryFlag(session.country)}</span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                        {session.country || 'Unknown'}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.city || 'Unknown City'}, {session.country || 'Unknown'}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#10b981', marginTop: '2px' }}>
-                      {session.referrer && session.referrer !== 'direct' ? '(referring link)' : '(No referring link)'}
-                    </div>
-                  </div>
-
-                  {/* Page URL */}
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>
-                      {formatDate(page.viewed_at)} {formatTime(page.viewed_at)}
-                    </div>
-                    <a 
-                      href={page.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ 
-                        fontSize: '13px', 
-                        color: '#3b82f6', 
-                        textDecoration: 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {page.url} <ExternalLink size={12} />
-                    </a>
-                  </div>
-
-                  {/* Session Number */}
-                  <div style={{ textAlign: 'center' }}>
                     <div style={{ 
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      background: '#eff6ff',
-                      borderRadius: '6px',
-                      border: '1px solid #bfdbfe'
+                      fontSize: '16px', 
+                      fontWeight: '600', 
+                      color: '#1e293b',
+                      marginBottom: '4px'
                     }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#3b82f6' }}>
-                        Session #{session.session_id}
+                      Session #{session.session_number || sessionIdx + 1}
+                    </div>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      color: '#64748b',
+                      display: 'flex',
+                      gap: '16px',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={14} />
+                        {new Date(session.visited_at).toLocaleString()}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>🔍</span>
+                      <span>
+                        Duration: {formatDuration(session.session_duration)}
+                      </span>
+                      <span>
+                        {session.page_count} pages
+                      </span>
                     </div>
                   </div>
-
-                  {/* Device & Browser */}
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>
-                      {session.device || 'Win7'}, {session.browser || 'Chrome'} {session.browser_version || '126.0'}
+                  
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
+                        {session.entry_page ? new URL(session.entry_page).pathname : 'Unknown'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        Entry Page
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {session.screen_resolution || '1280x1200'}
+                    <div style={{ fontSize: '20px', color: '#64748b' }}>→</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#ef4444' }}>
+                        {session.exit_page ? new URL(session.exit_page).pathname : 'Unknown'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        Exit Page
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
-              <p>No page views recorded</p>
-            </div>
-          )}
+
+                {/* Page Journey */}
+                {session.page_journey && session.page_journey.length > 0 && (
+                  <div>
+                    <h4 style={{ 
+                      fontSize: '14px', 
+                      fontWeight: '600', 
+                      color: '#1e293b',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Eye size={16} />
+                      Page Journey
+                    </h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {session.page_journey.map((page, pageIdx) => (
+                        <div 
+                          key={pageIdx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px',
+                            background: '#f8fafc',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0'
+                          }}
+                        >
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: '#3b82f6',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            flexShrink: 0
+                          }}>
+                            {pageIdx + 1}
+                          </div>
+                          
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ 
+                              fontSize: '13px', 
+                              fontWeight: '500', 
+                              color: '#1e293b',
+                              marginBottom: '2px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {page.url || 'Unknown Page'}
+                            </div>
+                            <div style={{ 
+                              fontSize: '11px', 
+                              color: '#64748b'
+                            }}>
+                              {page.title || 'No title'}
+                            </div>
+                          </div>
+                          
+                          <div style={{ 
+                            fontSize: '12px', 
+                            fontWeight: '600',
+                            color: '#10b981',
+                            textAlign: 'right',
+                            flexShrink: 0
+                          }}>
+                            {formatDuration(page.time_spent)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

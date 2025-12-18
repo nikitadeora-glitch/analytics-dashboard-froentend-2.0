@@ -23,7 +23,9 @@ function BarChart({
   showPageViews = true, 
   showUniqueVisits = true, 
   showReturningVisits = true,
-  period = 'daily'
+  period = 'daily',
+  stepSize = 20,
+  maxValue = 220
 }) {
   // Sample data matching your image if no data provided
   const sampleData = [
@@ -88,8 +90,8 @@ function BarChart({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    categoryPercentage: 0.7, // Controls spacing between groups
-    barPercentage: 0.8, // Controls bar width within groups
+    categoryPercentage: 0.6, // Controls spacing between groups (reduced from 0.7 to 0.5)
+    barPercentage: 0.9, // Controls bar width within groups (reduced from 0.8 to 0.6)
     plugins: {
       legend: {
         display: false, // Hide legend for now, can be enabled later
@@ -144,7 +146,7 @@ function BarChart({
       },
       y: {
         beginAtZero: true,
-        max: 220, // Set max to 220 like in your image
+        max: maxValue, // Use dynamic max value from props
         grid: {
           color: 'rgba(0, 0, 0, 0.1)',
           drawBorder: false,
@@ -157,7 +159,7 @@ function BarChart({
             weight: '400'
           },
           padding: 8,
-          stepSize: 20, // Grid lines every 20 units like in your image
+          stepSize: stepSize, // Use dynamic step size from props
           callback: function(tickValue) {
             return tickValue
           }

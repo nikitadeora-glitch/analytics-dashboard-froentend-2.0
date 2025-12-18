@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { visitorsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
+import { Skeleton, Box } from '@mui/material'
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -42,7 +43,54 @@ function VisitorMap({ projectId }) {
     }
   }
 
-  if (loading) return <div className="loading">Loading visitor map...</div>
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Visitor Map</h1>
+      </div>
+      <div className="content">
+        <Box className="chart-container">
+          {/* Map Placeholder - Material-UI */}
+          <Box sx={{
+            width: '100%',
+            height: '500px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative'
+          }}>
+            <Skeleton 
+              variant="rectangular" 
+              width="100%" 
+              height="100%" 
+              animation="wave"
+              sx={{ 
+                borderRadius: 2,
+                border: '1px solid #e2e8f0'
+              }}
+            />
+            
+            {/* Map Icon Overlay */}
+            <Box sx={{
+              position: 'absolute',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              zIndex: 1
+            }}>
+              <Box sx={{ fontSize: '48px', marginBottom: 2, opacity: 0.3 }}>
+                🗺️
+              </Box>
+              <Box sx={{ fontSize: '16px', color: '#64748b', fontWeight: 500 }}>
+                Loading visitor locations...
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </div>
+    </>
+  )
 
   return (
     <>

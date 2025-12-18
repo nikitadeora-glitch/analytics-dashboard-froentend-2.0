@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { reportsAPI, analyticsAPI, visitorsAPI, pagesAPI, trafficAPI } from '../../api/api'
 import { Download, TrendingUp, Users, Globe, BarChart3, Eye, RefreshCw, AlertCircle, CheckCircle, ArrowLeft, ExternalLink, Clock, MapPin } from 'lucide-react'
+import { Skeleton, Box, Grid, Card, CardContent } from '@mui/material'
 
 function Reports({ projectId }) {
   const [loading, setLoading] = useState(false)
@@ -1737,6 +1738,67 @@ function Reports({ projectId }) {
         <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>No Project Selected</h3>
         <p>Please select a project to view reports and analytics data.</p>
       </div>
+    )
+  }
+
+  if (loadingData) {
+    return (
+      <>
+        <div className="header">
+          <h1>Reports & Analytics</h1>
+        </div>
+        
+        <div className="content">
+          {/* Period Selector Skeleton */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            marginBottom: 4,
+            padding: 2.5,
+            background: '#f8fafc',
+            borderRadius: 3,
+            border: '1px solid #e2e8f0'
+          }}>
+            <Skeleton variant="text" width={120} height={16} animation="wave" />
+            <Skeleton variant="rounded" width={150} height={40} animation="wave" />
+            <Skeleton variant="rounded" width={100} height={40} animation="wave" />
+          </Box>
+
+          {/* Report Categories Grid */}
+          <Grid container spacing={3}>
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Grid item xs={12} md={6} lg={4} key={i}>
+                <Card sx={{ 
+                  padding: 3,
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                }}>
+                  <CardContent sx={{ padding: 0, '&:last-child': { paddingBottom: 0 } }}>
+                    {/* Category Header */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
+                      <Skeleton variant="rectangular" width={24} height={24} animation="wave" />
+                      <Skeleton variant="text" width={150} height={20} animation="wave" />
+                    </Box>
+
+                    {/* Category Description */}
+                    <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: 2.5 }} />
+
+                    {/* Stats */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <Box>
+                        <Skeleton variant="text" width={60} height={24} animation="wave" sx={{ marginBottom: 0.5 }} />
+                        <Skeleton variant="text" width={40} height={12} animation="wave" />
+                      </Box>
+                      <Skeleton variant="rounded" width={80} height={36} animation="wave" />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </div>
+      </>
     )
   }
 

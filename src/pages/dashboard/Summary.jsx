@@ -1,40 +1,35 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { analyticsAPI } from '../../api/api'
 import BarChart from '../../components/BarChart'
+import { Skeleton, Box, Grid, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
 function Summary({ projectId }) {
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('daily')
   const [dateRange, setDateRange] = useState(7)
   const [currentPage, setCurrentPage] = useState(0)
   const [showPageViews, setShowPageViews] = useState(true)
-  const [showUniqueVisits, setShowUniqueVisits] = useState(false)
-  const [showReturningVisits, setShowReturningVisits] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(null)
+  const [showUniqueVisits, setShowUniqueVisits] = useState(true)
+  const [showReturningVisits, setShowReturningVisits] = useState(true)
+
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
   const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
   useEffect(() => {
     loadSummary()
-    const interval = setInterval(loadSummary, 30000)
-    return () => clearInterval(interval)
+    // Remove auto-refresh to improve performance
+    // const interval = setInterval(loadSummary, 30000)
+    // return () => clearInterval(interval)
   }, [projectId, dateRange])
 
-  useEffect(() => {
-    console.log('✅ Page changed to:', currentPage)
-  }, [currentPage])
-
-  useEffect(() => {
-    console.log('📆 DateRange changed to:', dateRange)
-  }, [dateRange])
+  // Removed excessive logging for better performance
 
   const loadSummary = async () => {
     try {
-      console.log('🌐 API Call with dateRange:', dateRange)
       const response = await analyticsAPI.getSummary(projectId, dateRange)
-      console.log('✅ API Response - daily_stats length:', response.data.daily_stats?.length)
-      console.log('📅 All dates from API:', response.data.daily_stats?.map(d => d.date))
       setData(response.data)
       setCurrentPage(0)
     } catch (error) {
@@ -55,7 +50,79 @@ function Summary({ projectId }) {
 
 
 
-  if (loading) return <div className="loading">Loading summary...</div>
+  if (loading) return (
+    <>
+      {/* Header */}
+      <div className="header">
+        <h1>Summary</h1>
+      </div>
+
+      <div className="content">
+        {/* Summary Cards - Material-UI Grid */}
+        <Grid container spacing={0} sx={{ marginBottom: 3 }}>
+          {[1, 2, 3, 4].map(i => (
+            <Grid item xs={3} key={i}>
+              <Box className="stat-card" sx={{ padding: 2 }}>
+                <Skeleton variant="text" width="80%" height={13} animation="wave" sx={{ marginBottom: 1 }} />
+                <Skeleton variant="text" width={60} height={32} animation="wave" />
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Chart Container */}
+        <Box className="chart-container">
+          {/* Controls Bar */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: 2.5, 
+            padding: '10px 20px', 
+            borderBottom: '1px solid #e2e8f0' 
+          }}>
+            <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center' }}>
+              <Skeleton variant="rounded" width={120} height={36} animation="wave" />
+              <Skeleton variant="rounded" width={100} height={36} animation="wave" />
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Skeleton variant="text" width={80} height={14} animation="wave" />
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {[1, 2, 3, 4].map(i => (
+                  <Skeleton key={i} variant="rounded" width={32} height={32} animation="wave" />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Data Table */}
+          <Table>
+            <TableHead sx={{ background: '#f8fafc' }}>
+              <TableRow>
+                <TableCell><Skeleton variant="text" width={40} height={16} animation="wave" /></TableCell>
+                <TableCell align="center"><Skeleton variant="text" width={80} height={16} animation="wave" /></TableCell>
+                <TableCell align="center"><Skeleton variant="text" width={90} height={16} animation="wave" /></TableCell>
+                <TableCell align="center"><Skeleton variant="text" width={100} height={16} animation="wave" /></TableCell>
+                <TableCell align="center"><Skeleton variant="text" width={100} height={16} animation="wave" /></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                <TableRow key={i} sx={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <TableCell><Skeleton variant="text" width={80} height={16} animation="wave" /></TableCell>
+                  <TableCell align="center"><Skeleton variant="text" width={40} height={16} animation="wave" /></TableCell>
+                  <TableCell align="center"><Skeleton variant="text" width={30} height={16} animation="wave" /></TableCell>
+                  <TableCell align="center"><Skeleton variant="text" width={25} height={16} animation="wave" /></TableCell>
+                  <TableCell align="center"><Skeleton variant="text" width={25} height={16} animation="wave" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      </div>
+    </>
+  )
   if (!data) return <div className="loading">No data available</div>
 
   // Get filtered data based on period
@@ -102,33 +169,20 @@ function Summary({ projectId }) {
   const start = currentPage * itemsPerPage
   const end = start + itemsPerPage
   
-  console.log('🔪 Slicing:', { 
-    currentPage,
-    start, 
-    end, 
-    filteredDataLength: filteredData.length,
-    allFilteredDates: filteredData.map(d => d.date)
-  })
-  
   const displayData = filteredData.slice(start, end)
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
   const isLastPage = currentPage >= totalPages - 1
   const isFirstPage = currentPage === 0
 
-  console.log('📊 Result:', { 
-    displayDataLength: displayData.length,
-    displayDates: displayData.map(d => d.date)
-  })
-
   // Chart.js handles scaling automatically
 
   const handleDateClick = (day) => {
-    setSelectedDate(day)
+    // Navigate to hourly view for the selected date
+    const encodedDate = encodeURIComponent(day.date)
+    navigate(`/dashboard/project/${projectId}/hourly/${encodedDate}`)
   }
 
-  const closeModal = () => {
-    setSelectedDate(null)
-  }
+
 
   return (
     <>
@@ -136,142 +190,7 @@ function Summary({ projectId }) {
         <h1>Summary</h1>
       </div>
 
-      {/* Date Details Modal */}
-      {selectedDate && (
-        <div 
-          onClick={closeModal}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '500px',
-              width: '90%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              animation: 'slideIn 0.3s ease'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                 {selectedDate.date}
-              </h2>
-              <button 
-                onClick={closeModal}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '36px',
-                  height: '36px',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
 
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #bbf7d0'
-              }}>
-                <div style={{ fontSize: '14px', color: '#166534', fontWeight: '600', marginBottom: '8px' }}>
-                  📊 Page Views
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: '700', color: '#15803d' }}>
-                  {selectedDate.page_views}
-                </div>
-              </div>
-
-              <div style={{
-                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #bfdbfe'
-              }}>
-                <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', marginBottom: '8px' }}>
-                  👥 Unique Visits
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: '700', color: '#1d4ed8' }}>
-                  {selectedDate.unique_visits}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: '2px solid #fcd34d'
-                }}>
-                  <div style={{ fontSize: '12px', color: '#92400e', fontWeight: '600', marginBottom: '6px' }}>
-                    ✨ First Time
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#b45309' }}>
-                    {selectedDate.first_time_visits}
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: '2px solid #fde68a'
-                }}>
-                  <div style={{ fontSize: '12px', color: '#78350f', fontWeight: '600', marginBottom: '6px' }}>
-                    🔄 Returning
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#92400e' }}>
-                    {selectedDate.returning_visits}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              marginTop: '24px',
-              padding: '16px',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              fontSize: '13px',
-              color: '#64748b'
-            }}>
-              <strong style={{ color: '#1e293b' }}>💡 Tip:</strong> Click outside or press × to close
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="content">
         <div className="chart-container" style={{ marginBottom: '30px' }}>
@@ -379,7 +298,6 @@ function Summary({ projectId }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🔵 First clicked')
                     setCurrentPage(0)
                   }}
                   disabled={isFirstPage}
@@ -415,7 +333,6 @@ function Summary({ projectId }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🔵 Prev clicked, current:', currentPage)
                     if (!isFirstPage) setCurrentPage(currentPage - 1)
                   }}
                   disabled={isFirstPage}
@@ -451,7 +368,6 @@ function Summary({ projectId }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🔵 Next clicked, current:', currentPage, 'isLastPage:', isLastPage)
                     if (!isLastPage) setCurrentPage(currentPage + 1)
                   }}
                   disabled={isLastPage}
@@ -487,7 +403,6 @@ function Summary({ projectId }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🔵 Last clicked, totalPages:', totalPages)
                     if (!isLastPage) setCurrentPage(totalPages - 1)
                   }}
                   disabled={isLastPage}
@@ -717,30 +632,44 @@ function Summary({ projectId }) {
               </tr>
             </thead>
             <tbody>
-              {(data.all_daily_stats || data.daily_stats || []).map((day, idx) => (
+              {displayData.map((day, idx) => (
                 <tr 
                   key={idx} 
-                  onClick={() => handleDateClick(day)}
                   style={{ 
                     borderBottom: '1px solid #e2e8f0',
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#f8fafc'
-                    e.currentTarget.style.transform = 'scale(1.01)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.transform = 'scale(1)'
                   }}
                 >
-                  <td style={{ padding: '12px', color: '#1e40af', fontWeight: '600' }}>
-                    {day.date}
+                  <td 
+                    onClick={() => handleDateClick(day)}
+                    style={{ 
+                      padding: '12px', 
+                      color: '#1e40af', 
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#eff6ff'
+                      e.currentTarget.style.transform = 'scale(1.02)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
+                  >
+                     {day.date}
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.page_views}</td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.unique_visits}</td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.first_time_visits}</td>
+                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.returning_visits}</td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.returning_visits}</td>
                 </tr>
               ))}

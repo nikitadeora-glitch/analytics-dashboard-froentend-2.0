@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
+import { Skeleton, Box, Grid } from '@mui/material'
 
 function VisitorActivity({ projectId }) {
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [displayCount, setDisplayCount] = useState(10)
 
   useEffect(() => {
     loadVisitors()
@@ -23,6 +25,10 @@ function VisitorActivity({ projectId }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadMore = () => {
+    setDisplayCount(prev => prev + 4)
   }
 
   const getCountryFlag = (country) => {
@@ -50,9 +56,83 @@ function VisitorActivity({ projectId }) {
           <h1>Visitor Activity</h1>
         </div>
         <div className="content">
-          <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '16px', color: '#64748b' }}>Loading visitor activity...</div>
-          </div>
+          {/* Visitor List - Material-UI */}
+          <Box className="chart-container" sx={{ 
+            padding: 0,
+            overflowX: 'hidden',
+            width: '100%'
+          }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <Box key={i} sx={{
+                padding: '12px 20px',
+                borderBottom: i < 8 ? '1px solid #e2e8f0' : 'none'
+              }}>
+                {/* Two Column Layout */}
+                <Grid container spacing={2} sx={{ overflow: 'hidden', width: '100%' }}>
+                  
+                  {/* Left Column */}
+                  <Grid item xs={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                      
+                      {/* Page Views */}
+                      <Box>
+                        <Skeleton variant="text" width={70} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={40} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Visit Time */}
+                      <Box>
+                        <Skeleton variant="text" width={100} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={150} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Location */}
+                      <Box>
+                        <Skeleton variant="text" width={60} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={120} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Entry Page */}
+                      <Box>
+                        <Skeleton variant="text" width={80} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={200} height={12} animation="wave" />
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  {/* Right Column */}
+                  <Grid item xs={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                      
+                      {/* Session Duration */}
+                      <Box>
+                        <Skeleton variant="text" width={90} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={60} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Device Info */}
+                      <Box>
+                        <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={140} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Browser */}
+                      <Box>
+                        <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={100} height={12} animation="wave" />
+                      </Box>
+
+                      {/* Referrer */}
+                      <Box>
+                        <Skeleton variant="text" width={60} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                        <Skeleton variant="text" width={180} height={12} animation="wave" />
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            ))}
+          </Box>
         </div>
       </>
     )
@@ -102,7 +182,7 @@ function VisitorActivity({ projectId }) {
         }}>
           {visitors.length > 0 ? (
             <div>
-              {visitors.map((visitor, idx) => (
+              {visitors.slice(0, displayCount).map((visitor, idx) => (
                 <div 
                   key={idx}
                   style={{
@@ -307,6 +387,34 @@ function VisitorActivity({ projectId }) {
                   </div>
                 </div>
               ))}
+              
+              {/* Load More Button */}
+              {displayCount < visitors.length && (
+                <div style={{ 
+                  padding: '20px', 
+                  textAlign: 'center',
+                  borderTop: '1px solid #e2e8f0'
+                }}>
+                  <button 
+                    onClick={loadMore}
+                    style={{
+                      padding: '10px 24px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                  >
+                    Load More ({visitors.length - displayCount} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>

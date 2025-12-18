@@ -1,14 +1,20 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { fetchSessionDetails, clearSessionDetails } from '../../store/slices/sessionSlice'
+import { fetchSessionDetails, clearSessionDetails, fetchMoreSessionDetails } from '../../store/slices/sessionSlice'
+import { Skeleton, Box } from '@mui/material'
 
 function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack }) {
   const dispatch = useDispatch()
-  const { sessionDetails, loading, error } = useSelector(state => state.session)
+  const { sessionDetails, loading, loadingMore, error, hasMore, currentLimit } = useSelector(state => state.session)
+  
+  // Local state for pagination
+  const [loadCount, setLoadCount] = useState(0)
 
   useEffect(() => {
     if (selectedPageSessions) {
-      dispatch(fetchSessionDetails({ projectId, selectedPageSessions }))
+      // Reset load count and fetch initial data (3 sessions for fastest loading)
+      setLoadCount(0)
+      dispatch(fetchSessionDetails({ projectId, selectedPageSessions, limit: 3 }))
     }
     
     // Cleanup on unmount
@@ -16,6 +22,24 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
       dispatch(clearSessionDetails())
     }
   }, [dispatch, projectId, selectedPageSessions])
+
+  const handleLoadMore = () => {
+    if (loadingMore || !hasMore) return
+    
+    // Calculate increment: 3-4 items per load
+    const increment = loadCount % 2 === 0 ? 3 : 4
+    const newLimit = currentLimit + increment
+    
+    console.log(`📥 Loading more sessions: ${currentLimit} → ${newLimit}`)
+    
+    dispatch(fetchMoreSessionDetails({ 
+      projectId, 
+      selectedPageSessions, 
+      limit: newLimit 
+    }))
+    
+    setLoadCount(prev => prev + 1)
+  }
 
   // Optimized time formatting
   const formatTimeSpent = (seconds) => {
@@ -77,35 +101,143 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
   }
 
   if (loading) return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '300px',
-      fontSize: '16px',
-      color: '#64748b'
-    }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        border: '4px solid #f3f4f6',
-        borderTop: '4px solid #3b82f6',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        marginBottom: '16px'
-      }}></div>
-      <div>Loading session details...</div>
-      <div style={{ fontSize: '12px', marginTop: '8px', color: '#94a3b8' }}>
-        Processing visitor journeys and calculating time spent
+    <>
+      {/* Header */}
+      <div className="header">
+        <div>
+          <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
+          <button 
+            onClick={onBack}
+            style={{
+              padding: '8px 16px',
+              background: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: '#010812ff',
+              transition: 'all 0.2s',
+              marginTop: '8px'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+          >
+            ← Back
+          </button>
+        </div>
       </div>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
+
+      <div className="content">
+        <div className="chart-container" style={{ padding: 0 }}>
+          {/* Optimized Material UI Skeleton Loader */}
+          {[1].map((idx) => (
+            <Box 
+              key={idx}
+              sx={{
+                padding: '10px 20px',
+                borderBottom: 'none',
+                transition: 'background 0.2s'
+              }}
+            >
+              {/* Main Row Skeleton - Exact Grid Layout */}
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: '120px 1fr 200px 140px 240px',
+                alignItems: 'start',
+                gap: '20px'
+              }}>
+                {/* Date Only Skeleton - First Column */}
+                <Box>
+                  <Skeleton variant="text" width="100%" height={16} animation="wave" />
+                </Box>
+
+                {/* Time & URLs Skeleton - Second Column */}
+                <Box>
+                  <Skeleton variant="text" width="90%" height={15} animation="wave" sx={{ marginBottom: '4px' }} />
+                  <Skeleton variant="text" width="100%" height={14} animation="wave" sx={{ marginBottom: '4px' }} />
+                  <Skeleton variant="text" width="85%" height={12} animation="wave" />
+                </Box>
+
+                {/* Location & IP Skeleton - Third Column */}
+                <Box>
+                  <Skeleton variant="text" width="80%" height={16} animation="wave" sx={{ marginBottom: '4px' }} />
+                  <Skeleton variant="text" width="60%" height={14} animation="wave" sx={{ marginBottom: '4px' }} />
+                  <Skeleton variant="text" width="70%" height={12} animation="wave" />
+                </Box>
+
+                {/* Session Number & Total Time Skeleton - Fourth Column */}
+                <Box sx={{ textAlign: 'center' }}>
+                  <Skeleton variant="text" width="100%" height={18} animation="wave" sx={{ marginBottom: '6px' }} />
+                  <Skeleton variant="rounded" width="80%" height={24} animation="wave" sx={{ margin: '0 auto' }} />
+                </Box>
+
+                {/* Device & Browser Skeleton - Fifth Column */}
+                <Box sx={{ textAlign: 'right' }}>
+                  <Skeleton variant="text" width="90%" height={16} animation="wave" sx={{ marginBottom: '4px', marginLeft: 'auto' }} />
+                  <Skeleton variant="text" width="100%" height={15} animation="wave" sx={{ marginBottom: '4px' }} />
+                  <Skeleton variant="text" width="75%" height={12} animation="wave" sx={{ marginLeft: 'auto' }} />
+                </Box>
+              </Box>
+
+              {/* Session Stats Skeleton */}
+              <Box sx={{
+                marginTop: '12px',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '20px'
+              }}>
+                <Skeleton variant="text" width={120} height={14} animation="wave" />
+                <Skeleton variant="text" width={140} height={14} animation="wave" />
+                <Skeleton variant="text" width={100} height={14} animation="wave" />
+              </Box>
+
+              {/* User Journey Skeleton - Only for entry and top pages */}
+              {pageType !== 'exit' && (
+                <Box sx={{ 
+                  marginTop: '16px',
+                  paddingLeft: '20px'
+                }}>
+                  <Skeleton variant="text" width={150} height={14} animation="wave" sx={{ marginBottom: '12px' }} />
+                  
+                  {[1, 2].map((pidx) => (
+                    <Box 
+                      key={pidx}
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '40px 1fr 120px',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '8px',
+                        padding: '8px 5px'
+                      }}
+                    >
+                      {/* Step Number Skeleton */}
+                      <Skeleton variant="circular" width={25} height={25} animation="wave" />
+
+                      {/* Page Info Skeleton */}
+                      <Box sx={{ minWidth: 0 }}>
+                        <Skeleton variant="text" width={60} height={12} animation="wave" sx={{ marginBottom: '4px' }} />
+                        <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: '4px' }} />
+                        <Skeleton variant="text" width="100%" height={12} animation="wave" />
+                      </Box>
+
+                      {/* Time Spent Skeleton */}
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Skeleton variant="text" width={60} height={18} animation="wave" sx={{ marginBottom: '4px', marginLeft: 'auto' }} />
+                        <Skeleton variant="text" width={80} height={12} animation="wave" sx={{ marginLeft: 'auto' }} />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          ))}
+        </div>
+      </div>
+    </>
   )
   
   if (error) {
@@ -171,11 +303,85 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                 {/* Main Row */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '280px 1fr 140px 240px',
+                  gridTemplateColumns: '260px 300px 260px 260px 400px',
                   alignItems: 'start',
                   gap: '20px'
                 }}>
-                  {/* Location & IP */}
+                  {/* Date Only - First Column */}
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                      {session.local_time_formatted ? (
+                        <>
+                          {new Date(session.local_time_formatted).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </>
+                      ) : (
+                        <>
+                          {visitDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Time + URLs - Second Column */}
+                  <div>
+                    {/* Time */}
+                    <div>
+                      {/* Time */}
+                      <div style={{ fontSize: '11px', fontWeight: '500', color: '#475569', marginBottom: '2px' }}>
+                        {session.local_time_formatted ? (
+                          <>
+                            {session.local_time_formatted.split(',').pop().trim()}
+                            <span style={{ marginLeft: '4px', fontSize: '9px', color: '#64748b' }}>
+                              ({session.timezone || session.timezone_offset || 'Local'})
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {visitDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                          </>
+                        )}
+                      </div>
+                      <a 
+                        href={selectedPageSessions.url || selectedPageSessions.page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ 
+                          fontSize: '10px', 
+                          color: '#3b82f6', 
+                          textDecoration: 'none',
+                          display: 'block',
+                          marginBottom: '2px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                      >
+                        {selectedPageSessions.url || selectedPageSessions.page} 
+                      </a>
+                      {session.referrer && session.referrer !== 'direct' ? (
+                        <a 
+                          href={session.referrer}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ 
+                            fontSize: '10px', 
+                            color: '#10b981', 
+                            textDecoration: 'none',
+                            display: 'block'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          {session.referrer}
+                        </a>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
+                          Direct visit
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location & IP - Third Column */}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                       <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
@@ -202,75 +408,14 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     </div>
                   </div>
 
-                  {/* Date, Time & URLs */}
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: '500', color: '#1e293b', marginBottom: '2px' }}>
-                      {session.local_time_formatted ? (
-                        <>
-                          {new Date(session.local_time_formatted).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          <span style={{ marginLeft: '8px' }}>
-                            {session.local_time_formatted.split(',').pop().trim()}
-                          </span>
-                          <span style={{ marginLeft: '4px', fontSize: '9px', color: '#64748b' }}>
-                            ({session.timezone || session.timezone_offset || 'Local'})
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          {visitDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          <span style={{ marginLeft: '8px' }}>
-                            {visitDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <a 
-                      href={selectedPageSessions.url || selectedPageSessions.page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ 
-                        fontSize: '10px', 
-                        color: '#3b82f6', 
-                        textDecoration: 'none',
-                        display: 'block',
-                        marginBottom: '2px'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                    >
-                      {selectedPageSessions.url || selectedPageSessions.page} 
-                    </a>
-                    {session.referrer && session.referrer !== 'direct' ? (
-                      <a 
-                        href={session.referrer}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ 
-                          fontSize: '10px', 
-                          color: '#10b981', 
-                          textDecoration: 'none',
-                          display: 'block'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        {session.referrer}
-                      </a>
-                    ) : (
-                      <div style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
-                        Direct visit
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Session Number & Total Time */}
+                  {/* Session Number & Total Time - Fourth Column */}
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ 
-                      display: 'inline-flex',
+                    
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '4px',
-                      padding: '6px 12px',
+                      
                     }}>
                       <span style={{ fontSize: '13px', fontWeight: '600', color: 'black'}}>
                         Session #{String(session.session_id).substring(0, 8)}
@@ -291,7 +436,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     </div>
                   </div>
 
-                  {/* Device & Browser */}
+                  {/* Device & Browser - Fifth Column */}
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginBottom: '3px' }}>
                       <span style={{ fontSize: '14px' }}>💻</span>
@@ -369,8 +514,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                       >
                         {/* Step Number */}
                         <div style={{
-                          minWidth: '28px',
-                          height: '28px',
+                          minWidth: '25px',
+                          height: '35px',
                           borderRadius: '50%',
                           background: pidx === 0 ? '#059669' : pidx === session.path.length - 1 ? '#dc2626' : '#3b82f6',
                           color: 'white',
@@ -493,6 +638,49 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
               </div>
             )
           })}
+          
+          {/* Load More Button */}
+          {hasMore && sessionDetails.length > 0 && (
+            <div style={{ padding: '20px', textAlign: 'center', borderTop: '1px solid #e2e8f0' }}>
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                style={{
+                 
+                  color:  'black',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseEnter={(e) => {
+                  if (!loadingMore) {
+                   
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loadingMore) {
+                   
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }
+                }}
+              >
+                {loadingMore ? ' Loading...' : 'Load More Sessions'}
+              </button>
+              <div style={{ 
+                fontSize: '12px', 
+                color: '#64748b', 
+                marginTop: '8px' 
+              }}>
+                Showing {sessionDetails.length} of {selectedPageSessions?.visits?.length || 0} sessions
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

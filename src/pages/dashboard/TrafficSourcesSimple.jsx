@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { trafficAPI } from '../../api/api'
 import { TrendingUp } from 'lucide-react'
+import { Skeleton, Box, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
 function TrafficSourcesSimple({ projectId }) {
+  const navigate = useNavigate()
   const [sources, setSources] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -25,6 +28,7 @@ function TrafficSourcesSimple({ projectId }) {
   const loadData = async () => {
     try {
       const sourcesRes = await trafficAPI.getSources(projectId)
+      console.log('🚦 Traffic Sources API Response:', sourcesRes.data)
       setSources(sourcesRes.data)
     } catch (error) {
       console.error('Error loading traffic data:', error)
@@ -56,7 +60,104 @@ function TrafficSourcesSimple({ projectId }) {
     return total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
   }
 
-  if (loading) return <div className="loading">Loading traffic sources...</div>
+  const handleSourceClick = (stdSource, data) => {
+    console.log('🖱️ Clicked source:', stdSource.name, 'Data:', data)
+    
+    if (data.count === 0) {
+      console.log('❌ No data for this source, not navigating')
+      return // Don't navigate if no data
+    }
+    
+    const sourceInfo = {
+      name: stdSource.name,
+      type: stdSource.type,
+      icon: stdSource.icon,
+      count: data.count,
+      bounceRate: data.bounceRate
+    }
+    
+    console.log('✅ Navigating to detail with:', sourceInfo)
+    
+    navigate('detail', {
+      state: { sourceInfo }
+    })
+  }
+
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Traffic Sources</h1>
+      </div>
+
+      <div className="content">
+        <Box className="chart-container">
+          {/* Header Row */}
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 120px 120px 200px 120px',
+            padding: '16px 24px',
+            borderBottom: '2px solid #e2e8f0',
+            background: '#f8fafc',
+            alignItems: 'center'
+          }}>
+            <Skeleton variant="text" width={100} height={13} animation="wave" />
+            <Skeleton variant="text" width={60} height={13} animation="wave" />
+            <Skeleton variant="text" width={60} height={13} animation="wave" />
+            <Skeleton variant="text" width={140} height={13} animation="wave" />
+          </Box>
+
+          {/* Table Rows */}
+          <Box>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
+              <Box key={idx} sx={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 120px 120px 200px 120px',
+                padding: '20px 24px',
+                borderBottom: idx < 7 ? '1px solid #f1f5f9' : 'none',
+                alignItems: 'center'
+              }}>
+                {/* Traffic Source Name */}
+                <Box>
+                  <Box sx={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    marginBottom: 0.5
+                  }}>
+                    <Box sx={{
+                      width: '4px',
+                      height: '20px',
+                      background: '#3b82f6',
+                      borderRadius: '2px'
+                    }} />
+                    <Skeleton variant="text" width={120} height={15} animation="wave" />
+                  </Box>
+                  <Box sx={{ marginLeft: 1.5 }}>
+                    <Skeleton variant="text" width={40} height={12} animation="wave" />
+                  </Box>
+                </Box>
+
+                {/* Sessions */}
+                <Box sx={{ textAlign: 'center' }}>
+                  <Skeleton variant="text" width={30} height={16} animation="wave" />
+                </Box>
+
+                {/* Bounce % */}
+                <Box sx={{ textAlign: 'center' }}>
+                  <Skeleton variant="text" width={40} height={16} animation="wave" />
+                </Box>
+
+                {/* Entire Log Sessions */}
+                <Box sx={{ textAlign: 'center' }}>
+                  <Skeleton variant="text" width={50} height={16} animation="wave" />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </div>
+    </>
+  )
 
   const totalSessions = getTotalSessions()
 
@@ -102,11 +203,23 @@ function TrafficSourcesSimple({ projectId }) {
                     padding: '20px 24px',
                     borderBottom: idx < standardSources.length - 1 ? '1px solid #f1f5f9' : 'none',
                     alignItems: 'center',
-                    transition: 'background 0.2s',
-                    opacity: data.count === 0 ? 0.5 : 1
+                    transition: 'all 0.2s',
+                    opacity: data.count === 0 ? 0.5 : 1,
+                    cursor: data.count > 0 ? 'pointer' : 'default'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    if (data.count > 0) {
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                  onClick={() => handleSourceClick(stdSource, data)}
                 >
                   {/* Traffic Source Name */}
                   <div>

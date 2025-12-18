@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { pagesAPI, visitorsAPI } from '../../api/api'
-import { FileText, LogIn, LogOut, Eye } from 'lucide-react'
-import VisitorPathSimple from './VisitorPathSimple'
+import { pagesAPI } from '../../api/api'
 import PagesSessionView from './PagesSessionView'
+import VisitorPathSimple from './VisitorPathSimple'
+import { Skeleton, Box, Tabs, Tab } from '@mui/material'
 
 function Pages({ projectId }) {
   const navigate = useNavigate()
@@ -12,28 +12,37 @@ function Pages({ projectId }) {
   const [entryPages, setEntryPages] = useState([])
   const [exitPages, setExitPages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [selectedPage, setSelectedPage] = useState(null)
   const [selectedVisitorId, setSelectedVisitorId] = useState(null)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [selectedPageSessions, setSelectedPageSessions] = useState(null)
+  
+  // Pagination states
+  const [pagination, setPagination] = useState({
+    entry: { limit: 10, hasMore: true, loadCount: 0 },
+    top: { limit: 10, hasMore: true, loadCount: 0 },
+    exit: { limit: 10, hasMore: true, loadCount: 0 }
+  })
 
   useEffect(() => {
-    loadData()
+    loadInitialData()
   }, [projectId])
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
+    setLoading(true)
     try {
       const [visited, entry, exit] = await Promise.all([
-        pagesAPI.getMostVisited(projectId),
-        pagesAPI.getEntryPages(projectId),
-        pagesAPI.getExitPages(projectId)
+        pagesAPI.getMostVisited(projectId, 10),
+        pagesAPI.getEntryPages(projectId, 10),
+        pagesAPI.getExitPages(projectId, 10)
       ])
-      // Backend returns array directly, not wrapped in {data: []}
+      
       const visitedData = Array.isArray(visited.data) ? visited.data : visited
       const entryData = Array.isArray(entry.data) ? entry.data : entry
       const exitData = Array.isArray(exit.data) ? exit.data : exit
       
-      console.log('📊 Pages API Response:')
+      console.log('📊 Pages API Response (Initial):')
       console.log('  Most Visited:', visitedData.length, 'pages')
       console.log('  Entry Pages:', entryData.length, 'pages')
       console.log('  Exit Pages:', exitData.length, 'pages')
@@ -41,6 +50,13 @@ function Pages({ projectId }) {
       setMostVisited(visitedData)
       setEntryPages(entryData)
       setExitPages(exitData)
+      
+      // Update hasMore based on returned data
+      setPagination({
+        entry: { limit: 10, hasMore: entryData.length === 10, loadCount: 0 },
+        top: { limit: 10, hasMore: visitedData.length === 10, loadCount: 0 },
+        exit: { limit: 10, hasMore: exitData.length === 10, loadCount: 0 }
+      })
     } catch (error) {
       console.error('Error loading pages:', error)
     } finally {
@@ -48,9 +64,126 @@ function Pages({ projectId }) {
     }
   }
 
+  const loadMoreData = async () => {
+    const tabKey = activeTab === 'top' ? 'top' : activeTab
+    const currentPagination = pagination[tabKey]
+    
+    if (!currentPagination.hasMore || loadingMore) return
+    
+    setLoadingMore(true)
+    try {
+      // Calculate increment: 3-4 items per load
+      const increment = currentPagination.loadCount % 2 === 0 ? 3 : 4
+      const newLimit = currentPagination.limit + increment
+      
+      console.log(`📥 Loading more ${activeTab} pages: ${currentPagination.limit} → ${newLimit}`)
+      
+      let response
+      if (activeTab === 'entry') {
+        response = await pagesAPI.getEntryPages(projectId, newLimit)
+      } else if (activeTab === 'top') {
+        response = await pagesAPI.getMostVisited(projectId, newLimit)
+      } else {
+        response = await pagesAPI.getExitPages(projectId, newLimit)
+      }
+      
+      const newData = Array.isArray(response.data) ? response.data : response
+      
+      // Update the appropriate state
+      if (activeTab === 'entry') {
+        setEntryPages(newData)
+      } else if (activeTab === 'top') {
+        setMostVisited(newData)
+      } else {
+        setExitPages(newData)
+      }
+      
+      // Update pagination
+      setPagination(prev => ({
+        ...prev,
+        [tabKey]: {
+          limit: newLimit,
+          hasMore: newData.length === newLimit,
+          loadCount: prev[tabKey].loadCount + 1
+        }
+      }))
+      
+      console.log(`✅ Loaded ${newData.length} ${activeTab} pages`)
+    } catch (error) {
+      console.error('Error loading more pages:', error)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
 
-  if (loading) return <div className="loading">Loading pages...</div>
+
+  if (loading) return (
+    <>
+      {/* Header */}
+      <div className="header">
+        <h1>Pages</h1>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 1, 
+          paddingRight: '40px',
+          alignItems: 'center'
+        }}>
+        </Box>
+      </div>
+
+      <div className="content">
+        {/* Tabs - Material-UI */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', marginBottom: 3 }}>
+          <Tabs value={0}>
+            <Tab label={<Skeleton variant="text" width={90} height={15} animation="wave" />} />
+            <Tab label={<Skeleton variant="text" width={80} height={15} animation="wave" />} />
+            <Tab label={<Skeleton variant="text" width={85} height={15} animation="wave" />} />
+          </Tabs>
+        </Box>
+
+        {/* Chart Container */}
+        <Box className="chart-container" sx={{ padding: 0, maxHeight: 'none', overflow: 'hidden' }}>
+          <Box sx={{ padding: '10px' }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
+              <Box key={idx} sx={{
+                borderBottom: idx < 7 ? '1px solid #e2e8f0' : 'none',
+                padding: '8px 20px'
+              }}>
+                {/* Page Info Skeleton */}
+                <Box sx={{ marginBottom: 0.5, padding: 0.5 }}>
+                  <Skeleton variant="text" width="70%" height={16} animation="wave" sx={{ marginBottom: 0.5 }} />
+                  <Skeleton variant="text" width="85%" height={12} animation="wave" />
+                </Box>
+
+                {/* Stats Row Skeleton */}
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px 4px'
+                }}>
+                  <Box sx={{ display: 'flex', gap: 2.5 }}>
+                    <Box>
+                      <Skeleton variant="text" width={40} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                      <Skeleton variant="text" width={30} height={14} animation="wave" />
+                    </Box>
+                    
+                    <Box>
+                      <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
+                      <Skeleton variant="text" width={25} height={14} animation="wave" />
+                    </Box>
+                  </Box>
+
+                  <Skeleton variant="rounded" width={100} height={24} animation="wave" />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </div>
+    </>
+  )
 
   const getCurrentData = () => {
     switch(activeTab) {
@@ -73,10 +206,13 @@ function Pages({ projectId }) {
 
   const handleSessionsClick = async (e, page) => {
     e.stopPropagation()
+    
     // Show all sessions for this page with complete journey
     if (page.visits && page.visits.length > 0) {
       setSelectedPageSessions(page)
       setShowAllSessions(true)
+    } else {
+      alert('No session data available for this page')
     }
   }
 
@@ -113,11 +249,13 @@ function Pages({ projectId }) {
 
   // Show visitor path if selected
   if (selectedVisitorId) {
-    return <VisitorPathSimple 
-      projectId={projectId} 
-      visitorId={selectedVisitorId}
-      onBack={() => setSelectedVisitorId(null)}
-    />
+    return (
+      <VisitorPathSimple 
+        projectId={projectId} 
+        visitorId={selectedVisitorId}
+        onBack={() => setSelectedVisitorId(null)}
+      />
+    )
   }
 
   return (
@@ -429,11 +567,26 @@ function Pages({ projectId }) {
                             onClick={(e) => handleSessionsClick(e, page)}
                             style={{ 
                               textAlign: 'center',
-                              cursor: page.visits && page.visits.length > 0 ? 'pointer' : 'default',
+                              cursor: page.visits && page.visits.length > 0 ? 'pointer' : 'not-allowed',
                               padding: '4px 8px',
                               borderRadius: '6px',
                               minWidth: '70px',
-                              userSelect: 'none'
+                              userSelect: 'none',
+                              backgroundColor: page.visits && page.visits.length > 0 ? '#f0f9ff' : '#f8fafc',
+                              border: page.visits && page.visits.length > 0 ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (page.visits && page.visits.length > 0) {
+                                e.currentTarget.style.backgroundColor = '#dbeafe'
+                                e.currentTarget.style.transform = 'scale(1.05)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (page.visits && page.visits.length > 0) {
+                                e.currentTarget.style.backgroundColor = '#f0f9ff'
+                                e.currentTarget.style.transform = 'scale(1)'
+                              }
                             }}
                           >
                             <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '1px' }}>
@@ -457,6 +610,42 @@ function Pages({ projectId }) {
 
                   </div>
                 ))}
+                
+                {/* Load More Button */}
+                {pagination[activeTab === 'top' ? 'top' : activeTab]?.hasMore && (
+                  <div style={{ padding: '20px', textAlign: 'center' }}>
+                    <button
+                      onClick={loadMoreData}
+                      disabled={loadingMore}
+                      style={{
+                        background: loadingMore ? '#f1f5f9' : '#3b82f6',
+                        color: loadingMore ? '#64748b' : 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '12px 24px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: loadingMore ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        minWidth: '120px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!loadingMore) {
+                          e.currentTarget.style.background = '#2563eb'
+                          e.currentTarget.style.transform = 'translateY(-1px)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!loadingMore) {
+                          e.currentTarget.style.background = '#3b82f6'
+                          e.currentTarget.style.transform = 'translateY(0)'
+                        }
+                      }}
+                    >
+                      {loadingMore ? ' Loading...' : 'load more'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <p style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No data available</p>

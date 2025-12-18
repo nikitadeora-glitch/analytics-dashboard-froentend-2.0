@@ -11,6 +11,7 @@ function VisitorPath({ projectId }) {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedVisitorSessions, setSelectedVisitorSessions] = useState(null)
   const [loadingVisitorSessions, setLoadingVisitorSessions] = useState(false)
+  const [displayCount, setDisplayCount] = useState(10)
 
   useEffect(() => {
     loadVisitors()
@@ -52,6 +53,10 @@ function VisitorPath({ projectId }) {
   const closeModal = () => {
     setSelectedReferrer(null)
     setSelectedVisitorSessions(null)
+  }
+
+  const loadMore = () => {
+    setDisplayCount(prev => prev + 4)
   }
 
   const getCountryCode = (country) => {
@@ -110,7 +115,70 @@ function VisitorPath({ projectId }) {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   }
 
-  if (loading) return <div className="loading">Loading visitor paths...</div>
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Visitor Paths</h1>
+      </div>
+
+      <div className="content">
+        <div className="chart-container">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} style={{
+              padding: '20px',
+              borderBottom: i < 6 ? '1px solid #e2e8f0' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <div style={{ 
+                background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeleton-loading 1.5s infinite',
+                height: '40px',
+                width: '40px',
+                borderRadius: '50%'
+              }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '16px',
+                  width: '120px',
+                  borderRadius: '4px',
+                  marginBottom: '4px'
+                }} />
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '12px',
+                  width: '200px',
+                  borderRadius: '4px'
+                }} />
+              </div>
+              <div style={{ 
+                background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeleton-loading 1.5s infinite',
+                height: '14px',
+                width: '80px',
+                borderRadius: '4px'
+              }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <style>{`
+        @keyframes skeleton-loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </>
+  )
 
   // If visitor sessions are selected, show them on the page (not in popup)
   if (selectedVisitorSessions) {
@@ -1078,7 +1146,7 @@ function VisitorPath({ projectId }) {
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden', width: '100%' }}>
           {visitors.length > 0 ? (
             <div>
-              {visitors.map((visitor, idx) => (
+              {visitors.slice(0, displayCount).map((visitor, idx) => (
                 <div 
                   key={idx}
                   style={{
@@ -1160,6 +1228,34 @@ function VisitorPath({ projectId }) {
                   </div>
                 </div>
               ))}
+              
+              {/* Load More Button */}
+              {displayCount < visitors.length && (
+                <div style={{ 
+                  padding: '20px', 
+                  textAlign: 'center',
+                  borderTop: '1px solid #e2e8f0'
+                }}>
+                  <button 
+                    onClick={loadMore}
+                    style={{
+                      padding: '10px 24px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                  >
+                    Load More ({visitors.length - displayCount} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>

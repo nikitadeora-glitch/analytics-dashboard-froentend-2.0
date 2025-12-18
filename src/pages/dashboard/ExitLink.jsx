@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { trafficAPI, pagesAPI } from '../../api/api'
 import { Filter, Download, ExternalLink, LogOut, Search } from 'lucide-react'
+import { Skeleton, Box } from '@mui/material'
 
 function ExitLink({ projectId }) {
   const [activeTab, setActiveTab] = useState('external')
@@ -58,7 +59,33 @@ function ExitLink({ projectId }) {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   }
 
-  if (loading) return <div className="loading">Loading exit links...</div>
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Exit Links</h1>
+      </div>
+
+      <div className="content">
+        <Box className="chart-container">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <Box key={i} sx={{
+              padding: '16px 20px',
+              borderBottom: i < 8 ? '1px solid #e2e8f0' : 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Box sx={{ flex: 1 }}>
+                <Skeleton variant="text" width={250} height={16} animation="wave" sx={{ marginBottom: 0.5 }} />
+                <Skeleton variant="text" width={180} height={12} animation="wave" />
+              </Box>
+              <Skeleton variant="text" width={60} height={14} animation="wave" />
+            </Box>
+          ))}
+        </Box>
+      </div>
+    </>
+  )
 
   return (
     <>

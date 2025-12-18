@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
-import { ExternalLink, Search } from 'lucide-react'
+import { ExternalLink, Search, ChevronDown } from 'lucide-react'
+import { Skeleton, Box, List, ListItem } from '@mui/material'
 
 function CameFrom({ projectId }) {
-  const [visitors, setVisitors] = useState([])
+  const [allVisitors, setAllVisitors] = useState([])
+  const [displayedVisitors, setDisplayedVisitors] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [selectedReferrer, setSelectedReferrer] = useState(null)
 
   useEffect(() => {
@@ -18,12 +23,38 @@ function CameFrom({ projectId }) {
       const referralVisitors = response.data.filter(visitor => 
         visitor.referrer && visitor.referrer !== 'direct' && visitor.referrer.trim() !== ''
       )
-      setVisitors(referralVisitors)
+      
+      setAllVisitors(referralVisitors)
+      // Initially show first 10 items
+      const initialChunk = referralVisitors.slice(0, 10)
+      setDisplayedVisitors(initialChunk)
+      setCurrentIndex(10)
+      setHasMore(referralVisitors.length > 10)
     } catch (error) {
       console.error('Error loading visitors:', error)
+      setAllVisitors([])
+      setDisplayedVisitors([])
+      setHasMore(false)
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return
+    
+    setLoadingMore(true)
+    
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      const nextChunkSize = Math.floor(Math.random() * 2) + 3 // Random between 3-4
+      const nextChunk = allVisitors.slice(currentIndex, currentIndex + nextChunkSize)
+      
+      setDisplayedVisitors(prev => [...prev, ...nextChunk])
+      setCurrentIndex(prev => prev + nextChunkSize)
+      setHasMore(currentIndex + nextChunkSize < allVisitors.length)
+      setLoadingMore(false)
+    }, 500)
   }
 
 
@@ -42,7 +73,33 @@ function CameFrom({ projectId }) {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   }
 
-  if (loading) return <div className="loading">Loading referrer data...</div>
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Came From</h1>
+      </div>
+
+      <div className="content">
+        <Box className="chart-container">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <Box key={i} sx={{
+              padding: '16px 20px',
+              borderBottom: i < 8 ? '1px solid #e2e8f0' : 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Box sx={{ flex: 1 }}>
+                <Skeleton variant="text" width={200} height={16} animation="wave" sx={{ marginBottom: 0.5 }} />
+                <Skeleton variant="text" width={150} height={12} animation="wave" />
+              </Box>
+              <Skeleton variant="text" width={80} height={14} animation="wave" />
+            </Box>
+          ))}
+        </Box>
+      </div>
+    </>
+  )
 
   return (
     <>
@@ -225,7 +282,7 @@ function CameFrom({ projectId }) {
 
         {/* Referrer Table */}
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
-          {visitors.length > 0 ? (
+          {displayedVisitors.length > 0 ? (
             <div>
               {/* Table Header */}
               <div style={{
@@ -249,14 +306,14 @@ function CameFrom({ projectId }) {
               </div>
 
               {/* Table Rows */}
-              {visitors.map((visitor, idx) => (
+              {displayedVisitors.map((visitor, idx) => (
                 <div 
                   key={idx}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 1fr',
                     padding: '16px 24px',
-                    borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
+                    borderBottom: idx < displayedVisitors.length - 1 ? '1px solid #e2e8f0' : 'none',
                     alignItems: 'start',
                     gap: '12px',
                     minWidth: 0,
@@ -325,8 +382,73 @@ function CameFrom({ projectId }) {
               <p style={{ fontSize: '14px' }}>Only visitors from external referrers are shown here</p>
             </div>
           )}
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div style={{ 
+              padding: '20px', 
+              textAlign: 'center', 
+              borderTop: '1px solid #e2e8f0' 
+            }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  backgroundColor: loadingMore ? '#f1f5f9' : '#3b82f6',
+                  color: loadingMore ? '#64748b' : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: loadingMore ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!loadingMore) {
+                    e.currentTarget.style.backgroundColor = '#2563eb'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loadingMore) {
+                    e.currentTarget.style.backgroundColor = '#3b82f6'
+                  }
+                }}
+              >
+                {loadingMore ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #64748b',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={16} />
+                    Load More ({allVisitors.length - currentIndex} remaining)
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
+      
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   )
 }

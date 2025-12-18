@@ -1,24 +1,71 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
-import { Eye } from 'lucide-react'
+import { Eye, ChevronDown } from 'lucide-react'
 
 function PagesView({ projectId }) {
-  const [visitors, setVisitors] = useState([])
+  const [allVisitors, setAllVisitors] = useState([])
+  const [displayedVisitors, setDisplayedVisitors] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
-    loadVisitors()
+    console.log('🎯 PagesView useEffect - projectId:', projectId)
+    if (projectId) {
+      loadVisitors()
+    } else {
+      console.log('❌ No projectId provided')
+      setLoading(false)
+    }
   }, [projectId])
 
   const loadVisitors = async () => {
     try {
+      console.log('🔄 Loading visitors for project:', projectId)
       const response = await visitorsAPI.getActivity(projectId, 100)
-      setVisitors(response.data)
+      console.log('✅ API Response:', response.data)
+      console.log('📊 Data length:', response.data?.length)
+      
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setAllVisitors(response.data)
+        // Initially show first 10 items
+        const initialChunk = response.data.slice(0, 10)
+        setDisplayedVisitors(initialChunk)
+        setCurrentIndex(10)
+        setHasMore(response.data.length > 10)
+        console.log('✅ Visitors data loaded successfully')
+      } else {
+        console.log('⚠️ No visitors data received')
+        setAllVisitors([])
+        setDisplayedVisitors([])
+        setHasMore(false)
+      }
     } catch (error) {
-      console.error('Error loading visitors:', error)
+      console.error('❌ Error loading visitors:', error)
+      setAllVisitors([])
+      setDisplayedVisitors([])
+      setHasMore(false)
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return
+    
+    setLoadingMore(true)
+    
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      const nextChunkSize = Math.floor(Math.random() * 2) + 3 // Random between 3-4
+      const nextChunk = allVisitors.slice(currentIndex, currentIndex + nextChunkSize)
+      
+      setDisplayedVisitors(prev => [...prev, ...nextChunk])
+      setCurrentIndex(prev => prev + nextChunkSize)
+      setHasMore(currentIndex + nextChunkSize < allVisitors.length)
+      setLoadingMore(false)
+    }, 500)
   }
 
   const getCountryFlag = (country) => {
@@ -39,7 +86,76 @@ function PagesView({ projectId }) {
     return '💻'
   }
 
-  if (loading) return <div className="loading">Loading pages...</div>
+  if (loading) return (
+    <>
+      <div className="header">
+        <h1>Pages View</h1>
+      </div>
+
+      <div className="content">
+        <div className="chart-container">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} style={{
+              padding: '16px 20px',
+              borderBottom: i < 8 ? '1px solid #e2e8f0' : 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '16px',
+                  width: '70%',
+                  borderRadius: '4px',
+                  marginBottom: '4px'
+                }} />
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '12px',
+                  width: '85%',
+                  borderRadius: '4px'
+                }} />
+              </div>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '14px',
+                  width: '40px',
+                  borderRadius: '4px'
+                }} />
+                <div style={{ 
+                  background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s infinite',
+                  height: '14px',
+                  width: '60px',
+                  borderRadius: '4px'
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <style>{`
+        @keyframes skeleton-loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </>
+  )
 
   return (
     <>
@@ -86,8 +202,8 @@ function PagesView({ projectId }) {
           </div>
 
           {/* Table Rows */}
-          {visitors.length > 0 ? (
-            visitors.map((visitor, idx) => {
+          {displayedVisitors.length > 0 ? (
+            displayedVisitors.map((visitor, idx) => {
               const visitDate = new Date(visitor.visited_at)
               const deviceIcon = getDeviceIcon(visitor.device)
               const referrerText = visitor.referrer && visitor.referrer !== 'direct' 
@@ -116,7 +232,7 @@ function PagesView({ projectId }) {
                     display: 'grid',
                     gridTemplateColumns: '80px 100px 50px 200px 250px 1fr',
                     padding: '14px 16px',
-                    borderBottom: idx < visitors.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    borderBottom: idx < displayedVisitors.length - 1 ? '1px solid #f1f5f9' : 'none',
                     alignItems: 'start',
                     gap: '12px',
                     minWidth: 0,
@@ -248,6 +364,64 @@ function PagesView({ projectId }) {
               <Eye size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
               <p style={{ fontSize: '16px', fontWeight: '500' }}>No page data yet</p>
               <p style={{ fontSize: '14px' }}>Start tracking visitors to see page views</p>
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div style={{ 
+              padding: '20px', 
+              textAlign: 'center', 
+              borderTop: '1px solid #f1f5f9' 
+            }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  backgroundColor: loadingMore ? '#f1f5f9' : '#3b82f6',
+                  color: loadingMore ? '#64748b' : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: loadingMore ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!loadingMore) {
+                    e.currentTarget.style.backgroundColor = '#2563eb'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loadingMore) {
+                    e.currentTarget.style.backgroundColor = '#3b82f6'
+                  }
+                }}
+              >
+                {loadingMore ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #64748b',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={16} />
+                    Load More ({allVisitors.length - currentIndex} remaining)
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
