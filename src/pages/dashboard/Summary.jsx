@@ -29,7 +29,7 @@ function Summary({ projectId }) {
 
   const loadSummary = async () => {
     try {
-      const response = await analyticsAPI.getSummary(projectId, dateRange)
+      const response = await analyticsAPI.getSummaryView(projectId, dateRange)
       setData(response.data)
       setCurrentPage(0)
     } catch (error) {
@@ -73,19 +73,19 @@ function Summary({ projectId }) {
         {/* Chart Container */}
         <Box className="chart-container">
           {/* Controls Bar */}
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 2.5, 
-            padding: '10px 20px', 
-            borderBottom: '1px solid #e2e8f0' 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 2.5,
+            padding: '10px 20px',
+            borderBottom: '1px solid #e2e8f0'
           }}>
             <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center' }}>
               <Skeleton variant="rounded" width={120} height={36} animation="wave" />
               <Skeleton variant="rounded" width={100} height={36} animation="wave" />
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Skeleton variant="text" width={80} height={14} animation="wave" />
               <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -145,22 +145,22 @@ function Summary({ projectId }) {
     filteredData = weeks
   } else if (period === 'monthly') {
     const months = {}
-    ;(data.daily_stats || []).forEach(day => {
-      const monthKey = day.date.split(' ').slice(0, 2).join(' ')
-      if (!months[monthKey]) {
-        months[monthKey] = {
-          date: monthKey,
-          page_views: 0,
-          unique_visits: 0,
-          first_time_visits: 0,
-          returning_visits: 0
+      ; (data.daily_stats || []).forEach(day => {
+        const monthKey = day.date.split(' ').slice(0, 2).join(' ')
+        if (!months[monthKey]) {
+          months[monthKey] = {
+            date: monthKey,
+            page_views: 0,
+            unique_visits: 0,
+            first_time_visits: 0,
+            returning_visits: 0
+          }
         }
-      }
-      months[monthKey].page_views += day.page_views
-      months[monthKey].unique_visits += day.unique_visits
-      months[monthKey].first_time_visits += day.first_time_visits
-      months[monthKey].returning_visits += day.returning_visits
-    })
+        months[monthKey].page_views += day.page_views
+        months[monthKey].unique_visits += day.unique_visits
+        months[monthKey].first_time_visits += day.first_time_visits
+        months[monthKey].returning_visits += day.returning_visits
+      })
     filteredData = Object.values(months)
   }
 
@@ -168,7 +168,7 @@ function Summary({ projectId }) {
   const itemsPerPage = 7
   const start = currentPage * itemsPerPage
   const end = start + itemsPerPage
-  
+
   const displayData = filteredData.slice(start, end)
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
   const isLastPage = currentPage >= totalPages - 1
@@ -197,15 +197,15 @@ function Summary({ projectId }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <div 
+                <div
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                  style={{ 
-                    padding: '8px 40px 8px 16px', 
-                    borderRadius: '6px', 
-                    border: '1px solid #cbd5e1', 
-                    background: '#1e40af', 
-                    color: 'white', 
-                    fontWeight: '500', 
+                  style={{
+                    padding: '8px 40px 8px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#1e40af',
+                    color: 'white',
+                    fontWeight: '500',
                     fontSize: '13px',
                     minWidth: '120px',
                     position: 'relative',
@@ -215,7 +215,7 @@ function Summary({ projectId }) {
                 >
                   {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
                 </div>
-                <div 
+                <div
                   style={{
                     position: 'absolute',
                     right: '0',
@@ -237,7 +237,7 @@ function Summary({ projectId }) {
                 </div>
                 {showPeriodDropdown && (
                   <>
-                    <div 
+                    <div
                       onClick={() => setShowPeriodDropdown(false)}
                       style={{
                         position: 'fixed',
@@ -293,7 +293,7 @@ function Summary({ projectId }) {
                 )}
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
@@ -301,13 +301,13 @@ function Summary({ projectId }) {
                     setCurrentPage(0)
                   }}
                   disabled={isFirstPage}
-                  style={{ 
-                    padding: '8px 12px', 
-                    background: isFirstPage ? '#64748b' : '#1e40af', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: isFirstPage ? 'not-allowed' : 'pointer', 
+                  style={{
+                    padding: '8px 12px',
+                    background: isFirstPage ? '#64748b' : '#1e40af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isFirstPage ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     opacity: isFirstPage ? 0.6 : 1,
                     transition: 'all 0.2s ease',
@@ -328,7 +328,7 @@ function Summary({ projectId }) {
                   }}
                   title="First page"
                 >«</button>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
@@ -336,13 +336,13 @@ function Summary({ projectId }) {
                     if (!isFirstPage) setCurrentPage(currentPage - 1)
                   }}
                   disabled={isFirstPage}
-                  style={{ 
-                    padding: '8px 12px', 
-                    background: isFirstPage ? '#64748b' : '#1e40af', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: isFirstPage ? 'not-allowed' : 'pointer', 
+                  style={{
+                    padding: '8px 12px',
+                    background: isFirstPage ? '#64748b' : '#1e40af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isFirstPage ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     opacity: isFirstPage ? 0.6 : 1,
                     transition: 'all 0.2s ease',
@@ -363,7 +363,7 @@ function Summary({ projectId }) {
                   }}
                   title="Previous"
                 >‹</button>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
@@ -371,13 +371,13 @@ function Summary({ projectId }) {
                     if (!isLastPage) setCurrentPage(currentPage + 1)
                   }}
                   disabled={isLastPage}
-                  style={{ 
-                    padding: '8px 12px', 
-                    background: isLastPage ? '#64748b' : '#1e40af', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: isLastPage ? 'not-allowed' : 'pointer', 
+                  style={{
+                    padding: '8px 12px',
+                    background: isLastPage ? '#64748b' : '#1e40af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isLastPage ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     opacity: isLastPage ? 0.6 : 1,
                     transition: 'all 0.2s ease',
@@ -398,7 +398,7 @@ function Summary({ projectId }) {
                   }}
                   title="Next"
                 >›</button>
-                <button 
+                <button
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
@@ -406,13 +406,13 @@ function Summary({ projectId }) {
                     if (!isLastPage) setCurrentPage(totalPages - 1)
                   }}
                   disabled={isLastPage}
-                  style={{ 
-                    padding: '8px 12px', 
-                    background: isLastPage ? '#64748b' : '#1e40af', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: isLastPage ? 'not-allowed' : 'pointer', 
+                  style={{
+                    padding: '8px 12px',
+                    background: isLastPage ? '#64748b' : '#1e40af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isLastPage ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     opacity: isLastPage ? 0.6 : 1,
                     transition: 'all 0.2s ease',
@@ -435,15 +435,15 @@ function Summary({ projectId }) {
                 >»</button>
               </div>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <div 
+                <div
                   onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
-                  style={{ 
-                    padding: '8px 40px 8px 16px', 
-                    background: '#f1f5f9', 
-                    color: '#475569', 
-                    border: '1px solid #cbd5e1', 
-                    borderRadius: '6px', 
-                    fontSize: '13px', 
+                  style={{
+                    padding: '8px 40px 8px 16px',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     minWidth: '160px',
                     position: 'relative',
@@ -451,9 +451,9 @@ function Summary({ projectId }) {
                     cursor: 'pointer'
                   }}
                 >
-                 Last {dateRange} Days
+                  Last {dateRange} Days
                 </div>
-                <div 
+                <div
                   style={{
                     position: 'absolute',
                     right: '0',
@@ -475,7 +475,7 @@ function Summary({ projectId }) {
                 </div>
                 {showDateRangeDropdown && (
                   <>
-                    <div 
+                    <div
                       onClick={() => setShowDateRangeDropdown(false)}
                       style={{
                         position: 'fixed',
@@ -522,7 +522,7 @@ function Summary({ projectId }) {
                             if (dateRange !== days) e.currentTarget.style.background = 'white'
                           }}
                         >
-                        Last {days} Days
+                          Last {days} Days
                         </div>
                       ))}
                     </div>
@@ -532,42 +532,42 @@ function Summary({ projectId }) {
             </div>
             <div style={{ display: 'flex', gap: '15px', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showPageViews}
                   onChange={(e) => setShowPageViews(e.target.checked)}
-                  style={{ accentColor: '#10b981', cursor: 'pointer' }} 
+                  style={{ accentColor: '#10b981', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Page Views</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showUniqueVisits}
                   onChange={(e) => setShowUniqueVisits(e.target.checked)}
-                  style={{ accentColor: '#3b82f6', cursor: 'pointer' }} 
+                  style={{ accentColor: '#3b82f6', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Unique Visits</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showReturningVisits}
                   onChange={(e) => setShowReturningVisits(e.target.checked)}
-                  style={{ accentColor: '#f59e0b', cursor: 'pointer' }} 
+                  style={{ accentColor: '#f59e0b', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Returning Visits</span>
               </label>
             </div>
           </div>
-          
+
           <div style={{ position: 'relative', padding: '20px 0' }} key={`page-${currentPage}`}>
-            <div style={{ 
-              borderBottom: '2px solid #e2e8f0', 
+            <div style={{
+              borderBottom: '2px solid #e2e8f0',
               paddingBottom: '20px',
               marginBottom: '8px'
             }}>
-              <BarChart 
+              <BarChart
                 displayData={displayData}
                 showPageViews={showPageViews}
                 showUniqueVisits={showUniqueVisits}
@@ -575,25 +575,25 @@ function Summary({ projectId }) {
                 period={period}
               />
             </div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               marginTop: '16px'
             }}>
               <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
                 {displayData[0]?.date.split(',')[0]}
               </span>
-              
-              <span style={{ 
-                padding: '6px 16px', 
-                fontSize: '12px', 
-                color: '#64748b', 
+
+              <span style={{
+                padding: '6px 16px',
+                fontSize: '12px',
+                color: '#64748b',
                 fontWeight: '600',
               }}>
                 Page {currentPage + 1} of {totalPages}
               </span>
-              
+
               <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
                 {displayData[displayData.length - 1]?.date.split(',')[0]}
               </span>
@@ -633,9 +633,9 @@ function Summary({ projectId }) {
             </thead>
             <tbody>
               {displayData.map((day, idx) => (
-                <tr 
-                  key={idx} 
-                  style={{ 
+                <tr
+                  key={idx}
+                  style={{
                     borderBottom: '1px solid #e2e8f0',
                     transition: 'all 0.2s ease'
                   }}
@@ -646,11 +646,11 @@ function Summary({ projectId }) {
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
-                  <td 
+                  <td
                     onClick={() => handleDateClick(day)}
-                    style={{ 
-                      padding: '12px', 
-                      color: '#1e40af', 
+                    style={{
+                      padding: '12px',
+                      color: '#1e40af',
                       fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease'
@@ -664,7 +664,7 @@ function Summary({ projectId }) {
                       e.currentTarget.style.transform = 'scale(1)'
                     }}
                   >
-                     {day.date}
+                    {day.date}
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.page_views}</td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.unique_visits}</td>

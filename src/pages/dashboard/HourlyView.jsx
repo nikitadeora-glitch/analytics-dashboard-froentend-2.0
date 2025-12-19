@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Skeleton } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { analyticsAPI } from '../../api/api'
@@ -21,16 +22,35 @@ function HourlyView({ projectId }) {
     try {
       setLoading(true)
       console.log('🕐 Loading hourly data for date:', date)
-      
+
       // Call real API to get hourly data
       const response = await analyticsAPI.getHourlyData(projectId, date)
       console.log('✅ Hourly data loaded:', response.data)
-      
-      setData(response.data)
+
+      // Post-process data to convert UTC hours to IST
+      const processedData = {
+        ...response.data,
+        hourly_stats: response.data.hourly_stats.map(stat => {
+          const istTime = formatHourToIST(response.data.date, stat.date);
+          const [hour, minute] = istTime.split(':');
+          const endHour = minute === '30' ? hour : String(Number(hour)).padStart(2, '0');
+          const endMinute = minute === '30' ? '29' : '59';
+
+          return {
+            ...stat,
+            // Store original UTC for reference if needed, but display IST
+            utc_date: stat.date,
+            date: istTime,
+            timeRange: `${istTime}-${endHour}:${endMinute}`
+          };
+        })
+      };
+
+      setData(processedData)
     } catch (error) {
       console.error('❌ Error loading hourly data:', error)
       console.error('❌ Error details:', error.response?.data)
-      
+
       // Fallback to sample data if API fails
       console.log('🔄 Falling back to sample data')
       const hourlyData = generateSampleHourlyData(date)
@@ -40,18 +60,38 @@ function HourlyView({ projectId }) {
     }
   }
 
+  // Helper to convert UTC hour to IST
+  const formatHourToIST = (dateStr, hourStr) => {
+    try {
+      // hourStr is "HH:00"
+      // dateStr is "Mon, 16 Dec 2024" or similar
+      const d = new Date(`${dateStr} ${hourStr}:00 UTC`);
+
+      if (isNaN(d.getTime())) return hourStr; // Fallback
+
+      return d.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (e) {
+      return hourStr;
+    }
+  }
+
   const generateSampleHourlyData = (selectedDate) => {
     const hours = []
     for (let i = 0; i < 24; i++) {
       const hour = i.toString().padStart(2, '0')
       const timeRange = `${hour}:00-${hour}:59`
-      
+
       // Generate realistic sample data based on time of day
       let pageViews = 0
       let uniqueVisits = 0
       let firstTimeVisits = 0
       let returningVisits = 0
-      
+
       if (i >= 9 && i <= 17) { // Business hours
         pageViews = Math.floor(Math.random() * 20) + 5
         uniqueVisits = Math.floor(pageViews * 0.6)
@@ -68,7 +108,7 @@ function HourlyView({ projectId }) {
         firstTimeVisits = Math.floor(uniqueVisits * 0.9)
         returningVisits = uniqueVisits - firstTimeVisits
       }
-      
+
       hours.push({
         date: `${hour}:00`,
         timeRange,
@@ -78,14 +118,14 @@ function HourlyView({ projectId }) {
         returning_visits: returningVisits
       })
     }
-    
+
     const totals = hours.reduce((acc, hour) => ({
       page_views: acc.page_views + hour.page_views,
       unique_visits: acc.unique_visits + hour.unique_visits,
       first_time_visits: acc.first_time_visits + hour.first_time_visits,
       returning_visits: acc.returning_visits + hour.returning_visits
     }), { page_views: 0, unique_visits: 0, first_time_visits: 0, returning_visits: 0 })
-    
+
     return {
       date: selectedDate,
       hourly_stats: hours,
@@ -101,30 +141,72 @@ function HourlyView({ projectId }) {
 
   if (loading) {
     return (
-      <div className="content">
+      <>
         <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-          <button
-            onClick={() => navigate(`/dashboard/project/${projectId}/summary`)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              background: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              color: '#475569',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            <ArrowLeft size={16} />
-            Back to Summary
-          </button>
-          <h1>Loading Hourly Data...</h1>
+          <Skeleton variant="rectangular" width={140} height={40} sx={{ borderRadius: '6px' }} />
         </div>
-      </div>
+
+        <div className="content">
+          {/* Summary Cards Skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0', marginBottom: '30px' }}>
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="stat-card">
+                <Skeleton variant="text" width={100} height={20} sx={{ marginBottom: '8px' }} />
+                <Skeleton variant="rectangular" width={60} height={40} />
+              </div>
+            ))}
+          </div>
+
+          {/* Hourly Chart Skeleton */}
+          <div className="chart-container" style={{ marginBottom: '30px' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              padding: '10px 20px',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <Skeleton variant="text" width={150} height={30} />
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <Skeleton variant="text" width={80} height={20} />
+                <Skeleton variant="text" width={80} height={20} />
+                <Skeleton variant="text" width={80} height={20} />
+              </div>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </div>
+          </div>
+
+          {/* Hourly Data Table Skeleton */}
+          <div className="chart-container">
+            <div style={{ padding: '10px 20px', borderBottom: '1px solid #e2e8f0', height: '50px' }}></div>
+            <table style={{ width: '100%' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <th key={i} style={{ padding: '12px' }}>
+                      <Skeleton variant="text" width="80%" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4, 5].map((row) => (
+                  <tr key={row} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    {[1, 2, 3, 4, 5].map((col) => (
+                      <td key={col} style={{ padding: '12px' }}>
+                        <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
     )
   }
 
@@ -188,7 +270,7 @@ function HourlyView({ projectId }) {
           <ArrowLeft size={16} />
           Back to Summary
         </button>
-       
+
       </div>
 
       <div className="content">
@@ -214,50 +296,50 @@ function HourlyView({ projectId }) {
 
         {/* Hourly Chart */}
         <div className="chart-container" style={{ marginBottom: '30px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '20px', 
-            padding: '10px 20px', 
-            borderBottom: '1px solid #e2e8f0' 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            padding: '10px 20px',
+            borderBottom: '1px solid #e2e8f0'
           }}>
             <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', margin: 0 }}>
               Hourly Breakdown
             </h2>
             <div style={{ display: 'flex', gap: '15px', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showPageViews}
                   onChange={(e) => setShowPageViews(e.target.checked)}
-                  style={{ accentColor: '#10b981', cursor: 'pointer' }} 
+                  style={{ accentColor: '#10b981', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Page Views</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showUniqueVisits}
                   onChange={(e) => setShowUniqueVisits(e.target.checked)}
-                  style={{ accentColor: '#3b82f6', cursor: 'pointer' }} 
+                  style={{ accentColor: '#3b82f6', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Unique Visits</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showReturningVisits}
                   onChange={(e) => setShowReturningVisits(e.target.checked)}
-                  style={{ accentColor: '#f59e0b', cursor: 'pointer' }} 
+                  style={{ accentColor: '#f59e0b', cursor: 'pointer' }}
                 />
                 <span style={{ color: '#475569' }}>Returning Visits</span>
               </label>
             </div>
           </div>
-          
+
           <div style={{ position: 'relative', padding: '20px 0' }}>
-            <BarChart 
+            <BarChart
               displayData={data.hourly_stats}
               showPageViews={showPageViews}
               showUniqueVisits={showUniqueVisits}
@@ -272,12 +354,12 @@ function HourlyView({ projectId }) {
 
         {/* Hourly Data Table */}
         <div className="chart-container">
-          <div style={{ 
-            padding: '10px 20px', 
+          <div style={{
+            padding: '10px 20px',
             borderBottom: '1px solid #e2e8f0',
             marginBottom: '0'
           }}>
-           
+
           </div>
           <table style={{ width: '100%' }}>
             <thead>
@@ -291,9 +373,9 @@ function HourlyView({ projectId }) {
             </thead>
             <tbody>
               {data.hourly_stats.map((hour, idx) => (
-                <tr 
+                <tr
                   key={idx}
-                  style={{ 
+                  style={{
                     borderBottom: '1px solid #e2e8f0',
                     transition: 'all 0.2s ease'
                   }}

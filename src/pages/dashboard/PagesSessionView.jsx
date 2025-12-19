@@ -6,7 +6,7 @@ import { Skeleton, Box } from '@mui/material'
 function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack }) {
   const dispatch = useDispatch()
   const { sessionDetails, loading, loadingMore, error, hasMore, currentLimit } = useSelector(state => state.session)
-  
+
   // Local state for pagination
   const [loadCount, setLoadCount] = useState(0)
 
@@ -16,7 +16,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
       setLoadCount(0)
       dispatch(fetchSessionDetails({ projectId, selectedPageSessions, limit: 3 }))
     }
-    
+
     // Cleanup on unmount
     return () => {
       dispatch(clearSessionDetails())
@@ -25,19 +25,19 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
   const handleLoadMore = () => {
     if (loadingMore || !hasMore) return
-    
+
     // Calculate increment: 3-4 items per load
     const increment = loadCount % 2 === 0 ? 3 : 4
     const newLimit = currentLimit + increment
-    
+
     console.log(`📥 Loading more sessions: ${currentLimit} → ${newLimit}`)
-    
-    dispatch(fetchMoreSessionDetails({ 
-      projectId, 
-      selectedPageSessions, 
-      limit: newLimit 
+
+    dispatch(fetchMoreSessionDetails({
+      projectId,
+      selectedPageSessions,
+      limit: newLimit
     }))
-    
+
     setLoadCount(prev => prev + 1)
   }
 
@@ -47,15 +47,15 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     if (seconds === null || seconds === undefined || seconds === '' || isNaN(seconds)) {
       return '0s'
     }
-    
+
     const totalSeconds = Math.floor(Number(seconds))
-    
+
     if (totalSeconds <= 0) return '0s'
-    
+
     const hours = Math.floor(totalSeconds / 3600)
     const mins = Math.floor((totalSeconds % 3600) / 60)
     const secs = totalSeconds % 60
-    
+
     if (hours > 0) {
       return `${hours}h ${mins}m ${secs}s`
     } else if (mins > 0) {
@@ -100,13 +100,38 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     return codes[country] || 'XX'
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    // If it doesn't end with 'Z' and doesn't have offset info (like +05:30), append 'Z'
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   if (loading) return (
     <>
       {/* Header */}
       <div className="header">
         <div>
           <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
-          <button 
+          <button
             onClick={onBack}
             style={{
               padding: '8px 16px',
@@ -131,7 +156,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
         <div className="chart-container" style={{ padding: 0 }}>
           {/* Optimized Material UI Skeleton Loader */}
           {[1].map((idx) => (
-            <Box 
+            <Box
               key={idx}
               sx={{
                 padding: '10px 20px',
@@ -196,14 +221,14 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
               {/* User Journey Skeleton - Only for entry and top pages */}
               {pageType !== 'exit' && (
-                <Box sx={{ 
+                <Box sx={{
                   marginTop: '16px',
                   paddingLeft: '20px'
                 }}>
                   <Skeleton variant="text" width={150} height={14} animation="wave" sx={{ marginBottom: '12px' }} />
-                  
+
                   {[1, 2].map((pidx) => (
-                    <Box 
+                    <Box
                       key={pidx}
                       sx={{
                         display: 'grid',
@@ -239,7 +264,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
       </div>
     </>
   )
-  
+
   if (error) {
     console.error('Session loading error:', error)
     return <div className="loading">Error loading session details: {error}</div>
@@ -251,9 +276,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
         <div>
           <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
           <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
-          
+
           </div>
-          <button 
+          <button
             onClick={onBack}
             style={{
               padding: '8px 16px',
@@ -279,7 +304,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             <div style={{
               padding: '60px 20px',
               textAlign: 'center',
-            
+
             }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛤️</div>
               <p style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>No Journey Data Available</p>
@@ -288,9 +313,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
           ) : sessionDetails.map((session, idx) => {
             const visitDate = new Date(session.visited_at)
             const totalSessionTime = calculateSessionTime(session.path)
-            
+
             return (
-              <div 
+              <div
                 key={idx}
                 style={{
                   padding: '10px 20px',
@@ -310,15 +335,11 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   {/* Date Only - First Column */}
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {session.local_time_formatted ? (
-                        <>
-                          {new Date(session.local_time_formatted).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </>
-                      ) : (
-                        <>
-                          {visitDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </>
-                      )}
+                      {formatToIST(session.visited_at, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </div>
                   </div>
 
@@ -327,46 +348,46 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     {/* Time */}
                     <div>
                       {/* Time */}
+                      {/* Time - Converted to IST (Railway Format HH:MM:SS) */}
                       <div style={{ fontSize: '11px', fontWeight: '500', color: '#475569', marginBottom: '2px' }}>
-                        {session.local_time_formatted ? (
-                          <>
-                            {session.local_time_formatted.split(',').pop().trim()}
-                            <span style={{ marginLeft: '4px', fontSize: '9px', color: '#64748b' }}>
-                              ({session.timezone || session.timezone_offset || 'Local'})
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            {visitDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                          </>
-                        )}
+                        {formatToIST(session.visited_at, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: false
+                        })}
+                        <span style={{ marginLeft: '4px', fontSize: '9px', color: '#64748b' }}>
+                          (IST)
+                        </span>
                       </div>
-                      <a 
+                      <a
                         href={selectedPageSessions.url || selectedPageSessions.page}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ 
-                          fontSize: '10px', 
-                          color: '#3b82f6', 
+                        style={{
+                          fontSize: '10px',
+                          color: '#3b82f6',
                           textDecoration: 'none',
                           display: 'block',
-                          marginBottom: '2px'
+                          marginBottom: '2px',
+                          wordBreak: 'break-all'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                         onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                       >
-                        {selectedPageSessions.url || selectedPageSessions.page} 
+                        {selectedPageSessions.url || selectedPageSessions.page}
                       </a>
                       {session.referrer && session.referrer !== 'direct' ? (
-                        <a 
+                        <a
                           href={session.referrer}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ 
-                            fontSize: '10px', 
-                            color: '#10b981', 
+                          style={{
+                            fontSize: '10px',
+                            color: '#10b981',
                             textDecoration: 'none',
-                            display: 'block'
+                            display: 'block',
+                            wordBreak: 'break-all'
                           }}
                           onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                           onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
@@ -388,8 +409,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                         {getCountryCode(session.country)} {session.city || 'Unknown'}, {session.country || 'Unknown'}
                       </span>
                       {session.referrer_source && (
-                        <span style={{ 
-                          fontSize: '9px', 
+                        <span style={{
+                          fontSize: '9px',
                           fontWeight: '600',
                           color: '#dc2626',
                           background: '#fee2e2',
@@ -410,14 +431,14 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
                   {/* Session Number & Total Time - Fourth Column */}
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                    
+                    <div style={{
+
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '4px',
-                      
+
                     }}>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'black'}}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'black' }}>
                         Session #{String(session.session_id).substring(0, 8)}
                       </span>
                       {totalSessionTime > 0 && (
@@ -456,10 +477,10 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   <div style={{
                     marginTop: '12px',
                     padding: '8px 16px',
-               
+
                     borderRadius: '6px',
                     fontSize: '10px',
-               
+
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -482,10 +503,10 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
                 {/* Visitor Journey - Show only for entry and top pages, not for exit pages */}
                 {pageType !== 'exit' && session.path && session.path.length > 0 && (
-                  <div style={{ 
+                  <div style={{
                     marginTop: '16px',
                     paddingLeft: '20px',
-                    
+
                   }}>
                     <div style={{
                       fontSize: '11px',
@@ -497,9 +518,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     }}>
                       User Journey ({session.path.length} pages)
                     </div>
-                    
+
                     {session.path.map((page, pidx) => (
-                      <div 
+                      <div
                         key={pidx}
                         style={{
                           display: 'grid',
@@ -508,7 +529,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           gap: '12px',
                           marginBottom: '8px',
                           padding: '8px 5px',
-                          
+
                           position: 'relative'
                         }}
                       >
@@ -551,7 +572,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           }}>
                             {page.title || 'Untitled Page'}
                           </div>
-                          <a 
+                          <a
                             href={page.url}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -559,9 +580,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                               fontSize: '10px',
                               color: '#3b82f6',
                               textDecoration: 'none',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
+                              wordBreak: 'break-all',
+                              whiteSpace: 'normal',
                               display: 'block'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
@@ -577,7 +597,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           flexShrink: 0
                         }}>
                           {/* Optimized - removed excessive logging */}
-                          
+
                           <div style={{
                             fontSize: '16px',
                             fontWeight: '700',
@@ -602,7 +622,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           }}>
                             Time Spent
                           </div>
-                          
+
                           {/* Raw time_spent value for debugging */}
                           <div style={{
                             fontSize: '7px',
@@ -616,7 +636,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Percentage of session */}
                           {page.time_spent && Number(page.time_spent) > 0 && totalSessionTime > 0 && (
                             <div style={{
@@ -630,7 +650,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           )}
                         </div>
 
-                       
+
                       </div>
                     ))}
                   </div>
@@ -638,7 +658,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
               </div>
             )
           })}
-          
+
           {/* Load More Button */}
           {hasMore && sessionDetails.length > 0 && (
             <div style={{ padding: '20px', textAlign: 'center', borderTop: '1px solid #e2e8f0' }}>
@@ -646,8 +666,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                 onClick={handleLoadMore}
                 disabled={loadingMore}
                 style={{
-                 
-                  color:  'black',
+
+                  color: 'black',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '12px 24px',
@@ -659,23 +679,23 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                 }}
                 onMouseEnter={(e) => {
                   if (!loadingMore) {
-                   
+
                     e.currentTarget.style.transform = 'translateY(-1px)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!loadingMore) {
-                   
+
                     e.currentTarget.style.transform = 'translateY(0)'
                   }
                 }}
               >
                 {loadingMore ? ' Loading...' : 'Load More Sessions'}
               </button>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#64748b', 
-                marginTop: '8px' 
+              <div style={{
+                fontSize: '12px',
+                color: '#64748b',
+                marginTop: '8px'
               }}>
                 Showing {sessionDetails.length} of {selectedPageSessions?.visits?.length || 0} sessions
               </div>

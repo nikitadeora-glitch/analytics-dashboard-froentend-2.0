@@ -17,7 +17,7 @@ function Pages({ projectId }) {
   const [selectedVisitorId, setSelectedVisitorId] = useState(null)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [selectedPageSessions, setSelectedPageSessions] = useState(null)
-  
+
   // Pagination states
   const [pagination, setPagination] = useState({
     entry: { limit: 10, hasMore: true, loadCount: 0 },
@@ -32,30 +32,25 @@ function Pages({ projectId }) {
   const loadInitialData = async () => {
     setLoading(true)
     try {
-      const [visited, entry, exit] = await Promise.all([
-        pagesAPI.getMostVisited(projectId, 10),
-        pagesAPI.getEntryPages(projectId, 10),
-        pagesAPI.getExitPages(projectId, 10)
-      ])
-      
-      const visitedData = Array.isArray(visited.data) ? visited.data : visited
-      const entryData = Array.isArray(entry.data) ? entry.data : entry
-      const exitData = Array.isArray(exit.data) ? exit.data : exit
-      
-      console.log('📊 Pages API Response (Initial):')
-      console.log('  Most Visited:', visitedData.length, 'pages')
-      console.log('  Entry Pages:', entryData.length, 'pages')
-      console.log('  Exit Pages:', exitData.length, 'pages')
-      
-      setMostVisited(visitedData)
-      setEntryPages(entryData)
-      setExitPages(exitData)
-      
+      // Use the new single API call for the Pages route
+      const response = await pagesAPI.getPagesOverview(projectId, 10)
+
+      const { most_visited, entry_pages, exit_pages } = response.data
+
+      console.log(' Pages Overview API Response:')
+      console.log('  Most Visited:', most_visited.length)
+      console.log('  Entry Pages:', entry_pages.length)
+      console.log('  Exit Pages:', exit_pages.length)
+
+      setMostVisited(most_visited)
+      setEntryPages(entry_pages)
+      setExitPages(exit_pages)
+
       // Update hasMore based on returned data
       setPagination({
-        entry: { limit: 10, hasMore: entryData.length === 10, loadCount: 0 },
-        top: { limit: 10, hasMore: visitedData.length === 10, loadCount: 0 },
-        exit: { limit: 10, hasMore: exitData.length === 10, loadCount: 0 }
+        entry: { limit: 10, hasMore: entry_pages.length === 10, loadCount: 0 },
+        top: { limit: 10, hasMore: most_visited.length === 10, loadCount: 0 },
+        exit: { limit: 10, hasMore: exit_pages.length === 10, loadCount: 0 }
       })
     } catch (error) {
       console.error('Error loading pages:', error)
@@ -67,17 +62,17 @@ function Pages({ projectId }) {
   const loadMoreData = async () => {
     const tabKey = activeTab === 'top' ? 'top' : activeTab
     const currentPagination = pagination[tabKey]
-    
+
     if (!currentPagination.hasMore || loadingMore) return
-    
+
     setLoadingMore(true)
     try {
       // Calculate increment: 3-4 items per load
       const increment = currentPagination.loadCount % 2 === 0 ? 3 : 4
       const newLimit = currentPagination.limit + increment
-      
+
       console.log(`📥 Loading more ${activeTab} pages: ${currentPagination.limit} → ${newLimit}`)
-      
+
       let response
       if (activeTab === 'entry') {
         response = await pagesAPI.getEntryPages(projectId, newLimit)
@@ -86,9 +81,9 @@ function Pages({ projectId }) {
       } else {
         response = await pagesAPI.getExitPages(projectId, newLimit)
       }
-      
+
       const newData = Array.isArray(response.data) ? response.data : response
-      
+
       // Update the appropriate state
       if (activeTab === 'entry') {
         setEntryPages(newData)
@@ -97,7 +92,7 @@ function Pages({ projectId }) {
       } else {
         setExitPages(newData)
       }
-      
+
       // Update pagination
       setPagination(prev => ({
         ...prev,
@@ -107,7 +102,7 @@ function Pages({ projectId }) {
           loadCount: prev[tabKey].loadCount + 1
         }
       }))
-      
+
       console.log(`✅ Loaded ${newData.length} ${activeTab} pages`)
     } catch (error) {
       console.error('Error loading more pages:', error)
@@ -123,9 +118,9 @@ function Pages({ projectId }) {
       {/* Header */}
       <div className="header">
         <h1>Pages</h1>
-        <Box sx={{ 
-          display: 'flex', 
-          gap: 1, 
+        <Box sx={{
+          display: 'flex',
+          gap: 1,
           paddingRight: '40px',
           alignItems: 'center'
         }}>
@@ -168,7 +163,7 @@ function Pages({ projectId }) {
                       <Skeleton variant="text" width={40} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                       <Skeleton variant="text" width={30} height={14} animation="wave" />
                     </Box>
-                    
+
                     <Box>
                       <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                       <Skeleton variant="text" width={25} height={14} animation="wave" />
@@ -186,7 +181,7 @@ function Pages({ projectId }) {
   )
 
   const getCurrentData = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'entry': return entryPages
       case 'top': return mostVisited
       case 'exit': return exitPages
@@ -199,14 +194,14 @@ function Pages({ projectId }) {
   const handleVisitorClick = async (e, visitorId) => {
     e.stopPropagation()
     // Navigate to Visitor Path with visitor_id as state
-    navigate(`/project/${projectId}/visitor-path`, { 
-      state: { selectedVisitorId: visitorId } 
+    navigate(`/project/${projectId}/visitor-path`, {
+      state: { selectedVisitorId: visitorId }
     })
   }
 
   const handleSessionsClick = async (e, page) => {
     e.stopPropagation()
-    
+
     // Show all sessions for this page with complete journey
     if (page.visits && page.visits.length > 0) {
       setSelectedPageSessions(page)
@@ -221,13 +216,46 @@ function Pages({ projectId }) {
   }
 
   const formatDate = (date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+    if (!date) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = date
+    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
+      utcString = date + 'Z'
+    }
+
+    const d = new Date(utcString)
+
+    if (isNaN(d.getTime())) return ''
+
+    return d.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata'
+    })
   }
 
   const formatTime = (date) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    if (!date) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = date
+    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
+      utcString = date + 'Z'
+    }
+
+    const d = new Date(utcString)
+
+    if (isNaN(d.getTime())) return ''
+
+    return d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Kolkata'
+    }) + ' (IST)'
   }
 
   const currentData = getCurrentData()
@@ -235,7 +263,7 @@ function Pages({ projectId }) {
   // Show all sessions view with complete journey
   if (showAllSessions && selectedPageSessions) {
     return (
-      <PagesSessionView 
+      <PagesSessionView
         projectId={projectId}
         selectedPageSessions={selectedPageSessions}
         pageType={activeTab}
@@ -250,8 +278,8 @@ function Pages({ projectId }) {
   // Show visitor path if selected
   if (selectedVisitorId) {
     return (
-      <VisitorPathSimple 
-        projectId={projectId} 
+      <VisitorPathSimple
+        projectId={projectId}
         visitorId={selectedVisitorId}
         onBack={() => setSelectedVisitorId(null)}
       />
@@ -262,9 +290,9 @@ function Pages({ projectId }) {
     <>
       <div className="header">
         <h1>Pages</h1>
-        <div style={{ 
-          display: 'flex', 
-          gap: '8px', 
+        <div style={{
+          display: 'flex',
+          gap: '8px',
           paddingRight: '40px',
           alignItems: 'center'
         }}>
@@ -273,7 +301,7 @@ function Pages({ projectId }) {
 
       {/* Page Details Modal */}
       {selectedPage && (
-        <div 
+        <div
           onClick={closeModal}
           style={{
             position: 'fixed',
@@ -289,7 +317,7 @@ function Pages({ projectId }) {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -308,13 +336,13 @@ function Pages({ projectId }) {
                 <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
                   {selectedPage.title || 'Untitled Page'}
                 </h2>
-                <a 
-                  href={selectedPage.url || selectedPage.page} 
-                  target="_blank" 
+                <a
+                  href={selectedPage.url || selectedPage.page}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={{ 
-                    fontSize: '14px', 
-                    color: '#3b82f6', 
+                  style={{
+                    fontSize: '14px',
+                    color: '#3b82f6',
                     textDecoration: 'none',
                     wordBreak: 'break-all'
                   }}
@@ -322,7 +350,7 @@ function Pages({ projectId }) {
                   🔗 {selectedPage.url || selectedPage.page}
                 </a>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
                 style={{
                   background: '#f1f5f9',
@@ -356,10 +384,10 @@ function Pages({ projectId }) {
             {/* Sessions List */}
             {selectedPage.visits && selectedPage.visits.length > 0 ? (
               <div>
-                <div style={{ 
-                  fontSize: '14px', 
-                  fontWeight: '600', 
-                  color: '#64748b', 
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#64748b',
                   marginBottom: '16px',
                   padding: '12px 16px',
                   background: '#f8fafc',
@@ -395,9 +423,9 @@ function Pages({ projectId }) {
                         e.currentTarget.style.transform = 'translateX(0)'
                       }}
                     >
-                      <div style={{ 
-                        fontSize: '14px', 
-                        color: '#3b82f6', 
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#3b82f6',
                         fontWeight: '700',
                         background: 'white',
                         padding: '8px 12px',
@@ -415,7 +443,7 @@ function Pages({ projectId }) {
                         </div>
                       </div>
                       <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'right' }}>
-                        🕒 {formatDate(visit.visited_at)}<br/>
+                        🕒 {formatDate(visit.visited_at)}<br />
                         {formatTime(visit.visited_at)}
                       </div>
                     </div>
@@ -439,8 +467,8 @@ function Pages({ projectId }) {
 
       <div className="content">
         {/* Simple Tabs */}
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           gap: '0',
           marginBottom: '24px',
           borderBottom: '2px solid #e2e8f0'
@@ -523,15 +551,15 @@ function Pages({ projectId }) {
               <div>
                 {console.log(`🔍 Rendering ${currentData.length} pages in ${activeTab} tab`)}
                 {currentData.map((page, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     style={{
                       borderBottom: idx < currentData.length - 1 ? '1px solid #e2e8f0' : 'none',
                       padding: '8px 20px'
                     }}>
-              
+
                     {/* Page Info */}
-                    <div 
+                    <div
                       style={{
                         marginBottom: '4px',
                         padding: '4px',
@@ -541,17 +569,17 @@ function Pages({ projectId }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', wordBreak: 'break-word' }}>
-                             {page.title || page.page || 'Untitled'}
+                            {page.title || page.page || 'Untitled'}
                           </div>
-                          <a 
-                            href={page.url || page.page || '/'} 
-                            target="_blank" 
+                          <a
+                            href={page.url || page.page || '/'}
+                            target="_blank"
                             rel="noopener noreferrer"
-                            style={{ 
-                              fontSize: '11px', 
-                              color: '#3b82f6', 
+                            style={{
+                              fontSize: '11px',
+                              color: '#3b82f6',
                               textDecoration: 'none',
-                              wordBreak: 'break-all', 
+                              wordBreak: 'break-all',
                               lineHeight: '1.3',
                               cursor: 'pointer'
                             }}
@@ -563,9 +591,9 @@ function Pages({ projectId }) {
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
                           {/* Sessions Number - Clickable */}
-                          <div 
+                          <div
                             onClick={(e) => handleSessionsClick(e, page)}
-                            style={{ 
+                            style={{
                               textAlign: 'center',
                               cursor: page.visits && page.visits.length > 0 ? 'pointer' : 'not-allowed',
                               padding: '4px 8px',
@@ -610,7 +638,7 @@ function Pages({ projectId }) {
 
                   </div>
                 ))}
-                
+
                 {/* Load More Button */}
                 {pagination[activeTab === 'top' ? 'top' : activeTab]?.hasMore && (
                   <div style={{ padding: '20px', textAlign: 'center' }}>

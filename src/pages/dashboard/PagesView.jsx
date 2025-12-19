@@ -26,7 +26,7 @@ function PagesView({ projectId }) {
       const response = await visitorsAPI.getActivity(projectId, 100)
       console.log('✅ API Response:', response.data)
       console.log('📊 Data length:', response.data?.length)
-      
+
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         setAllVisitors(response.data)
         // Initially show first 10 items
@@ -53,14 +53,14 @@ function PagesView({ projectId }) {
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return
-    
+
     setLoadingMore(true)
-    
+
     // Simulate loading delay for better UX
     setTimeout(() => {
       const nextChunkSize = Math.floor(Math.random() * 2) + 3 // Random between 3-4
       const nextChunk = allVisitors.slice(currentIndex, currentIndex + nextChunkSize)
-      
+
       setDisplayedVisitors(prev => [...prev, ...nextChunk])
       setCurrentIndex(prev => prev + nextChunkSize)
       setHasMore(currentIndex + nextChunkSize < allVisitors.length)
@@ -86,6 +86,30 @@ function PagesView({ projectId }) {
     return '💻'
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   if (loading) return (
     <>
       <div className="header">
@@ -103,7 +127,7 @@ function PagesView({ projectId }) {
               alignItems: 'center'
             }}>
               <div style={{ flex: 1 }}>
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -112,7 +136,7 @@ function PagesView({ projectId }) {
                   borderRadius: '4px',
                   marginBottom: '4px'
                 }} />
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -122,7 +146,7 @@ function PagesView({ projectId }) {
                 }} />
               </div>
               <div style={{ display: 'flex', gap: '20px' }}>
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -130,7 +154,7 @@ function PagesView({ projectId }) {
                   width: '40px',
                   borderRadius: '4px'
                 }} />
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -143,7 +167,7 @@ function PagesView({ projectId }) {
           ))}
         </div>
       </div>
-      
+
       <style>{`
         @keyframes skeleton-loading {
           0% { background-position: 200% 0; }
@@ -161,18 +185,18 @@ function PagesView({ projectId }) {
     <>
       <div className="header">
         <h1>Pages View</h1>
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
+        <div style={{
+          display: 'flex',
+          gap: '12px',
           paddingRight: '40px',
           alignItems: 'center'
         }}>
-         
+
         </div>
       </div>
 
       <div className="content">
-        
+
 
 
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
@@ -206,27 +230,27 @@ function PagesView({ projectId }) {
             displayedVisitors.map((visitor, idx) => {
               const visitDate = new Date(visitor.visited_at)
               const deviceIcon = getDeviceIcon(visitor.device)
-              const referrerText = visitor.referrer && visitor.referrer !== 'direct' 
-                ? visitor.referrer 
+              const referrerText = visitor.referrer && visitor.referrer !== 'direct'
+                ? visitor.referrer
                 : '(No referring link)'
               const referrerColor = visitor.referrer && visitor.referrer !== 'direct' ? '#3b82f6' : '#10b981'
-              
+
               // Extract time from local_time_formatted
               const timeDisplay = (() => {
                 if (visitor.local_time_formatted) {
                   const timePart = visitor.local_time_formatted.split(',').pop().trim()
                   return timePart
                 }
-                return visitDate.toLocaleTimeString('en-GB', { 
-                  hour: '2-digit', 
-                  minute: '2-digit', 
-                  second: '2-digit', 
-                  hour12: false 
+                return visitDate.toLocaleTimeString('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false
                 })
               })()
-              
+
               return (
-                <div 
+                <div
                   key={idx}
                   style={{
                     display: 'grid',
@@ -240,26 +264,31 @@ function PagesView({ projectId }) {
                   }}
                 >
                   {/* Date */}
-                  <div style={{ 
-                    fontSize: '13px', 
+                  <div style={{
+                    fontSize: '13px',
                     color: '#1e293b',
                     fontWeight: '500',
                     paddingTop: '2px'
                   }}>
-                    {visitDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    {formatToIST(visitor.visited_at, { day: '2-digit', month: 'short' })}
                   </div>
 
                   {/* Time */}
-                  <div style={{ 
-                    fontSize: '13px', 
+                  <div style={{
+                    fontSize: '13px',
                     color: '#64748b',
                     paddingTop: '2px'
                   }}>
-                    {timeDisplay}
+                    {formatToIST(visitor.visited_at, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    })} (IST)
                   </div>
 
                   {/* Icon (Browser/Device) */}
-                  <div style={{ 
+                  <div style={{
                     fontSize: '20px',
                     textAlign: 'center',
                     paddingTop: '0px'
@@ -269,22 +298,22 @@ function PagesView({ projectId }) {
 
                   {/* System (Browser + OS + Resolution) */}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      fontWeight: '500', 
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '500',
                       color: '#1e293b',
                       marginBottom: '2px'
                     }}>
                       {visitor.browser || 'Unknown Browser'}
                     </div>
-                    <div style={{ 
-                      fontSize: '11px', 
+                    <div style={{
+                      fontSize: '11px',
                       color: '#64748b'
                     }}>
                       {visitor.os || 'Unknown OS'}
                     </div>
-                    <div style={{ 
-                      fontSize: '10px', 
+                    <div style={{
+                      fontSize: '10px',
                       color: '#94a3b8'
                     }}>
                       {visitor.screen_resolution || 'Unknown'}
@@ -293,9 +322,9 @@ function PagesView({ projectId }) {
 
                   {/* Location / Language */}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      fontWeight: '500', 
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '500',
                       color: '#1e293b',
                       marginBottom: '2px',
                       overflow: 'hidden',
@@ -304,22 +333,22 @@ function PagesView({ projectId }) {
                     }}>
                       {getCountryFlag(visitor.country)} {visitor.country || 'Unknown'},
                     </div>
-                    <div style={{ 
-                      fontSize: '11px', 
+                    <div style={{
+                      fontSize: '11px',
                       color: '#64748b',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }}>
-                      {visitor.city || 'Unknown'} 
+                      {visitor.city || 'Unknown'}
                     </div>
                   </div>
 
                   {/* Host Name/Web Page/Referrer */}
                   <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      fontWeight: '500', 
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '500',
                       color: '#1e293b',
                       marginBottom: '2px',
                       overflow: 'hidden',
@@ -328,8 +357,8 @@ function PagesView({ projectId }) {
                     }}>
                       {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'}
                     </div>
-                    <div style={{ 
-                      fontSize: '10px', 
+                    <div style={{
+                      fontSize: '10px',
                       color: referrerColor,
                       marginBottom: '2px',
                       wordBreak: 'break-all',
@@ -337,12 +366,12 @@ function PagesView({ projectId }) {
                     }}>
                       {referrerText}
                     </div>
-                    <a 
-                      href={visitor.entry_page} 
-                      target="_blank" 
+                    <a
+                      href={visitor.entry_page}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      style={{ 
-                        fontSize: '11px', 
+                      style={{
+                        fontSize: '11px',
                         color: '#3b82f6',
                         textDecoration: 'none',
                         display: 'inline-block',
@@ -369,10 +398,10 @@ function PagesView({ projectId }) {
 
           {/* Load More Button */}
           {hasMore && (
-            <div style={{ 
-              padding: '20px', 
-              textAlign: 'center', 
-              borderTop: '1px solid #f1f5f9' 
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              borderTop: '1px solid #f1f5f9'
             }}>
               <button
                 onClick={loadMore}

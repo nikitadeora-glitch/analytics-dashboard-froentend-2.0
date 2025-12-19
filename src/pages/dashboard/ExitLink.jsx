@@ -19,11 +19,11 @@ function ExitLink({ projectId }) {
       // Get external exit links (clicks to external URLs)
       const linksResponse = await trafficAPI.getExitLinks(projectId)
       // Sort by date descending (newest first)
-      const sortedLinks = linksResponse.data.sort((a, b) => 
+      const sortedLinks = linksResponse.data.sort((a, b) =>
         new Date(b.clicked_at) - new Date(a.clicked_at)
       )
       setExitLinks(sortedLinks)
-      
+
       // Get internal exit pages (pages where users left the site)
       const pagesResponse = await pagesAPI.getExitPages(projectId)
       // Sort by date descending (newest first)
@@ -49,14 +49,41 @@ function ExitLink({ projectId }) {
     setSelectedExit(null)
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   const formatDate = (date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+    return formatToIST(date, { day: 'numeric', month: 'short' })
   }
 
   const formatTime = (date) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    return formatToIST(date, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }) + ' (IST)'
   }
 
   if (loading) return (
@@ -95,7 +122,7 @@ function ExitLink({ projectId }) {
 
       {/* Exit Link Details Modal */}
       {selectedExit && (
-        <div 
+        <div
           onClick={closeModal}
           style={{
             position: 'fixed',
@@ -111,7 +138,7 @@ function ExitLink({ projectId }) {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -132,7 +159,7 @@ function ExitLink({ projectId }) {
                   Clicked {selectedExit.click_count || 0} times
                 </div>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
                 style={{
                   background: '#f1f5f9',
@@ -177,13 +204,13 @@ function ExitLink({ projectId }) {
                   {selectedExit.url || 'Unknown'}
                 </div>
                 {selectedExit.url && (
-                  <a 
-                    href={selectedExit.url} 
-                    target="_blank" 
+                  <a
+                    href={selectedExit.url}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#dc2626', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#dc2626',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -208,13 +235,13 @@ function ExitLink({ projectId }) {
                   {selectedExit.from_page || 'Unknown'}
                 </div>
                 {selectedExit.from_page && (
-                  <a 
-                    href={selectedExit.from_page} 
-                    target="_blank" 
+                  <a
+                    href={selectedExit.from_page}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#3b82f6', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#3b82f6',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -343,7 +370,7 @@ function ExitLink({ projectId }) {
             {/* Table Rows - External Links */}
             {activeTab === 'external' && exitLinks.length > 0 ? (
               exitLinks.map((exit, idx) => (
-                <div 
+                <div
                   key={idx}
                   style={{
                     display: 'grid',
@@ -436,7 +463,7 @@ function ExitLink({ projectId }) {
             {/* Table Rows - Exit Pages */}
             {activeTab === 'pages' && exitPages.length > 0 ? (
               exitPages.map((page, idx) => (
-                <div 
+                <div
                   key={idx}
                   style={{
                     display: 'grid',

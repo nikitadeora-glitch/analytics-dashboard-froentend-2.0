@@ -33,8 +33,8 @@ function Dashboard() {
     { path: 'summary', label: 'Summary', icon: BarChart3 },
     { path: 'pages', label: 'Pages', icon: FileText },
     { path: 'traffic', label: 'Traffic Sources', icon: TrendingUp },
-    { 
-      label: 'Recent Activity', 
+    {
+      label: 'Recent Activity',
       icon: Activity,
       isDropdown: true,
       subItems: [
@@ -53,9 +53,9 @@ function Dashboard() {
 
   return (
     <div style={{ display: 'flex', flex: 1, height: '100vh' }}>
-      <div 
-        className="sidebar" 
-        style={{ 
+      <div
+        className="sidebar"
+        style={{
           borderLeft: '1px solid #1e293b',
           backgroundImage: `url(${analyticImage})`,
           backgroundSize: 'cover',
@@ -74,7 +74,7 @@ function Dashboard() {
           backgroundColor: 'rgba(15, 23, 42, 0.85)',
           zIndex: 1
         }} />
-        
+
         {/* Content */}
         <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '30px' }}>
@@ -82,12 +82,12 @@ function Dashboard() {
             <h2 style={{ margin: 0, color: 'white' }}>Statify</h2>
           </div>
 
-          <div 
-            className="menu-item" 
+          <div
+            className="menu-item"
             onClick={() => navigate('/dashboard')}
-            style={{ 
-              marginBottom: '20px', 
-              background: 'rgba(30, 41, 59, 0.8)', 
+            style={{
+              marginBottom: '20px',
+              background: 'rgba(30, 41, 59, 0.8)',
               border: '1px solid rgba(51, 65, 85, 0.8)',
               color: 'white'
             }}
@@ -96,10 +96,10 @@ function Dashboard() {
             Back to Projects
           </div>
 
-          <div style={{ 
-            fontSize: '11px', 
-            fontWeight: '600', 
-            color: '#cbd5e1', 
+          <div style={{
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#cbd5e1',
             marginBottom: '12px',
             letterSpacing: '0.5px'
           }}>
@@ -111,10 +111,10 @@ function Dashboard() {
               <div key={idx}>
                 {item.isDropdown ? (
                   <>
-                    <div 
-                      className="menu-item" 
+                    <div
+                      className="menu-item"
                       onClick={() => setIsRecentActivityOpen(!isRecentActivityOpen)}
-                      style={{ 
+                      style={{
                         cursor: 'pointer',
                         background: isRecentActivityOpen ? 'rgba(30, 41, 59, 0.8)' : 'transparent',
                         justifyContent: 'space-between',
@@ -128,7 +128,7 @@ function Dashboard() {
                       {isRecentActivityOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </div>
                     {isRecentActivityOpen && (
-                      <div style={{ 
+                      <div style={{
                         marginLeft: '12px',
                         borderLeft: '2px solid rgba(51, 65, 85, 0.8)',
                         paddingLeft: '8px',
@@ -174,10 +174,10 @@ function Dashboard() {
 
           {/* Logout Button at Bottom */}
           <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-            <div 
+            <div
               className="menu-item"
               onClick={handleLogout}
-              style={{ 
+              style={{
                 color: '#f2e7e7ff',
                 borderTop: '1px solid rgba(255, 255, 255, 0.1)',
                 paddingTop: '16px',

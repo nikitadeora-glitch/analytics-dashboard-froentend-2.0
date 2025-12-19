@@ -27,7 +27,7 @@ function TrafficSourcesSimple({ projectId }) {
 
   const loadData = async () => {
     try {
-      const sourcesRes = await trafficAPI.getSources(projectId)
+      const sourcesRes = await trafficAPI.getTrafficOverview(projectId)
       console.log('🚦 Traffic Sources API Response:', sourcesRes.data)
       setSources(sourcesRes.data)
     } catch (error) {
@@ -45,10 +45,10 @@ function TrafficSourcesSimple({ projectId }) {
     // Sum up all sources of this type (e.g., all "organic" sources)
     const matchingSources = sources.filter(s => s.source_type?.toLowerCase() === type.toLowerCase())
     const totalCount = matchingSources.reduce((sum, s) => sum + (s.count || 0), 0)
-    const avgBounceRate = matchingSources.length > 0 
+    const avgBounceRate = matchingSources.length > 0
       ? matchingSources.reduce((sum, s) => sum + (s.bounce_rate || 0), 0) / matchingSources.length
       : 0
-    
+
     return {
       count: totalCount,
       bounceRate: Math.round(avgBounceRate)
@@ -62,12 +62,12 @@ function TrafficSourcesSimple({ projectId }) {
 
   const handleSourceClick = (stdSource, data) => {
     console.log('🖱️ Clicked source:', stdSource.name, 'Data:', data)
-    
+
     if (data.count === 0) {
       console.log('❌ No data for this source, not navigating')
       return // Don't navigate if no data
     }
-    
+
     const sourceInfo = {
       name: stdSource.name,
       type: stdSource.type,
@@ -75,9 +75,9 @@ function TrafficSourcesSimple({ projectId }) {
       count: data.count,
       bounceRate: data.bounceRate
     }
-    
+
     console.log('✅ Navigating to detail with:', sourceInfo)
-    
+
     navigate('detail', {
       state: { sourceInfo }
     })
@@ -118,7 +118,7 @@ function TrafficSourcesSimple({ projectId }) {
               }}>
                 {/* Traffic Source Name */}
                 <Box>
-                  <Box sx={{ 
+                  <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
@@ -193,9 +193,9 @@ function TrafficSourcesSimple({ projectId }) {
               const data = getSourceData(stdSource.type)
               const percentage = calculatePercentage(data.count)
               const bounceRate = data.bounceRate || (data.count > 0 ? 88 : 0) // Default bounce rate if data exists
-              
+
               return (
-                <div 
+                <div
                   key={idx}
                   style={{
                     display: 'grid',
@@ -223,9 +223,9 @@ function TrafficSourcesSimple({ projectId }) {
                 >
                   {/* Traffic Source Name */}
                   <div>
-                    <div style={{ 
-                      fontSize: '15px', 
-                      fontWeight: '600', 
+                    <div style={{
+                      fontSize: '15px',
+                      fontWeight: '600',
                       color: data.count > 0 ? '#1e293b' : '#94a3b8',
                       marginBottom: '4px',
                       display: 'flex',
@@ -240,8 +240,8 @@ function TrafficSourcesSimple({ projectId }) {
                       }} />
                       {stdSource.name}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px', 
+                    <div style={{
+                      fontSize: '12px',
                       color: '#64748b',
                       marginLeft: '12px'
                     }}>
@@ -250,7 +250,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Sessions */}
-                  <div style={{ 
+                  <div style={{
                     textAlign: 'center',
                     fontSize: '16px',
                     fontWeight: '700',
@@ -260,7 +260,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Bounce % */}
-                  <div style={{ 
+                  <div style={{
                     textAlign: 'center',
                     fontSize: '16px',
                     fontWeight: '600',
@@ -270,7 +270,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Session Log Bar - Thin & Elegant */}
-                  <div style={{ 
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -332,7 +332,7 @@ function TrafficSourcesSimple({ projectId }) {
                     )}
                   </div>
 
-              
+
                 </div>
               )
             })}

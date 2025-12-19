@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { trafficAPI } from '../../api/api'
 import { Skeleton, Box } from '@mui/material'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 
 function TrafficSourceDetailView({ projectId }) {
   const location = useLocation()
@@ -25,19 +25,19 @@ function TrafficSourceDetailView({ projectId }) {
   const loadChartData = async (source) => {
     try {
       setLoading(true)
-      
+
       // Use actual data from the source and create realistic trend
       const data = []
       const today = new Date()
       const totalSessions = source.count || 0
       const avgBounceRate = source.bounceRate || 65
-      
+
       // If no data, show empty chart
       if (totalSessions === 0) {
         for (let i = 13; i >= 0; i--) {
           const date = new Date(today)
           date.setDate(date.getDate() - i)
-          
+
           data.push({
             date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
             fullDate: date.toISOString().split('T')[0],
@@ -48,19 +48,19 @@ function TrafficSourceDetailView({ projectId }) {
       } else {
         // Distribute sessions across 14 days with realistic variation
         const dailyAvg = Math.max(1, Math.floor(totalSessions / 14))
-        
+
         for (let i = 13; i >= 0; i--) {
           const date = new Date(today)
           date.setDate(date.getDate() - i)
-          
+
           // Create realistic daily variation (70% to 130% of average)
           const variation = 0.7 + (Math.random() * 0.6)
           const sessions = Math.max(0, Math.floor(dailyAvg * variation))
-          
+
           // Bounce rate with some daily variation (±10%)
           const bounceVariation = (Math.random() - 0.5) * 20
           const bounceRate = Math.max(10, Math.min(95, avgBounceRate + bounceVariation))
-          
+
           data.push({
             date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
             fullDate: date.toISOString().split('T')[0],
@@ -69,7 +69,7 @@ function TrafficSourceDetailView({ projectId }) {
           })
         }
       }
-      
+
       setChartData(data)
     } catch (error) {
       console.error('Error loading chart data:', error)
@@ -88,7 +88,7 @@ function TrafficSourceDetailView({ projectId }) {
         <div className="header">
           <div>
             <h1>Traffic Source Details</h1>
-            <button 
+            <button
               onClick={handleBack}
               style={{
                 padding: '8px 16px',
@@ -122,7 +122,7 @@ function TrafficSourceDetailView({ projectId }) {
         <div className="header">
           <div>
             <h1>Traffic Source Details</h1>
-            <button 
+            <button
               onClick={handleBack}
               style={{
                 padding: '8px 16px',
@@ -158,10 +158,8 @@ function TrafficSourceDetailView({ projectId }) {
       <div className="header">
         <div>
           <h1>{sourceInfo.name} - Analytics</h1>
-          <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
-            {sourceInfo.type} traffic • Last 14 days
-          </div>
-          <button 
+
+          <button
             onClick={handleBack}
             style={{
               padding: '8px 16px',
@@ -176,18 +174,18 @@ function TrafficSourceDetailView({ projectId }) {
             onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
           >
-            ← Back to Traffic Sources
+            ← Back
           </button>
         </div>
       </div>
 
       <div className="content">
         {/* Summary Stats */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '20px', 
-          marginBottom: '30px' 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px',
+          marginBottom: '30px'
         }}>
           <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#3b82f6' : '#94a3b8', marginBottom: '8px' }}>
@@ -195,14 +193,14 @@ function TrafficSourceDetailView({ projectId }) {
             </div>
             <div style={{ fontSize: '14px', color: '#64748b' }}>Total Sessions</div>
           </div>
-          
+
           <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions === 0 ? '#94a3b8' : (avgBounceRate > 70 ? '#ef4444' : '#10b981'), marginBottom: '8px' }}>
               {totalSessions === 0 ? 'N/A' : `${avgBounceRate}%`}
             </div>
             <div style={{ fontSize: '14px', color: '#64748b' }}>Avg Bounce Rate</div>
           </div>
-          
+
           <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#8b5cf6' : '#94a3b8', marginBottom: '8px' }}>
               {totalSessions === 0 ? '0' : Math.max(1, Math.round(totalSessions / 14))}
@@ -227,35 +225,50 @@ function TrafficSourceDetailView({ projectId }) {
           ) : (
             <div style={{ height: '300px', padding: '0 20px 20px 20px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="date" 
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis
+                    dataKey="date"
                     stroke="#64748b"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#64748b"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
                   />
-                  <Tooltip 
+                  <Tooltip
+                    cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '3 3' }}
                     contentStyle={{
                       background: 'white',
-                      border: '1px solid #e2e8f0',
+                      border: 'none',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      padding: '12px'
                     }}
                     formatter={(value, name) => [value, name === 'sessions' ? 'Sessions' : name]}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="sessions" 
-                    stroke="#3b82f6" 
+                  <Area
+                    type="monotone"
+                    dataKey="sessions"
+                    stroke="#3b82f6"
                     strokeWidth={3}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+                    fillOpacity={1}
+                    fill="url(#colorSessions)"
+                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 0, fill: '#3b82f6' }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -277,33 +290,44 @@ function TrafficSourceDetailView({ projectId }) {
           ) : (
             <div style={{ height: '300px', padding: '0 20px 20px 20px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="date" 
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis
+                    dataKey="date"
                     stroke="#64748b"
                     fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#64748b"
                     fontSize={12}
                     domain={[0, 100]}
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
                   />
-                  <Tooltip 
+                  <Tooltip
+                    cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '3 3' }}
                     contentStyle={{
                       background: 'white',
-                      border: '1px solid #e2e8f0',
+                      border: 'none',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      padding: '12px'
                     }}
                     formatter={(value) => [`${value}%`, 'Bounce Rate']}
                   />
-                  <Bar 
-                    dataKey="bounceRate" 
-                    fill="#10b981"
-                    radius={[4, 4, 0, 0]}
+                  <Line
+                    type="monotone"
+                    dataKey="bounceRate"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ fill: '#10b981', strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 0 }}
                   />
-                </BarChart>
+                </LineChart>
               </ResponsiveContainer>
             </div>
           )}

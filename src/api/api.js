@@ -38,7 +38,7 @@ api.interceptors.response.use(
         const refreshResponse = await api.post('/auth/refresh')
         const newToken = refreshResponse.data.token
         setToken(newToken)
-        
+
         // Retry the original request with new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return api(originalRequest)
@@ -64,20 +64,25 @@ export const projectsAPI = {
 
 export const analyticsAPI = {
   getSummary: (projectId, days = 30) => api.get(`/analytics/${projectId}/summary?days=${days}`),
+  getSummaryView: (projectId, days = 30) => api.get(`/analytics/${projectId}/summary-view?days=${days}`), // New specific API
   getHourlyData: (projectId, date) => api.get(`/analytics/${projectId}/hourly/${encodeURIComponent(date)}`),
   trackVisit: (projectId, data) => api.post(`/analytics/${projectId}/track`, data)
 }
 
 export const visitorsAPI = {
   getActivity: (projectId, limit = 50) => api.get(`/visitors/${projectId}/activity?limit=${limit}`),
+  getActivityView: (projectId, limit = 50) => api.get(`/visitors/${projectId}/activity-view?limit=${limit}`),
   getPath: (projectId, visitorId) => api.get(`/visitors/${projectId}/path/${visitorId}`),
   getMap: (projectId) => api.get(`/visitors/${projectId}/map`),
+  getMapView: (projectId, days = 30) => api.get(`/visitors/${projectId}/map-view?days=${days}`),
+  getVisitorsByLocation: (projectId, lat, lng, days = 30) => api.get(`/visitors/${projectId}/visitors-at-location`, { params: { lat, lng, days } }), // New specific API
   getAllSessions: (projectId, visitorId) => api.get(`/visitors/${projectId}/visitor-sessions/${visitorId}`),
   getVisitorsByPage: (projectId, pageUrl) => api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } }),
   getBulkSessions: (projectId, visitorIds) => api.post(`/visitors/${projectId}/bulk-sessions`, visitorIds)
 }
 
 export const pagesAPI = {
+  getPagesOverview: (projectId, limit = 10) => api.get(`/pages/${projectId}/pages-overview?limit=${limit}`), // New specific API
   getMostVisited: (projectId, limit = 100) => api.get(`/pages/${projectId}/most-visited?limit=${limit}`),
   getEntryPages: (projectId, limit = 100) => api.get(`/pages/${projectId}/entry-pages?limit=${limit}`),
   getExitPages: (projectId, limit = 100) => api.get(`/pages/${projectId}/exit-pages?limit=${limit}`),
@@ -85,6 +90,7 @@ export const pagesAPI = {
 }
 
 export const trafficAPI = {
+  getTrafficOverview: (projectId) => api.get(`/traffic/${projectId}/traffic-overview`), // New specific API
   getSources: (projectId) => api.get(`/traffic/${projectId}/sources`),
   getKeywords: (projectId, limit = 20) => api.get(`/traffic/${projectId}/keywords?limit=${limit}`),
   getReferrers: (projectId) => api.get(`/traffic/${projectId}/referrers`),

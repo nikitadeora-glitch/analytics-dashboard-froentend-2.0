@@ -20,10 +20,10 @@ function CameFrom({ projectId }) {
     try {
       const response = await visitorsAPI.getActivity(projectId, 100)
       // Filter to show only referral traffic (exclude direct traffic)
-      const referralVisitors = response.data.filter(visitor => 
+      const referralVisitors = response.data.filter(visitor =>
         visitor.referrer && visitor.referrer !== 'direct' && visitor.referrer.trim() !== ''
       )
-      
+
       setAllVisitors(referralVisitors)
       // Initially show first 10 items
       const initialChunk = referralVisitors.slice(0, 10)
@@ -42,14 +42,14 @@ function CameFrom({ projectId }) {
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return
-    
+
     setLoadingMore(true)
-    
+
     // Simulate loading delay for better UX
     setTimeout(() => {
       const nextChunkSize = Math.floor(Math.random() * 2) + 3 // Random between 3-4
       const nextChunk = allVisitors.slice(currentIndex, currentIndex + nextChunkSize)
-      
+
       setDisplayedVisitors(prev => [...prev, ...nextChunk])
       setCurrentIndex(prev => prev + nextChunkSize)
       setHasMore(currentIndex + nextChunkSize < allVisitors.length)
@@ -63,14 +63,41 @@ function CameFrom({ projectId }) {
     setSelectedReferrer(null)
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   const formatDate = (date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+    return formatToIST(date, { day: 'numeric', month: 'short' })
   }
 
   const formatTime = (date) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    return formatToIST(date, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }) + ' (IST)'
   }
 
   if (loading) return (
@@ -109,7 +136,7 @@ function CameFrom({ projectId }) {
 
       {/* Referrer Details Modal */}
       {selectedReferrer && (
-        <div 
+        <div
           onClick={closeModal}
           style={{
             position: 'fixed',
@@ -125,7 +152,7 @@ function CameFrom({ projectId }) {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -146,7 +173,7 @@ function CameFrom({ projectId }) {
                   {formatDate(selectedReferrer.visited_at)} at {formatTime(selectedReferrer.visited_at)}
                 </div>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
                 style={{
                   background: '#f1f5f9',
@@ -188,18 +215,18 @@ function CameFrom({ projectId }) {
                   🌐 Referrer Source
                 </div>
                 <div style={{ fontSize: '16px', fontWeight: '700', color: '#1d4ed8', marginBottom: '8px', wordBreak: 'break-all' }}>
-                  {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' 
-                    ? selectedReferrer.referrer 
+                  {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct'
+                    ? selectedReferrer.referrer
                     : 'Direct Traffic (No Referrer)'}
                 </div>
                 {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' && (
-                  <a 
-                    href={selectedReferrer.referrer} 
-                    target="_blank" 
+                  <a
+                    href={selectedReferrer.referrer}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#3b82f6', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#3b82f6',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -224,13 +251,13 @@ function CameFrom({ projectId }) {
                   {selectedReferrer.entry_page || 'Unknown'}
                 </div>
                 {selectedReferrer.entry_page && (
-                  <a 
-                    href={selectedReferrer.entry_page} 
-                    target="_blank" 
+                  <a
+                    href={selectedReferrer.entry_page}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#10b981', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#10b981',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -278,7 +305,7 @@ function CameFrom({ projectId }) {
       )}
 
       <div className="content">
-        
+
 
         {/* Referrer Table */}
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
@@ -307,7 +334,7 @@ function CameFrom({ projectId }) {
 
               {/* Table Rows */}
               {displayedVisitors.map((visitor, idx) => (
-                <div 
+                <div
                   key={idx}
                   style={{
                     display: 'grid',
@@ -322,7 +349,7 @@ function CameFrom({ projectId }) {
                 >
                   {/* Date */}
                   <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
-                    
+
                     {formatDate(visitor.visited_at)}
                   </div>
 
@@ -334,8 +361,8 @@ function CameFrom({ projectId }) {
                   {/* Referrer - Non-clickable */}
                   <div style={{ minWidth: 0, maxWidth: '100%' }}>
                     <div
-                      style={{ 
-                        fontSize: '14px', 
+                      style={{
+                        fontSize: '14px',
                         color: '#30ad51d1',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -350,12 +377,12 @@ function CameFrom({ projectId }) {
 
                   {/* Entry Page */}
                   <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <a 
+                    <a
                       href={visitor.entry_page}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ 
-                        fontSize: '14px', 
+                      style={{
+                        fontSize: '14px',
                         color: '#3b82f6',
                         textDecoration: 'none',
                         display: 'inline-flex',
@@ -365,7 +392,7 @@ function CameFrom({ projectId }) {
                         lineHeight: '1.4',
                         cursor: 'pointer'
                       }}
-                     
+
                       onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
                       {visitor.entry_page || 'Unknown'}
@@ -385,10 +412,10 @@ function CameFrom({ projectId }) {
 
           {/* Load More Button */}
           {hasMore && (
-            <div style={{ 
-              padding: '20px', 
-              textAlign: 'center', 
-              borderTop: '1px solid #e2e8f0' 
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              borderTop: '1px solid #e2e8f0'
             }}>
               <button
                 onClick={loadMore}
@@ -442,7 +469,7 @@ function CameFrom({ projectId }) {
           )}
         </div>
       </div>
-      
+
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

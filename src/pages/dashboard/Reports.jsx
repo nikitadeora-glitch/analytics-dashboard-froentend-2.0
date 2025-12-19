@@ -50,12 +50,12 @@ function Reports({ projectId }) {
     try {
       const endDate = new Date().toISOString()
       const startDate = new Date(Date.now() - parseInt(selectedPeriod) * 24 * 60 * 60 * 1000).toISOString()
-      
+
       // Pass the selectedPeriod to analytics API to get data for the correct time range
       // Increase limits to get more data for filtering based on period
       const visitorLimit = Math.max(1000, parseInt(selectedPeriod) * 50) // More visitors for longer periods
       const pageLimit = Math.max(200, parseInt(selectedPeriod) * 10) // More pages for longer periods
-      
+
       const [summary, analytics, visitors, pages, traffic] = await Promise.all([
         reportsAPI.getSummaryReport(projectId, startDate, endDate),
         analyticsAPI.getSummary(projectId, selectedPeriod), // Pass selectedPeriod here
@@ -90,6 +90,30 @@ function Reports({ projectId }) {
     }
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = typeof dateString === 'string' ? dateString : dateString.toISOString()
+    if (typeof utcString === 'string' && !utcString.endsWith('Z') && !utcString.includes('+')) {
+      utcString = utcString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   const refreshData = () => {
     fetchReportData()
   }
@@ -121,9 +145,9 @@ function Reports({ projectId }) {
 
   const filterDataByPeriod = (data, dateField = 'visited_at') => {
     if (!data || !Array.isArray(data)) return []
-    
+
     const cutoffDate = new Date(Date.now() - parseInt(selectedPeriod) * 24 * 60 * 60 * 1000)
-    
+
     return data.filter(item => {
       const itemDate = new Date(item[dateField] || item.visited_at || item.last_clicked || item.created_at)
       return itemDate >= cutoffDate && itemDate <= new Date() // Ensure within period range
@@ -133,7 +157,7 @@ function Reports({ projectId }) {
   // Enhanced period-aware data filtering
   const getPeriodFilteredData = (dataType) => {
     if (!reportData) return []
-    
+
     switch (dataType) {
       case 'visitors':
         // Visitors are already filtered in fetchReportData
@@ -155,7 +179,7 @@ function Reports({ projectId }) {
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category)
-    
+
     // Set detail data based on category with enhanced period filtering
     switch (category.title) {
       case 'Visitor Analytics':
@@ -281,13 +305,13 @@ function Reports({ projectId }) {
 
   const getFilteredVisitors = () => {
     if (!detailData?.data) return []
-    
+
     let filtered = detailData.data
-    
+
     // Apply search filter
     if (visitorSearchTerm) {
       const searchLower = visitorSearchTerm.toLowerCase()
-      filtered = filtered.filter(visitor => 
+      filtered = filtered.filter(visitor =>
         visitor.ip_address?.toLowerCase().includes(searchLower) ||
         visitor.country?.toLowerCase().includes(searchLower) ||
         visitor.city?.toLowerCase().includes(searchLower) ||
@@ -296,7 +320,7 @@ function Reports({ projectId }) {
         visitor.visitor_id?.toLowerCase().includes(searchLower)
       )
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (visitorSortBy) {
@@ -312,24 +336,24 @@ function Reports({ projectId }) {
           return 0
       }
     })
-    
+
     return filtered
   }
 
   const getFilteredPages = () => {
     if (!detailData?.data) return []
-    
+
     let filtered = detailData.data
-    
+
     // Apply search filter
     if (pageSearchTerm) {
       const searchLower = pageSearchTerm.toLowerCase()
-      filtered = filtered.filter(page => 
+      filtered = filtered.filter(page =>
         (page.url || page.page_url || '').toLowerCase().includes(searchLower) ||
         (page.title || '').toLowerCase().includes(searchLower)
       )
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (pageSortBy) {
@@ -347,25 +371,25 @@ function Reports({ projectId }) {
           return 0
       }
     })
-    
+
     return filtered
   }
 
   const getFilteredTraffic = () => {
     if (!detailData?.data) return []
-    
+
     let filtered = detailData.data
-    
+
     // Apply search filter
     if (trafficSearchTerm) {
       const searchLower = trafficSearchTerm.toLowerCase()
-      filtered = filtered.filter(source => 
+      filtered = filtered.filter(source =>
         (source.source_name || source.source || source.referrer || '').toLowerCase().includes(searchLower) ||
         (source.source_type || source.medium || '').toLowerCase().includes(searchLower) ||
         (source.referrer_url || '').toLowerCase().includes(searchLower)
       )
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (trafficSortBy) {
@@ -379,25 +403,25 @@ function Reports({ projectId }) {
           return 0
       }
     })
-    
+
     return filtered
   }
 
   const getFilteredGeoData = () => {
     if (!detailData?.data) return []
-    
+
     let filtered = detailData.data
-    
+
     // Apply search filter
     if (geoSearchTerm) {
       const searchLower = geoSearchTerm.toLowerCase()
-      filtered = filtered.filter(location => 
+      filtered = filtered.filter(location =>
         (location.country || '').toLowerCase().includes(searchLower) ||
         (location.state || '').toLowerCase().includes(searchLower) ||
         (location.city || '').toLowerCase().includes(searchLower)
       )
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (geoSortBy) {
@@ -413,24 +437,24 @@ function Reports({ projectId }) {
           return 0
       }
     })
-    
+
     return filtered
   }
 
   const getFilteredTopPages = () => {
     if (!detailData?.data) return []
-    
+
     let filtered = detailData.data
-    
+
     // Apply search filter
     if (topPagesSearchTerm) {
       const searchLower = topPagesSearchTerm.toLowerCase()
-      filtered = filtered.filter(page => 
+      filtered = filtered.filter(page =>
         (page.url || page.page_url || '').toLowerCase().includes(searchLower) ||
         (page.title || '').toLowerCase().includes(searchLower)
       )
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (topPagesSortBy) {
@@ -450,7 +474,7 @@ function Reports({ projectId }) {
           return 0
       }
     })
-    
+
     return filtered
   }
 
@@ -460,7 +484,7 @@ function Reports({ projectId }) {
     return (
       <div className="chart-container" style={{ marginBottom: '30px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <button 
+          <button
             onClick={handleBackToCategories}
             style={{
               display: 'flex',
@@ -500,28 +524,28 @@ function Reports({ projectId }) {
               fontSize: '12px',
               fontWeight: '500'
             }}>
-              🔄 Updated: {new Date().toLocaleTimeString()}
+              🔄 Updated: {formatToIST(new Date(), { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} (IST)
             </div>
           </div>
         </div>
 
         {/* Summary Stats for Selected Category */}
-        <div style={{ 
-          display: 'grid', 
+        <div style={{
+          display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: '16px',
           marginBottom: '20px'
         }}>
-          <div style={{ 
-            padding: '16px', 
-            background: selectedCategory?.bgColor || '#f8fafc', 
+          <div style={{
+            padding: '16px',
+            background: selectedCategory?.bgColor || '#f8fafc',
             borderRadius: '8px',
             border: `2px solid ${selectedCategory?.color || '#e2e8f0'}20`,
             textAlign: 'center'
           }}>
-            <div style={{ 
-              fontSize: '24px', 
-              fontWeight: '700', 
+            <div style={{
+              fontSize: '24px',
+              fontWeight: '700',
               color: selectedCategory?.color || '#64748b',
               marginBottom: '4px'
             }}>
@@ -531,16 +555,16 @@ function Reports({ projectId }) {
               {selectedCategory?.label || 'Total'}
             </div>
           </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#f0f9ff', 
+          <div style={{
+            padding: '16px',
+            background: '#f0f9ff',
             borderRadius: '8px',
             border: '2px solid #0ea5e920',
             textAlign: 'center'
           }}>
-            <div style={{ 
-              fontSize: '24px', 
-              fontWeight: '700', 
+            <div style={{
+              fontSize: '24px',
+              fontWeight: '700',
               color: '#0369a1',
               marginBottom: '4px'
             }}>
@@ -550,16 +574,16 @@ function Reports({ projectId }) {
               Records Found
             </div>
           </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#f0fdf4', 
+          <div style={{
+            padding: '16px',
+            background: '#f0fdf4',
             borderRadius: '8px',
             border: '2px solid #10b98120',
             textAlign: 'center'
           }}>
-            <div style={{ 
-              fontSize: '24px', 
-              fontWeight: '700', 
+            <div style={{
+              fontSize: '24px',
+              fontWeight: '700',
               color: '#059669',
               marginBottom: '4px'
             }}>
@@ -569,22 +593,22 @@ function Reports({ projectId }) {
               Days Period
             </div>
           </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#fef3c7', 
+          <div style={{
+            padding: '16px',
+            background: '#fef3c7',
             borderRadius: '8px',
             border: '2px solid #f59e0b20',
             textAlign: 'center'
           }}>
-            <div style={{ 
-              fontSize: '24px', 
-              fontWeight: '700', 
+            <div style={{
+              fontSize: '24px',
+              fontWeight: '700',
               color: '#d97706',
               marginBottom: '4px'
             }}>
-              {summaryData?.averages ? 
-                (detailData.type === 'visitors' ? 
-                  Math.round(summaryData.averages.unique_visits) : 
+              {summaryData?.averages ?
+                (detailData.type === 'visitors' ?
+                  Math.round(summaryData.averages.unique_visits) :
                   Math.round(summaryData.averages.page_views)
                 ) : 0
               }
@@ -593,1085 +617,1101 @@ function Reports({ projectId }) {
               Daily Average
             </div>
           </div>
-        </div>
+        </div >
 
-        {detailData.type === 'visitors' && (
-          <div>
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, color: '#374151' }}>Recent Visitor Activity</h4>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b',
-                  background: '#e0f2fe',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}>
-                  Showing visitors from last {selectedPeriod} days
-                  {detailData.period && (
-                    <span style={{ 
-                      marginLeft: '8px',
-                      padding: '2px 6px',
-                      background: '#dcfce7',
-                      color: '#166534',
-                      borderRadius: '4px',
-                      fontSize: '10px'
-                    }}>
-                      ✓ Period: {detailData.period} days
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {/* Search and Sort Controls */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr auto',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search visitors by IP, country, city, device, browser..."
-                  value={visitorSearchTerm}
-                  onChange={(e) => setVisitorSearchTerm(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                />
-                <select
-                  value={visitorSortBy}
-                  onChange={(e) => setVisitorSortBy(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '150px'
-                  }}
-                >
-                  <option value="visited_at">Latest First</option>
-                  <option value="country">By Country</option>
-                  <option value="page_views">By Page Views</option>
-                  <option value="session_duration">By Session Time</option>
-                </select>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '12px'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {(() => {
-                    const filteredData = getFilteredVisitors()
-                    const displayCount = Math.min(visitorDisplayLimit, filteredData.length)
-                    return `Showing ${displayCount} of ${filteredData.length} visitors${visitorSearchTerm ? ' (filtered)' : ''}`
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(() => {
-                    const filteredData = getFilteredVisitors()
-                    return visitorDisplayLimit < filteredData.length && (
-                      <>
-                        <button
-                          onClick={handleShowMoreVisitors}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show 50 More
-                        </button>
-                        <button
-                          onClick={handleShowAllVisitors}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show All ({filteredData.length})
-                        </button>
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
-                {getFilteredVisitors().slice(0, visitorDisplayLimit).map((visitor, index) => (
-                  <div key={index} style={{
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                    gap: '12px',
-                    alignItems: 'center'
+        {
+          detailData.type === 'visitors' && (
+            <div>
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: '#374151' }}>Recent Visitor Activity</h4>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    background: '#e0f2fe',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
                   }}>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
-                        {visitor.ip_address}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        {visitor.visitor_id?.substring(0, 8)}...
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={12} />
-                        {visitor.country || 'Unknown'}, {visitor.city || 'Unknown'}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        {visitor.device} • {visitor.browser}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '13px', color: '#374151' }}>
-                        {visitor.page_views || 0} pages
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={12} />
-                        {visitor.session_duration ? `${Math.round(visitor.session_duration / 60)}m` : 'N/A'}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {new Date(visitor.visited_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {detailData.type === 'pages' && (
-          <div>
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, color: '#374151' }}>Top Performing Pages</h4>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b',
-                  background: '#f3e8ff',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}>
-                  {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
-                </div>
-              </div>
-              
-              {/* Search and Sort Controls */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr auto',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search pages by URL or title..."
-                  value={pageSearchTerm}
-                  onChange={(e) => setPageSearchTerm(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                />
-                <select
-                  value={pageSortBy}
-                  onChange={(e) => setPageSortBy(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '150px'
-                  }}
-                >
-                  <option value="total_views">By Total Views</option>
-                  <option value="unique_views">By Unique Views</option>
-                  <option value="avg_time_spent">By Avg Time</option>
-                  <option value="bounce_rate">By Bounce Rate</option>
-                  <option value="url">By URL (A-Z)</option>
-                </select>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '12px'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {(() => {
-                    const filteredData = getFilteredPages()
-                    const displayCount = Math.min(pageDisplayLimit, filteredData.length)
-                    return `Showing ${displayCount} of ${filteredData.length} pages${pageSearchTerm ? ' (filtered)' : ''}`
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(() => {
-                    const filteredData = getFilteredPages()
-                    return pageDisplayLimit < filteredData.length && (
-                      <>
-                        <button
-                          onClick={handleShowMorePages}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#8b5cf6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show 15 More
-                        </button>
-                        <button
-                          onClick={handleShowAllPages}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show All ({filteredData.length})
-                        </button>
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
-                {getFilteredPages().slice(0, pageDisplayLimit).map((page, index) => (
-                  <div key={index} style={{
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: '500', 
-                        color: '#1e293b',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        marginBottom: '4px'
+                    Showing visitors from last {selectedPeriod} days
+                    {detailData.period && (
+                      <span style={{
+                        marginLeft: '8px',
+                        padding: '2px 6px',
+                        background: '#dcfce7',
+                        color: '#166534',
+                        borderRadius: '4px',
+                        fontSize: '10px'
                       }}>
-                        {page.url || page.page_url}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        {page.title || 'No title'}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>
-                          {page.total_views || page.visits || 0}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Views</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>
-                          {page.unique_views || 0}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Unique</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#f59e0b' }}>
-                          {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Time</div>
-                      </div>
-                      {page.bounce_rate !== undefined && (
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#ec4899' }}>
-                            {Math.round(page.bounce_rate)}%
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>Bounce</div>
-                        </div>
-                      )}
-                    </div>
+                        ✓ Period: {detailData.period} days
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                </div>
 
-        {detailData.type === 'traffic' && (
-          <div>
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, color: '#374151' }}>Traffic Sources Breakdown</h4>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b',
-                  background: '#ecfdf5',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
+                {/* Search and Sort Controls */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: '12px',
+                  marginBottom: '16px'
                 }}>
-                  {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
-                </div>
-              </div>
-              
-              {/* Search and Sort Controls */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr auto',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search traffic sources by name, type, or URL..."
-                  value={trafficSearchTerm}
-                  onChange={(e) => setTrafficSearchTerm(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                />
-                <select
-                  value={trafficSortBy}
-                  onChange={(e) => setTrafficSortBy(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '150px'
-                  }}
-                >
-                  <option value="visit_count">By Visit Count</option>
-                  <option value="source_name">By Source Name</option>
-                  <option value="source_type">By Source Type</option>
-                </select>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '12px'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {(() => {
-                    const filteredData = getFilteredTraffic()
-                    const displayCount = Math.min(trafficDisplayLimit, filteredData.length)
-                    return `Showing ${displayCount} of ${filteredData.length} traffic sources${trafficSearchTerm ? ' (filtered)' : ''}`
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(() => {
-                    const filteredData = getFilteredTraffic()
-                    return trafficDisplayLimit < filteredData.length && (
-                      <>
-                        <button
-                          onClick={handleShowMoreTraffic}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show 15 More
-                        </button>
-                        <button
-                          onClick={handleShowAllTraffic}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#059669',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show All ({filteredData.length})
-                        </button>
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
-                {getFilteredTraffic().slice(0, trafficDisplayLimit).map((source, index) => (
-                  <div key={index} style={{
-                    padding: '12px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: '500', 
-                        color: '#1e293b',
-                        marginBottom: '4px'
-                      }}>
-                        {source.source_name || source.source || source.referrer || 'Direct'}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        {source.source_type || source.medium || 'Traffic source'}
-                        {source.referrer_url && (
-                          <span style={{ marginLeft: '8px', fontSize: '11px', color: '#94a3b8' }}>
-                            • {source.referrer_url.length > 30 ? source.referrer_url.substring(0, 30) + '...' : source.referrer_url}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '18px', fontWeight: '600', color: '#10b981' }}>
-                          {source.visit_count || source.visits || source.count || 0}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Visits</div>
-                      </div>
-                      {source.referrer_url && (
-                        <ExternalLink size={16} style={{ color: '#64748b' }} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {detailData.type === 'geographic' && (
-          <div>
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, color: '#374151' }}>Geographic Distribution</h4>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b',
-                  background: '#fffbeb',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
-                }}>
-                  Data from last {selectedPeriod} days
-                </div>
-              </div>
-              
-              {/* Search, Sort and View Controls */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr auto auto',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search by country, state, or city..."
-                  value={geoSearchTerm}
-                  onChange={(e) => setGeoSearchTerm(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                />
-                <select
-                  value={geoSortBy}
-                  onChange={(e) => setGeoSortBy(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '130px'
-                  }}
-                >
-                  <option value="count">By Visitor Count</option>
-                  <option value="country">By Country</option>
-                  <option value="state">By State</option>
-                  <option value="city">By City</option>
-                </select>
-                <select
-                  value={geoViewMode}
-                  onChange={(e) => setGeoViewMode(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '100px'
-                  }}
-                >
-                  <option value="grid">Grid View</option>
-                  <option value="list">List View</option>
-                </select>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '12px'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {(() => {
-                    const filteredData = getFilteredGeoData()
-                    const displayCount = Math.min(geoDisplayLimit, filteredData.length)
-                    return `Showing ${displayCount} of ${filteredData.length} locations${geoSearchTerm ? ' (filtered)' : ''}`
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(() => {
-                    const filteredData = getFilteredGeoData()
-                    return geoDisplayLimit < filteredData.length && (
-                      <>
-                        <button
-                          onClick={handleShowMoreGeo}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#f59e0b',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show 12 More
-                        </button>
-                        <button
-                          onClick={handleShowAllGeo}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#d97706',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show All ({filteredData.length})
-                        </button>
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-
-              {/* Grid View */}
-              {geoViewMode === 'grid' && (
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: '16px',
-                  maxHeight: '600px',
-                  overflowY: 'auto'
-                }}>
-                  {getFilteredGeoData().slice(0, geoDisplayLimit).map((location, index) => (
-                    <div key={index} style={{
-                      padding: '16px',
-                      background: 'white',
-                      borderRadius: '8px',
+                  <input
+                    type="text"
+                    placeholder="Search visitors by IP, country, city, device, browser..."
+                    value={visitorSearchTerm}
+                    onChange={(e) => setVisitorSearchTerm(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
                       border: '1px solid #e2e8f0',
-                      textAlign: 'center',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer'
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)'
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                  />
+                  <select
+                    value={visitorSortBy}
+                    onChange={(e) => setVisitorSortBy(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '150px'
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                    >
-                      <div style={{ 
-                        fontSize: '24px', 
-                        fontWeight: '700', 
-                        color: '#f59e0b',
-                        marginBottom: '8px'
-                      }}>
-                        {location.count}
-                      </div>
-                      <div style={{ 
-                        fontSize: '14px', 
-                        color: '#1e293b',
-                        fontWeight: '500',
-                        marginBottom: '4px'
-                      }}>
-                        {location.country || 'Unknown'}
-                      </div>
-                      {location.state && (
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#64748b',
-                          marginBottom: '2px'
-                        }}>
-                          {location.state}
-                        </div>
-                      )}
-                      {location.city && (
-                        <div style={{ 
-                          fontSize: '11px', 
-                          color: '#94a3b8',
-                          marginBottom: '4px'
-                        }}>
-                          {location.city}
-                        </div>
-                      )}
-                      <div style={{ 
-                        fontSize: '12px', 
-                        color: '#64748b'
-                      }}>
-                        Visitors
-                      </div>
-                    </div>
-                  ))}
+                  >
+                    <option value="visited_at">Latest First</option>
+                    <option value="country">By Country</option>
+                    <option value="page_views">By Page Views</option>
+                    <option value="session_duration">By Session Time</option>
+                  </select>
                 </div>
-              )}
 
-              {/* List View */}
-              {geoViewMode === 'list' && (
-                <div style={{ 
-                  display: 'grid', 
-                  gap: '8px',
-                  maxHeight: '600px',
-                  overflowY: 'auto'
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
                 }}>
-                  {getFilteredGeoData().slice(0, geoDisplayLimit).map((location, index) => (
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    {(() => {
+                      const filteredData = getFilteredVisitors()
+                      const displayCount = Math.min(visitorDisplayLimit, filteredData.length)
+                      return `Showing ${displayCount} of ${filteredData.length} visitors${visitorSearchTerm ? ' (filtered)' : ''}`
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(() => {
+                      const filteredData = getFilteredVisitors()
+                      return visitorDisplayLimit < filteredData.length && (
+                        <>
+                          <button
+                            onClick={handleShowMoreVisitors}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show 50 More
+                          </button>
+                          <button
+                            onClick={handleShowAllVisitors}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show All ({filteredData.length})
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  {getFilteredVisitors().slice(0, visitorDisplayLimit).map((visitor, index) => (
                     <div key={index} style={{
-                      padding: '12px 16px',
+                      padding: '12px',
                       background: 'white',
                       borderRadius: '6px',
                       border: '1px solid #e2e8f0',
                       display: 'grid',
-                      gridTemplateColumns: '1fr auto',
-                      alignItems: 'center',
-                      gap: '12px'
+                      gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                      gap: '12px',
+                      alignItems: 'center'
                     }}>
                       <div>
-                        <div style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '500', 
-                          color: '#1e293b',
-                          marginBottom: '2px'
-                        }}>
-                          {location.country || 'Unknown Country'}
+                        <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+                          {visitor.ip_address}
                         </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#64748b'
-                        }}>
-                          {[location.state, location.city].filter(Boolean).join(', ') || 'No additional location data'}
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          {visitor.visitor_id?.substring(0, 8)}...
                         </div>
                       </div>
-                      <div style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ 
-                            fontSize: '18px', 
-                            fontWeight: '600', 
-                            color: '#f59e0b'
-                          }}>
-                            {location.count}
-                          </div>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: '#64748b'
-                          }}>
-                            visitors
-                          </div>
+                      <div>
+                        <div style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <MapPin size={12} />
+                          {visitor.country || 'Unknown'}, {visitor.city || 'Unknown'}
                         </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          {visitor.device} • {visitor.browser}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', color: '#374151' }}>
+                          {visitor.page_views || 0} pages
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} />
+                          {visitor.session_duration ? `${Math.round(visitor.session_duration / 60)}m` : 'N/A'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        {formatToIST(visitor.visited_at, {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        })} (IST)
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
-        {detailData.type === 'top-pages' && (
-          <div>
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ margin: 0, color: '#374151' }}>Top Pages Analysis</h4>
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b',
-                  background: '#fdf2f8',
-                  padding: '4px 8px',
-                  borderRadius: '4px'
+        {
+          detailData.type === 'pages' && (
+            <div>
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: '#374151' }}>Top Performing Pages</h4>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    background: '#f3e8ff',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                  </div>
+                </div>
+
+                {/* Search and Sort Controls */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: '12px',
+                  marginBottom: '16px'
                 }}>
-                  {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
-                </div>
-              </div>
-              
-              {/* Search, Sort and View Controls */}
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr auto auto',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search pages by URL or title..."
-                  value={topPagesSearchTerm}
-                  onChange={(e) => setTopPagesSearchTerm(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                />
-                <select
-                  value={topPagesSortBy}
-                  onChange={(e) => setTopPagesSortBy(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '150px'
-                  }}
-                >
-                  <option value="total_views">By Total Views</option>
-                  <option value="unique_views">By Unique Views</option>
-                  <option value="avg_time_spent">By Avg Time</option>
-                  <option value="bounce_rate">By Bounce Rate</option>
-                  <option value="url">By URL (A-Z)</option>
-                  <option value="title">By Title (A-Z)</option>
-                </select>
-                <select
-                  value={topPagesViewMode}
-                  onChange={(e) => setTopPagesViewMode(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    minWidth: '120px'
-                  }}
-                >
-                  <option value="detailed">Detailed View</option>
-                  <option value="compact">Compact View</option>
-                  <option value="analytics">Analytics View</option>
-                </select>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '12px'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {(() => {
-                    const filteredData = getFilteredTopPages()
-                    const displayCount = Math.min(topPagesDisplayLimit, filteredData.length)
-                    return `Showing ${displayCount} of ${filteredData.length} pages${topPagesSearchTerm ? ' (filtered)' : ''}`
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(() => {
-                    const filteredData = getFilteredTopPages()
-                    return topPagesDisplayLimit < filteredData.length && (
-                      <>
-                        <button
-                          onClick={handleShowMoreTopPages}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#ec4899',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show 20 More
-                        </button>
-                        <button
-                          onClick={handleShowAllTopPages}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#be185d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          Show All ({filteredData.length})
-                        </button>
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-
-              {/* Detailed View */}
-              {topPagesViewMode === 'detailed' && (
-                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
-                  {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
-                    <div key={index} style={{
-                      padding: '16px',
-                      background: 'white',
-                      borderRadius: '8px',
+                  <input
+                    type="text"
+                    placeholder="Search pages by URL or title..."
+                    value={pageSearchTerm}
+                    onChange={(e) => setPageSearchTerm(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
                       border: '1px solid #e2e8f0',
-                      transition: 'all 0.2s ease'
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-1px)'
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                  />
+                  <select
+                    value={pageSortBy}
+                    onChange={(e) => setPageSortBy(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '150px'
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.boxShadow = 'none'
+                  >
+                    <option value="total_views">By Total Views</option>
+                    <option value="unique_views">By Unique Views</option>
+                    <option value="avg_time_spent">By Avg Time</option>
+                    <option value="bounce_rate">By Bounce Rate</option>
+                    <option value="url">By URL (A-Z)</option>
+                  </select>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    {(() => {
+                      const filteredData = getFilteredPages()
+                      const displayCount = Math.min(pageDisplayLimit, filteredData.length)
+                      return `Showing ${displayCount} of ${filteredData.length} pages${pageSearchTerm ? ' (filtered)' : ''}`
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(() => {
+                      const filteredData = getFilteredPages()
+                      return pageDisplayLimit < filteredData.length && (
+                        <>
+                          <button
+                            onClick={handleShowMorePages}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#8b5cf6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show 15 More
+                          </button>
+                          <button
+                            onClick={handleShowAllPages}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show All ({filteredData.length})
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  {getFilteredPages().slice(0, pageDisplayLimit).map((page, index) => (
+                    <div key={index} style={{
+                      padding: '12px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#1e293b',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          marginBottom: '4px'
+                        }}>
+                          {page.url || page.page_url}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          {page.title || 'No title'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>
+                            {page.total_views || page.visits || 0}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Views</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>
+                            {page.unique_views || 0}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Unique</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#f59e0b' }}>
+                            {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Time</div>
+                        </div>
+                        {page.bounce_rate !== undefined && (
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '600', color: '#ec4899' }}>
+                              {Math.round(page.bounce_rate)}%
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>Bounce</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          detailData.type === 'traffic' && (
+            <div>
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: '#374151' }}>Traffic Sources Breakdown</h4>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    background: '#ecfdf5',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                  </div>
+                </div>
+
+                {/* Search and Sort Controls */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: '12px',
+                  marginBottom: '16px'
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Search traffic sources by name, type, or URL..."
+                    value={trafficSearchTerm}
+                    onChange={(e) => setTrafficSearchTerm(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none'
                     }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ 
-                            fontSize: '16px', 
-                            fontWeight: '600', 
+                  />
+                  <select
+                    value={trafficSortBy}
+                    onChange={(e) => setTrafficSortBy(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '150px'
+                    }}
+                  >
+                    <option value="visit_count">By Visit Count</option>
+                    <option value="source_name">By Source Name</option>
+                    <option value="source_type">By Source Type</option>
+                  </select>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    {(() => {
+                      const filteredData = getFilteredTraffic()
+                      const displayCount = Math.min(trafficDisplayLimit, filteredData.length)
+                      return `Showing ${displayCount} of ${filteredData.length} traffic sources${trafficSearchTerm ? ' (filtered)' : ''}`
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(() => {
+                      const filteredData = getFilteredTraffic()
+                      return trafficDisplayLimit < filteredData.length && (
+                        <>
+                          <button
+                            onClick={handleShowMoreTraffic}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show 15 More
+                          </button>
+                          <button
+                            onClick={handleShowAllTraffic}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#059669',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show All ({filteredData.length})
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  {getFilteredTraffic().slice(0, trafficDisplayLimit).map((source, index) => (
+                    <div key={index} style={{
+                      padding: '12px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#1e293b',
+                          marginBottom: '4px'
+                        }}>
+                          {source.source_name || source.source || source.referrer || 'Direct'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          {source.source_type || source.medium || 'Traffic source'}
+                          {source.referrer_url && (
+                            <span style={{ marginLeft: '8px', fontSize: '11px', color: '#94a3b8' }}>
+                              • {source.referrer_url.length > 30 ? source.referrer_url.substring(0, 30) + '...' : source.referrer_url}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '18px', fontWeight: '600', color: '#10b981' }}>
+                            {source.visit_count || source.visits || source.count || 0}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Visits</div>
+                        </div>
+                        {source.referrer_url && (
+                          <ExternalLink size={16} style={{ color: '#64748b' }} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        {
+          detailData.type === 'geographic' && (
+            <div>
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: '#374151' }}>Geographic Distribution</h4>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    background: '#fffbeb',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    Data from last {selectedPeriod} days
+                  </div>
+                </div>
+
+                {/* Search, Sort and View Controls */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto',
+                  gap: '12px',
+                  marginBottom: '16px'
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Search by country, state, or city..."
+                    value={geoSearchTerm}
+                    onChange={(e) => setGeoSearchTerm(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                  <select
+                    value={geoSortBy}
+                    onChange={(e) => setGeoSortBy(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '130px'
+                    }}
+                  >
+                    <option value="count">By Visitor Count</option>
+                    <option value="country">By Country</option>
+                    <option value="state">By State</option>
+                    <option value="city">By City</option>
+                  </select>
+                  <select
+                    value={geoViewMode}
+                    onChange={(e) => setGeoViewMode(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '100px'
+                    }}
+                  >
+                    <option value="grid">Grid View</option>
+                    <option value="list">List View</option>
+                  </select>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    {(() => {
+                      const filteredData = getFilteredGeoData()
+                      const displayCount = Math.min(geoDisplayLimit, filteredData.length)
+                      return `Showing ${displayCount} of ${filteredData.length} locations${geoSearchTerm ? ' (filtered)' : ''}`
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(() => {
+                      const filteredData = getFilteredGeoData()
+                      return geoDisplayLimit < filteredData.length && (
+                        <>
+                          <button
+                            onClick={handleShowMoreGeo}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#f59e0b',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show 12 More
+                          </button>
+                          <button
+                            onClick={handleShowAllGeo}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#d97706',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show All ({filteredData.length})
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+
+                {/* Grid View */}
+                {geoViewMode === 'grid' && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: '16px',
+                    maxHeight: '600px',
+                    overflowY: 'auto'
+                  }}>
+                    {getFilteredGeoData().slice(0, geoDisplayLimit).map((location, index) => (
+                      <div key={index} style={{
+                        padding: '16px',
+                        background: 'white',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        textAlign: 'center',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                      }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: '#f59e0b',
+                          marginBottom: '8px'
+                        }}>
+                          {location.count}
+                        </div>
+                        <div style={{
+                          fontSize: '14px',
+                          color: '#1e293b',
+                          fontWeight: '500',
+                          marginBottom: '4px'
+                        }}>
+                          {location.country || 'Unknown'}
+                        </div>
+                        {location.state && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            marginBottom: '2px'
+                          }}>
+                            {location.state}
+                          </div>
+                        )}
+                        {location.city && (
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#94a3b8',
+                            marginBottom: '4px'
+                          }}>
+                            {location.city}
+                          </div>
+                        )}
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#64748b'
+                        }}>
+                          Visitors
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* List View */}
+                {geoViewMode === 'list' && (
+                  <div style={{
+                    display: 'grid',
+                    gap: '8px',
+                    maxHeight: '600px',
+                    overflowY: 'auto'
+                  }}>
+                    {getFilteredGeoData().slice(0, geoDisplayLimit).map((location, index) => (
+                      <div key={index} style={{
+                        padding: '12px 16px',
+                        background: 'white',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <div>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#1e293b',
+                            marginBottom: '2px'
+                          }}>
+                            {location.country || 'Unknown Country'}
+                          </div>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b'
+                          }}>
+                            {[location.state, location.city].filter(Boolean).join(', ') || 'No additional location data'}
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{
+                              fontSize: '18px',
+                              fontWeight: '600',
+                              color: '#f59e0b'
+                            }}>
+                              {location.count}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#64748b'
+                            }}>
+                              visitors
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        }
+
+        {
+          detailData.type === 'top-pages' && (
+            <div>
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, color: '#374151' }}>Top Pages Analysis</h4>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    background: '#fdf2f8',
+                    padding: '4px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                  </div>
+                </div>
+
+                {/* Search, Sort and View Controls */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto',
+                  gap: '12px',
+                  marginBottom: '16px'
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Search pages by URL or title..."
+                    value={topPagesSearchTerm}
+                    onChange={(e) => setTopPagesSearchTerm(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                  <select
+                    value={topPagesSortBy}
+                    onChange={(e) => setTopPagesSortBy(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '150px'
+                    }}
+                  >
+                    <option value="total_views">By Total Views</option>
+                    <option value="unique_views">By Unique Views</option>
+                    <option value="avg_time_spent">By Avg Time</option>
+                    <option value="bounce_rate">By Bounce Rate</option>
+                    <option value="url">By URL (A-Z)</option>
+                    <option value="title">By Title (A-Z)</option>
+                  </select>
+                  <select
+                    value={topPagesViewMode}
+                    onChange={(e) => setTopPagesViewMode(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      minWidth: '120px'
+                    }}
+                  >
+                    <option value="detailed">Detailed View</option>
+                    <option value="compact">Compact View</option>
+                    <option value="analytics">Analytics View</option>
+                  </select>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    {(() => {
+                      const filteredData = getFilteredTopPages()
+                      const displayCount = Math.min(topPagesDisplayLimit, filteredData.length)
+                      return `Showing ${displayCount} of ${filteredData.length} pages${topPagesSearchTerm ? ' (filtered)' : ''}`
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(() => {
+                      const filteredData = getFilteredTopPages()
+                      return topPagesDisplayLimit < filteredData.length && (
+                        <>
+                          <button
+                            onClick={handleShowMoreTopPages}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#ec4899',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show 20 More
+                          </button>
+                          <button
+                            onClick={handleShowAllTopPages}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#be185d',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Show All ({filteredData.length})
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+
+                {/* Detailed View */}
+                {topPagesViewMode === 'detailed' && (
+                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                    {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
+                      <div key={index} style={{
+                        padding: '16px',
+                        background: 'white',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        transition: 'all 0.2s ease'
+                      }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-1px)'
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: '16px',
+                              fontWeight: '600',
+                              color: '#1e293b',
+                              marginBottom: '4px',
+                              wordBreak: 'break-all'
+                            }}>
+                              {page.url || page.page_url}
+                            </div>
+                            <div style={{
+                              fontSize: '14px',
+                              color: '#64748b',
+                              marginBottom: '8px'
+                            }}>
+                              {page.title || 'No title available'}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                          gap: '16px'
+                        }}>
+                          <div style={{ textAlign: 'center', padding: '8px', background: '#eff6ff', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6', marginBottom: '2px' }}>
+                              {page.total_views || page.visits || 0}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>Total Views</div>
+                          </div>
+                          <div style={{ textAlign: 'center', padding: '8px', background: '#f0fdf4', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981', marginBottom: '2px' }}>
+                              {page.unique_views || 0}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>Unique Views</div>
+                          </div>
+                          <div style={{ textAlign: 'center', padding: '8px', background: '#fffbeb', borderRadius: '6px' }}>
+                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b', marginBottom: '2px' }}>
+                              {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Time</div>
+                          </div>
+                          {page.bounce_rate !== undefined && (
+                            <div style={{ textAlign: 'center', padding: '8px', background: '#fdf2f8', borderRadius: '6px' }}>
+                              <div style={{ fontSize: '20px', fontWeight: '700', color: '#ec4899', marginBottom: '2px' }}>
+                                {Math.round(page.bounce_rate)}%
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>Bounce Rate</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Compact View */}
+                {topPagesViewMode === 'compact' && (
+                  <div style={{ display: 'grid', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
+                    {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
+                      <div key={index} style={{
+                        padding: '12px 16px',
+                        background: 'white',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr auto',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#1e293b',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            marginBottom: '2px'
+                          }}>
+                            {page.url || page.page_url}
+                          </div>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {page.title || 'No title'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>
+                              {page.total_views || page.visits || 0}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>Views</div>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>
+                              {page.unique_views || 0}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>Unique</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Analytics View */}
+                {topPagesViewMode === 'analytics' && (
+                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                    {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
+                      <div key={index} style={{
+                        padding: '16px',
+                        background: 'white',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
                             color: '#1e293b',
                             marginBottom: '4px',
                             wordBreak: 'break-all'
                           }}>
                             {page.url || page.page_url}
                           </div>
-                          <div style={{ 
-                            fontSize: '14px', 
-                            color: '#64748b',
-                            marginBottom: '8px'
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b'
                           }}>
                             {page.title || 'No title available'}
                           </div>
                         </div>
-                      </div>
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: '16px'
-                      }}>
-                        <div style={{ textAlign: 'center', padding: '8px', background: '#eff6ff', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6', marginBottom: '2px' }}>
-                            {page.total_views || page.visits || 0}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>Total Views</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '8px', background: '#f0fdf4', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981', marginBottom: '2px' }}>
-                            {page.unique_views || 0}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>Unique Views</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '8px', background: '#fffbeb', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b', marginBottom: '2px' }}>
-                            {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Time</div>
-                        </div>
-                        {page.bounce_rate !== undefined && (
-                          <div style={{ textAlign: 'center', padding: '8px', background: '#fdf2f8', borderRadius: '6px' }}>
-                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ec4899', marginBottom: '2px' }}>
-                              {Math.round(page.bounce_rate)}%
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#64748b' }}>Bounce Rate</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Compact View */}
-              {topPagesViewMode === 'compact' && (
-                <div style={{ display: 'grid', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
-                  {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
-                    <div key={index} style={{
-                      padding: '12px 16px',
-                      background: 'white',
-                      borderRadius: '6px',
-                      border: '1px solid #e2e8f0',
-                      display: 'grid',
-                      gridTemplateColumns: '1fr auto',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '500', 
-                          color: '#1e293b',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          marginBottom: '2px'
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                          gap: '8px'
                         }}>
-                          {page.url || page.page_url}
-                        </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#64748b',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {page.title || 'No title'}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>
-                            {page.total_views || page.visits || 0}
-                          </div>
-                          <div style={{ fontSize: '10px', color: '#64748b' }}>Views</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>
-                            {page.unique_views || 0}
-                          </div>
-                          <div style={{ fontSize: '10px', color: '#64748b' }}>Unique</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Analytics View */}
-              {topPagesViewMode === 'analytics' && (
-                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
-                  {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
-                    <div key={index} style={{
-                      padding: '16px',
-                      background: 'white',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0'
-                    }}>
-                      <div style={{ marginBottom: '12px' }}>
-                        <div style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '600', 
-                          color: '#1e293b',
-                          marginBottom: '4px',
-                          wordBreak: 'break-all'
-                        }}>
-                          {page.url || page.page_url}
-                        </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#64748b'
-                        }}>
-                          {page.title || 'No title available'}
-                        </div>
-                      </div>
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-                        gap: '8px'
-                      }}>
-                        <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#3b82f6' }}>
-                            {page.total_views || page.visits || 0}
-                          </div>
-                          <div style={{ fontSize: '9px', color: '#64748b' }}>Views</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
-                            {page.unique_views || 0}
-                          </div>
-                          <div style={{ fontSize: '9px', color: '#64748b' }}>Unique</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#f59e0b' }}>
-                            {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
-                          </div>
-                          <div style={{ fontSize: '9px', color: '#64748b' }}>Time</div>
-                        </div>
-                        {page.bounce_rate !== undefined && (
                           <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#ec4899' }}>
-                              {Math.round(page.bounce_rate)}%
+                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#3b82f6' }}>
+                              {page.total_views || page.visits || 0}
                             </div>
-                            <div style={{ fontSize: '9px', color: '#64748b' }}>Bounce</div>
+                            <div style={{ fontSize: '9px', color: '#64748b' }}>Views</div>
                           </div>
-                        )}
+                          <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
+                              {page.unique_views || 0}
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#64748b' }}>Unique</div>
+                          </div>
+                          <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#f59e0b' }}>
+                              {page.avg_time_spent ? `${Math.round(page.avg_time_spent)}s` : 'N/A'}
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#64748b' }}>Time</div>
+                          </div>
+                          {page.bounce_rate !== undefined && (
+                            <div style={{ textAlign: 'center', padding: '6px', background: '#f8fafc', borderRadius: '4px' }}>
+                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#ec4899' }}>
+                                {Math.round(page.bounce_rate)}%
+                              </div>
+                              <div style={{ fontSize: '9px', color: '#64748b' }}>Bounce</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
     )
   }
 
@@ -1726,10 +1766,10 @@ function Reports({ projectId }) {
   // Don't render if no project is selected
   if (!projectId) {
     return (
-      <div className="content" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+      <div className="content" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
         height: '400px',
         color: '#64748b'
@@ -1747,7 +1787,7 @@ function Reports({ projectId }) {
         <div className="header">
           <h1>Reports & Analytics</h1>
         </div>
-        
+
         <div className="content">
           {/* Period Selector Skeleton */}
           <Box sx={{
@@ -1769,7 +1809,7 @@ function Reports({ projectId }) {
           <Grid container spacing={3}>
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Grid item xs={12} md={6} lg={4} key={i}>
-                <Card sx={{ 
+                <Card sx={{
                   padding: 3,
                   border: '1px solid #e2e8f0',
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
@@ -1816,7 +1856,7 @@ function Reports({ projectId }) {
         <h1>
           {selectedCategory ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button 
+              <button
                 onClick={handleBackToCategories}
                 style={{
                   background: 'none',
@@ -1838,9 +1878,9 @@ function Reports({ projectId }) {
         </h1>
         <div style={{ display: 'flex', gap: '12px', paddingRight: '40px', alignItems: 'center' }}>
           {exportStatus && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '6px',
@@ -1852,7 +1892,7 @@ function Reports({ projectId }) {
               {exportStatus === 'success' ? 'Export successful!' : 'Export failed. Please try again.'}
             </div>
           )}
-         
+
           <button className="btn btn-primary" onClick={handleExportCSV} disabled={loading}>
             <Download size={16} />
             {loading ? 'Exporting...' : `Export Last ${selectedPeriod} Days`}
@@ -1876,7 +1916,7 @@ function Reports({ projectId }) {
             <AlertCircle size={20} />
             <div>
               <strong>Error:</strong> {error}
-              <button 
+              <button
                 onClick={refreshData}
                 style={{
                   marginLeft: '12px',
@@ -1911,9 +1951,9 @@ function Reports({ projectId }) {
         ) : (
           <>
             {/* Period Controls */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '20px',
               padding: '16px',
@@ -1930,12 +1970,12 @@ function Reports({ projectId }) {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <button 
-                  className="btn" 
-                  onClick={refreshData} 
+                <button
+                  className="btn"
+                  onClick={refreshData}
                   disabled={loadingData}
-                  style={{ 
-                    background: 'white', 
+                  style={{
+                    background: 'white',
                     border: '1px solid #e2e8f0',
                     color: '#475569'
                   }}
@@ -1943,10 +1983,10 @@ function Reports({ projectId }) {
                   <RefreshCw size={16} style={{ marginRight: '6px' }} />
                   Refresh Data
                 </button>
-                <select 
+                <select
                   className="btn"
-                  style={{ 
-                    background: 'white', 
+                  style={{
+                    background: 'white',
                     border: '1px solid #e2e8f0',
                     color: '#475569',
                     cursor: 'pointer',
@@ -1984,30 +2024,30 @@ function Reports({ projectId }) {
               <div className="stat-card">
                 <h3>Unique Visitors</h3>
                 <div className="value">{summaryData?.unique_visitors?.toLocaleString() || 0}</div>
-                
+
               </div>
               <div className="stat-card live">
                 <h3>Live Visitors</h3>
                 <div className="value">{summaryData?.live_visitors || 0}</div>
-               
+
               </div>
               <div className="stat-card">
                 <h3>Avg. Session</h3>
                 <div className="value">
-                  {summaryData?.total_visits > 0 
+                  {summaryData?.total_visits > 0
                     ? Math.round((summaryData.total_visits / summaryData.unique_visitors) * 10) / 10
                     : 0}
                 </div>
-           
+
               </div>
             </div>
 
-          
-            
+
+
           </>
         )}
 
-        
+
 
         {/* Detailed Data View */}
         {selectedCategory && renderDetailedData()}
@@ -2016,104 +2056,104 @@ function Reports({ projectId }) {
         {!selectedCategory && (
           <div style={{ marginBottom: '30px' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
-              Available Report Categories 
+              Available Report Categories
             </h3>
-            <div style={{ 
-              display: 'grid', 
+            <div style={{
+              display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '20px'
             }}>
               {reportCategories.map((category, index) => (
-              <div 
-                key={index}
-                className="report-category-card"
-                style={{
-                  background: 'white',
-                  padding: '24px',
-                  borderRadius: '12px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer',
-                  border: '2px solid transparent',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-                onClick={() => handleCategoryClick(category)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
-                  e.currentTarget.style.borderColor = category.color
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
-                  e.currentTarget.style.borderColor = 'transparent'
-                }}
-              >
-                <div style={{ 
-                  width: '48px', 
-                  height: '48px', 
-                  borderRadius: '12px',
-                  background: category.bgColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: category.color,
-                  marginBottom: '16px'
-                }}>
-                  {category.icon}
-                </div>
-                <h4 style={{ 
-                  fontSize: '16px', 
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  marginBottom: '8px'
-                }}>
-                  {category.title}
-                </h4>
-                <p style={{ 
-                  fontSize: '14px', 
-                  color: '#64748b',
-                  lineHeight: '1.6',
-                  marginBottom: '12px'
-                }}>
-                  {category.description}
-                </p>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'baseline',
-                  gap: '8px',
-                  marginTop: 'auto',
-                  marginBottom: '12px'
-                }}>
-                  <span style={{ 
-                    fontSize: '24px', 
-                    fontWeight: '700',
-                    color: category.color
+                <div
+                  key={index}
+                  className="report-category-card"
+                  style={{
+                    background: 'white',
+                    padding: '24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    border: '2px solid transparent',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onClick={() => handleCategoryClick(category)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)'
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
+                    e.currentTarget.style.borderColor = category.color
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: category.bgColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: category.color,
+                    marginBottom: '16px'
                   }}>
-                    {category.value.toLocaleString()}
-                  </span>
-                  <span style={{ 
-                    fontSize: '13px', 
-                    color: '#94a3b8'
+                    {category.icon}
+                  </div>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    marginBottom: '8px'
                   }}>
-                    {category.label}
-                  </span>
+                    {category.title}
+                  </h4>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    lineHeight: '1.6',
+                    marginBottom: '12px'
+                  }}>
+                    {category.description}
+                  </p>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '8px',
+                    marginTop: 'auto',
+                    marginBottom: '12px'
+                  }}>
+                    <span style={{
+                      fontSize: '24px',
+                      fontWeight: '700',
+                      color: category.color
+                    }}>
+                      {category.value.toLocaleString()}
+                    </span>
+                    <span style={{
+                      fontSize: '13px',
+                      color: '#94a3b8'
+                    }}>
+                      {category.label}
+                    </span>
+                  </div>
+                  <div style={{
+                    padding: '8px 12px',
+                    background: category.bgColor,
+                    color: category.color,
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    border: `1px solid ${category.color}20`
+                  }}>
+                    👆 Click to view details
+                  </div>
                 </div>
-                <div style={{
-                  padding: '8px 12px',
-                  background: category.bgColor,
-                  color: category.color,
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  textAlign: 'center',
-                  border: `1px solid ${category.color}20`
-                }}>
-                  👆 Click to view details
-                </div>
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         )}

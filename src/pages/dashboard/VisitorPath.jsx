@@ -15,7 +15,7 @@ function VisitorPath({ projectId }) {
 
   useEffect(() => {
     loadVisitors()
-    
+
     // Check if we received a visitor_id from navigation state
     if (location.state?.selectedVisitorId) {
       loadVisitorSessions(location.state.selectedVisitorId)
@@ -105,14 +105,41 @@ function VisitorPath({ projectId }) {
     return '💻'
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   const formatDate = (date) => {
-    const d = new Date(date)
-    return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
+    return formatToIST(date, { day: '2-digit', month: 'short' })
   }
 
   const formatTime = (date) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    return formatToIST(date, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }) + ' (IST)'
   }
 
   if (loading) return (
@@ -131,7 +158,7 @@ function VisitorPath({ projectId }) {
               alignItems: 'center',
               gap: '16px'
             }}>
-              <div style={{ 
+              <div style={{
                 background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                 backgroundSize: '200% 100%',
                 animation: 'skeleton-loading 1.5s infinite',
@@ -140,7 +167,7 @@ function VisitorPath({ projectId }) {
                 borderRadius: '50%'
               }} />
               <div style={{ flex: 1 }}>
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -149,7 +176,7 @@ function VisitorPath({ projectId }) {
                   borderRadius: '4px',
                   marginBottom: '4px'
                 }} />
-                <div style={{ 
+                <div style={{
                   background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skeleton-loading 1.5s infinite',
@@ -158,7 +185,7 @@ function VisitorPath({ projectId }) {
                   borderRadius: '4px'
                 }} />
               </div>
-              <div style={{ 
+              <div style={{
                 background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
                 backgroundSize: '200% 100%',
                 animation: 'skeleton-loading 1.5s infinite',
@@ -170,7 +197,7 @@ function VisitorPath({ projectId }) {
           ))}
         </div>
       </div>
-      
+
       <style>{`
         @keyframes skeleton-loading {
           0% { background-position: 200% 0; }
@@ -191,7 +218,7 @@ function VisitorPath({ projectId }) {
               Session #{selectedVisitorSessions.sessions[0]?.session_id || 'N/A'}
             </div>
           </div>
-          <button 
+          <button
             onClick={closeModal}
             style={{
               padding: '10px 20px',
@@ -222,7 +249,7 @@ function VisitorPath({ projectId }) {
           {/* Simple Table Layout */}
           <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
             {selectedVisitorSessions.sessions.map((session, sessionIdx) => (
-              <div 
+              <div
                 key={sessionIdx}
                 className="chart-container"
                 style={{
@@ -244,9 +271,9 @@ function VisitorPath({ projectId }) {
                 }}
               >
                 {/* Session Header */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: '20px',
                   paddingBottom: '16px',
@@ -263,9 +290,9 @@ function VisitorPath({ projectId }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      fontSize: '16px', 
-                      fontWeight: '700', 
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: '700',
                       color: '#3b82f6',
                       marginBottom: '4px',
                       display: 'flex',
@@ -282,9 +309,9 @@ function VisitorPath({ projectId }) {
                 </div>
 
                 {/* Session Details Grid */}
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '16px',
                   marginBottom: '20px'
                 }}>
@@ -327,9 +354,9 @@ function VisitorPath({ projectId }) {
                   marginBottom: '20px',
                   border: '2px solid #e2e8f0'
                 }}>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(4, 1fr)', 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '16px',
                     fontSize: '13px'
                   }}>
@@ -362,10 +389,10 @@ function VisitorPath({ projectId }) {
 
                 {/* Page Journey Timeline */}
                 <div>
-                  <h4 style={{ 
-                    fontSize: '16px', 
-                    fontWeight: '700', 
-                    color: '#1e293b', 
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#1e293b',
                     marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -373,7 +400,7 @@ function VisitorPath({ projectId }) {
                   }}>
                     📍 Page Journey Timeline
                   </h4>
-                  
+
                   {session.page_journey && session.page_journey.length > 0 ? (
                     <div style={{ position: 'relative', paddingLeft: '32px' }}>
                       {/* Timeline vertical line */}
@@ -388,7 +415,7 @@ function VisitorPath({ projectId }) {
                       }} />
 
                       {session.page_journey.map((page, pageIdx) => (
-                        <div 
+                        <div
                           key={pageIdx}
                           style={{
                             position: 'relative',
@@ -424,28 +451,28 @@ function VisitorPath({ projectId }) {
                             border: '2px solid #e2e8f0',
                             transition: 'all 0.2s'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#3b82f6'
-                            e.currentTarget.style.transform = 'translateX(6px)'
-                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#e2e8f0'
-                            e.currentTarget.style.transform = 'translateX(0)'
-                            e.currentTarget.style.boxShadow = 'none'
-                          }}>
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = '#3b82f6'
+                              e.currentTarget.style.transform = 'translateX(6px)'
+                              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = '#e2e8f0'
+                              e.currentTarget.style.transform = 'translateX(0)'
+                              e.currentTarget.style.boxShadow = 'none'
+                            }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', marginBottom: '6px' }}>
                                   📄 {page.title || 'Untitled Page'}
                                 </div>
-                                <a 
+                                <a
                                   href={page.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  style={{ 
-                                    fontSize: '12px', 
-                                    color: '#3b82f6', 
+                                  style={{
+                                    fontSize: '12px',
+                                    color: '#3b82f6',
                                     textDecoration: 'none',
                                     wordBreak: 'break-all',
                                     overflowWrap: 'anywhere',
@@ -475,12 +502,12 @@ function VisitorPath({ projectId }) {
                                       justifyContent: 'center',
                                       gap: '6px'
                                     }}>
-                                      🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
+                                      🕐 {formatToIST(page.viewed_at, {
                                         hour: '2-digit',
                                         minute: '2-digit',
                                         second: '2-digit',
-                                        hour12: true
-                                      })}
+                                        hour12: false
+                                      })} (IST)
                                     </div>
                                     <div style={{
                                       fontSize: '11px',
@@ -514,9 +541,9 @@ function VisitorPath({ projectId }) {
                       ))}
                     </div>
                   ) : (
-                    <div style={{ 
-                      padding: '40px', 
-                      textAlign: 'center', 
+                    <div style={{
+                      padding: '40px',
+                      textAlign: 'center',
                       color: '#94a3b8',
                       background: 'white',
                       borderRadius: '12px',
@@ -542,7 +569,7 @@ function VisitorPath({ projectId }) {
 
       {/* Referrer Details Modal - Keep this as popup */}
       {selectedReferrer && (
-        <div 
+        <div
           onClick={closeModal}
           style={{
             position: 'fixed',
@@ -558,7 +585,7 @@ function VisitorPath({ projectId }) {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -573,10 +600,10 @@ function VisitorPath({ projectId }) {
             }}
           >
             {/* Header */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               marginBottom: '24px',
               position: 'sticky',
               top: 0,
@@ -593,8 +620,8 @@ function VisitorPath({ projectId }) {
                   <span>
                     Visitor ID: <span style={{ fontWeight: '600', color: '#3b82f6', fontFamily: 'monospace' }}>{selectedVisitorSessions.visitor_id}</span>
                   </span>
-                  <span style={{ 
-                    padding: '4px 12px', 
+                  <span style={{
+                    padding: '4px 12px',
                     background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
                     borderRadius: '12px',
                     fontWeight: '600',
@@ -605,7 +632,7 @@ function VisitorPath({ projectId }) {
                   </span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
                 style={{
                   background: '#f1f5f9',
@@ -639,7 +666,7 @@ function VisitorPath({ projectId }) {
             {/* Sessions Timeline */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
               {selectedVisitorSessions.sessions.map((session, sessionIdx) => (
-                <div 
+                <div
                   key={sessionIdx}
                   style={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
@@ -661,9 +688,9 @@ function VisitorPath({ projectId }) {
                   }}
                 >
                   {/* Session Header */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '16px',
                     paddingBottom: '12px',
@@ -680,9 +707,9 @@ function VisitorPath({ projectId }) {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ 
-                        fontSize: '16px', 
-                        fontWeight: '700', 
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '700',
                         color: '#3b82f6',
                         marginBottom: '4px',
                         display: 'flex',
@@ -699,9 +726,9 @@ function VisitorPath({ projectId }) {
                   </div>
 
                   {/* Session Details Grid */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(2, 1fr)', 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '16px',
                     marginBottom: '20px'
                   }}>
@@ -744,9 +771,9 @@ function VisitorPath({ projectId }) {
                     marginBottom: '20px',
                     border: '2px solid #e2e8f0'
                   }}>
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(4, 1fr)', 
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
                       gap: '16px',
                       fontSize: '13px'
                     }}>
@@ -779,10 +806,10 @@ function VisitorPath({ projectId }) {
 
                   {/* Page Journey Timeline */}
                   <div>
-                    <h4 style={{ 
-                      fontSize: '14px', 
-                      fontWeight: '700', 
-                      color: '#1e293b', 
+                    <h4 style={{
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      color: '#1e293b',
                       marginBottom: '12px',
                       display: 'flex',
                       alignItems: 'center',
@@ -790,7 +817,7 @@ function VisitorPath({ projectId }) {
                     }}>
                       📍 Page Journey Timeline
                     </h4>
-                    
+
                     {session.page_journey && session.page_journey.length > 0 ? (
                       <div style={{ position: 'relative', paddingLeft: '32px' }}>
                         {/* Timeline vertical line */}
@@ -805,7 +832,7 @@ function VisitorPath({ projectId }) {
                         }} />
 
                         {session.page_journey.map((page, pageIdx) => (
-                          <div 
+                          <div
                             key={pageIdx}
                             style={{
                               position: 'relative',
@@ -841,28 +868,28 @@ function VisitorPath({ projectId }) {
                               border: '1px solid #e2e8f0',
                               transition: 'all 0.2s'
                             }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = '#3b82f6'
-                              e.currentTarget.style.transform = 'translateX(6px)'
-                              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '#e2e8f0'
-                              e.currentTarget.style.transform = 'translateX(0)'
-                              e.currentTarget.style.boxShadow = 'none'
-                            }}>
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#3b82f6'
+                                e.currentTarget.style.transform = 'translateX(6px)'
+                                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#e2e8f0'
+                                e.currentTarget.style.transform = 'translateX(0)'
+                                e.currentTarget.style.boxShadow = 'none'
+                              }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 <div style={{ width: '100%' }}>
                                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '3px', wordBreak: 'break-word' }}>
                                     📄 {page.title || 'Untitled Page'}
                                   </div>
-                                  <a 
+                                  <a
                                     href={page.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    style={{ 
-                                      fontSize: '10px', 
-                                      color: '#3b82f6', 
+                                    style={{
+                                      fontSize: '10px',
+                                      color: '#3b82f6',
                                       textDecoration: 'none',
                                       wordBreak: 'break-all',
                                       overflowWrap: 'anywhere',
@@ -872,13 +899,13 @@ function VisitorPath({ projectId }) {
                                       whiteSpace: 'normal'
                                     }}
                                   >
-                                    {page.url} 
+                                    {page.url}
                                   </a>
                                 </div>
                                 <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
-                                  <div style={{ 
-                                    fontSize: '20px', 
-                                    fontWeight: '700', 
+                                  <div style={{
+                                    fontSize: '20px',
+                                    fontWeight: '700',
                                     color: '#10b981',
                                     marginBottom: '6px',
                                     display: 'flex',
@@ -888,28 +915,28 @@ function VisitorPath({ projectId }) {
                                   }}>
                                     ⏱️ {page.time_spent || 0}s
                                   </div>
-                                  <div style={{ 
-                                    fontSize: '12px', 
-                                    color: '#64748b', 
+                                  <div style={{
+                                    fontSize: '12px',
+                                    color: '#64748b',
                                     fontWeight: '600',
                                     marginBottom: '4px'
                                   }}>
                                     Time Spent
                                   </div>
-                                  <div style={{ 
-                                    fontSize: '13px', 
-                                    color: '#3b82f6', 
+                                  <div style={{
+                                    fontSize: '13px',
+                                    color: '#3b82f6',
                                     fontWeight: '600',
                                     background: '#eff6ff',
                                     padding: '4px 8px',
                                     borderRadius: '6px',
                                     border: '1px solid #dbeafe'
                                   }}>
-                                    🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', { 
-                                      hour: '2-digit', 
+                                    🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
+                                      hour: '2-digit',
                                       minute: '2-digit',
                                       second: '2-digit',
-                                      hour12: true 
+                                      hour12: true
                                     })}
                                   </div>
                                   <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
@@ -922,9 +949,9 @@ function VisitorPath({ projectId }) {
                         ))}
                       </div>
                     ) : (
-                      <div style={{ 
-                        padding: '40px', 
-                        textAlign: 'center', 
+                      <div style={{
+                        padding: '40px',
+                        textAlign: 'center',
                         color: '#94a3b8',
                         background: 'white',
                         borderRadius: '12px',
@@ -943,7 +970,7 @@ function VisitorPath({ projectId }) {
 
       {/* Referrer Details Modal */}
       {selectedReferrer && (
-        <div 
+        <div
           onClick={closeModal}
           style={{
             position: 'fixed',
@@ -959,7 +986,7 @@ function VisitorPath({ projectId }) {
             animation: 'fadeIn 0.2s ease'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
@@ -980,7 +1007,7 @@ function VisitorPath({ projectId }) {
                   Session #{selectedReferrer.id}
                 </div>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
                 style={{
                   background: '#f1f5f9',
@@ -1023,18 +1050,18 @@ function VisitorPath({ projectId }) {
                   🌐 Referrer Source
                 </div>
                 <div style={{ fontSize: '18px', fontWeight: '700', color: '#1d4ed8', marginBottom: '8px' }}>
-                  {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' 
-                    ? selectedReferrer.referrer 
+                  {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct'
+                    ? selectedReferrer.referrer
                     : 'Direct Traffic'}
                 </div>
                 {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' && (
-                  <a 
-                    href={selectedReferrer.referrer} 
-                    target="_blank" 
+                  <a
+                    href={selectedReferrer.referrer}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#3b82f6', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#3b82f6',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -1060,13 +1087,13 @@ function VisitorPath({ projectId }) {
                   {selectedReferrer.entry_page || 'Unknown'}
                 </div>
                 {selectedReferrer.entry_page && (
-                  <a 
-                    href={selectedReferrer.entry_page} 
-                    target="_blank" 
+                  <a
+                    href={selectedReferrer.entry_page}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    style={{ 
-                      fontSize: '13px', 
-                      color: '#10b981', 
+                    style={{
+                      fontSize: '13px',
+                      color: '#10b981',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -1139,7 +1166,7 @@ function VisitorPath({ projectId }) {
       <div className="content" style={{ overflowX: 'hidden' }}>
         {/* Filters and Export */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-         
+
         </div>
 
         {/* Visitor List */}
@@ -1147,7 +1174,7 @@ function VisitorPath({ projectId }) {
           {visitors.length > 0 ? (
             <div>
               {visitors.slice(0, displayCount).map((visitor, idx) => (
-                <div 
+                <div
                   key={idx}
                   style={{
                     padding: '16px 20px',
@@ -1191,9 +1218,9 @@ function VisitorPath({ projectId }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      style={{ 
-                        fontSize: '11px', 
-                        color: '#3b82f6', 
+                      style={{
+                        fontSize: '11px',
+                        color: '#3b82f6',
                         fontWeight: '500',
                         textDecoration: 'none',
                         wordBreak: 'break-all',
@@ -1228,15 +1255,15 @@ function VisitorPath({ projectId }) {
                   </div>
                 </div>
               ))}
-              
+
               {/* Load More Button */}
               {displayCount < visitors.length && (
-                <div style={{ 
-                  padding: '20px', 
+                <div style={{
+                  padding: '20px',
                   textAlign: 'center',
                   borderTop: '1px solid #e2e8f0'
                 }}>
-                  <button 
+                  <button
                     onClick={loadMore}
                     style={{
                       padding: '10px 24px',

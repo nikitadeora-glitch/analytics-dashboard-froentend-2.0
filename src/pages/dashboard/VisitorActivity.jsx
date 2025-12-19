@@ -17,7 +17,7 @@ function VisitorActivity({ projectId }) {
   const loadVisitors = async () => {
     try {
       setError(null)
-      const response = await visitorsAPI.getActivity(projectId)
+      const response = await visitorsAPI.getActivityView(projectId)
       setVisitors(response.data)
     } catch (error) {
       console.error('Error loading visitors:', error)
@@ -49,6 +49,30 @@ function VisitorActivity({ projectId }) {
     return '💻'
   }
 
+  // Helper to format date to IST (India Standard Time)
+  const formatToIST = (dateString, options = {}) => {
+    if (!dateString) return ''
+
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return ''
+
+    // Default to IST timezone
+    const defaultOptions = {
+      timeZone: 'Asia/Kolkata',
+      ...options
+    }
+
+    return date.toLocaleString('en-IN', defaultOptions)
+  }
+
   if (loading) {
     return (
       <>
@@ -57,7 +81,7 @@ function VisitorActivity({ projectId }) {
         </div>
         <div className="content">
           {/* Visitor List - Material-UI */}
-          <Box className="chart-container" sx={{ 
+          <Box className="chart-container" sx={{
             padding: 0,
             overflowX: 'hidden',
             width: '100%'
@@ -69,11 +93,11 @@ function VisitorActivity({ projectId }) {
               }}>
                 {/* Two Column Layout */}
                 <Grid container spacing={2} sx={{ overflow: 'hidden', width: '100%' }}>
-                  
+
                   {/* Left Column */}
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-                      
+
                       {/* Page Views */}
                       <Box>
                         <Skeleton variant="text" width={70} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
@@ -103,7 +127,7 @@ function VisitorActivity({ projectId }) {
                   {/* Right Column */}
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-                      
+
                       {/* Session Duration */}
                       <Box>
                         <Skeleton variant="text" width={90} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
@@ -147,7 +171,7 @@ function VisitorActivity({ projectId }) {
         <div className="content">
           <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '16px', color: '#ef4444', marginBottom: '10px' }}>{error}</div>
-            <button 
+            <button
               onClick={loadVisitors}
               style={{
                 padding: '8px 16px',
@@ -175,7 +199,7 @@ function VisitorActivity({ projectId }) {
 
       <div className="content">
         {/* Visitor List */}
-        <div className="chart-container" style={{ 
+        <div className="chart-container" style={{
           padding: 0,
           overflowX: 'hidden',
           width: '100%'
@@ -183,7 +207,7 @@ function VisitorActivity({ projectId }) {
           {visitors.length > 0 ? (
             <div>
               {visitors.slice(0, displayCount).map((visitor, idx) => (
-                <div 
+                <div
                   key={idx}
                   style={{
                     padding: '12px 20px',
@@ -194,23 +218,23 @@ function VisitorActivity({ projectId }) {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {/* Two Column Layout */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr', 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr',
                     gap: '16px',
                     overflow: 'hidden',
                     width: '100%'
                   }}>
-                    
+
                     {/* Left Column */}
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
                       gap: '10px',
                       minWidth: 0,
                       overflow: 'hidden'
                     }}>
-                      
+
                       {/* Page Views */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
@@ -221,32 +245,24 @@ function VisitorActivity({ projectId }) {
                         </div>
                       </div>
 
-                      {/* Local Time (Visitor's Timezone) */}
+                      {/* Local Time (Converted to IST) */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
-                          Visit Time {visitor.local_time_formatted ? '(Local)' : '(Server)'}:
+                          Visit Time:
                         </div>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: visitor.local_time_formatted ? '#10b981' : '#f59e0b' }}>
-                          {visitor.local_time_formatted || (visitor.visited_at ? new Date(visitor.visited_at).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#10b981' }}>
+                          {formatToIST(visitor.visited_at, {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}<br />
+                          {formatToIST(visitor.visited_at, {
                             hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit',
                             hour12: false
-                          }) : 'N/A')}
-                          {visitor.timezone_offset && (
-                            <span style={{ fontSize: '9px', color: '#64748b', marginLeft: '4px' }}>
-                              (UTC{visitor.timezone_offset})
-                            </span>
-                          )}
+                          })} (IST)
                         </div>
-                        {visitor.timezone && (
-                          <div style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>
-                            🌍 {visitor.timezone}
-                          </div>
-                        )}
                       </div>
 
                       {/* Resolution */}
@@ -275,14 +291,14 @@ function VisitorActivity({ projectId }) {
                     </div>
 
                     {/* Right Column */}
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
                       gap: '10px',
                       minWidth: 0,
                       overflow: 'hidden'
                     }}>
-                      
+
                       {/* Total Sessions */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
@@ -311,9 +327,9 @@ function VisitorActivity({ projectId }) {
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           ISP / IP Address:
                         </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '600', 
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
                           color: '#1e293b',
                           wordBreak: 'break-word',
                           overflow: 'hidden',
@@ -328,9 +344,9 @@ function VisitorActivity({ projectId }) {
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           Referring URL:
                         </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '600', 
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
                           color: visitor.referrer && visitor.referrer !== 'direct' ? '#10b981' : '#64748b',
                           wordBreak: 'break-word',
                           overflow: 'hidden',
@@ -354,9 +370,9 @@ function VisitorActivity({ projectId }) {
                               // Navigate to visitor path with visitor_id
                               window.location.href = `/project/${projectId}/visitor-path?visitor_id=${visitor.visitor_id}`
                             }}
-                            style={{ 
-                              fontSize: '12px', 
-                              fontWeight: '600', 
+                            style={{
+                              fontSize: '12px',
+                              fontWeight: '600',
                               color: '#3b82f6',
                               textDecoration: 'none',
                               cursor: 'pointer',
@@ -372,9 +388,9 @@ function VisitorActivity({ projectId }) {
                             {visitor.entry_page} →
                           </a>
                         ) : (
-                          <div style={{ 
-                            fontSize: '12px', 
-                            fontWeight: '600', 
+                          <div style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
                             color: '#64748b',
                             fontStyle: 'italic'
                           }}>
@@ -387,15 +403,15 @@ function VisitorActivity({ projectId }) {
                   </div>
                 </div>
               ))}
-              
+
               {/* Load More Button */}
               {displayCount < visitors.length && (
-                <div style={{ 
-                  padding: '20px', 
+                <div style={{
+                  padding: '20px',
                   textAlign: 'center',
                   borderTop: '1px solid #e2e8f0'
                 }}>
-                  <button 
+                  <button
                     onClick={loadMore}
                     style={{
                       padding: '10px 24px',
@@ -421,7 +437,7 @@ function VisitorActivity({ projectId }) {
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
               <p style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>No visitor activity yet</p>
               <p style={{ fontSize: '14px', color: '#64748b' }}>Start tracking visitors to see their activity here</p>
-              <button 
+              <button
                 onClick={loadVisitors}
                 style={{
                   marginTop: '16px',
