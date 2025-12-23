@@ -51,7 +51,7 @@ function ForgotPassword() {
           overflow: 'hidden',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}>
-          
+
           <div style={{
             flex: '1',
             backgroundImage: `url(${backgroundImage})`,
@@ -118,7 +118,7 @@ function ForgotPassword() {
             }}>
               Check Your Email
             </h1>
-            
+
             <p style={{
               fontSize: '16px',
               color: '#64748b',
@@ -134,7 +134,7 @@ function ForgotPassword() {
               margin: '0 0 32px 0',
               lineHeight: '1.5'
             }}>
-              Please check your email and click the link to reset your password. 
+              Please check your email and click the link to reset your password.
               If you don't see the email, check your spam folder.
             </p>
 
@@ -211,7 +211,7 @@ function ForgotPassword() {
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
       }}>
-        
+
         <div style={{
           flex: '1',
           backgroundImage: `url(${backgroundImage})`,
@@ -265,9 +265,9 @@ function ForgotPassword() {
             textAlign: 'center',
             marginBottom: '32px'
           }}>
-            <img 
-              src={logo} 
-              alt="State Counter Logo" 
+            <img
+              src={logo}
+              alt="State Counter Logo"
               style={{
                 width: '120px',
                 height: '114px',
@@ -318,8 +318,8 @@ function ForgotPassword() {
                 Email Address
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail 
-                  size={20} 
+                <Mail
+                  size={20}
                   style={{
                     position: 'absolute',
                     left: '12px',

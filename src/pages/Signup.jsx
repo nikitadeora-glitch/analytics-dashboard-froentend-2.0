@@ -24,7 +24,7 @@ function Signup() {
   // Password validation function
   const validatePassword = (password) => {
     const errors = []
-    
+
     if (password.length < 6) {
       errors.push('At least 6 characters')
     }
@@ -40,7 +40,7 @@ function Signup() {
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       errors.push('One special character')
     }
-    
+
     return errors
   }
 
@@ -67,7 +67,7 @@ function Signup() {
     try {
       // Call signup API
       const response = await authAPI.signup(formData)
-      
+
       // Store token if provided (auto-login after signup)
       if (response.data.token) {
         tokenManager.setToken(response.data.token)
@@ -96,7 +96,7 @@ function Signup() {
     if (name === 'password') {
       const errors = validatePassword(value)
       setPasswordErrors(errors)
-      
+
       // Check confirm password match if it exists
       if (formData.confirmPassword) {
         setConfirmPasswordError(
@@ -126,13 +126,13 @@ function Signup() {
       <div style={{
         display: 'flex',
         width: '1200px',
-     
+
         height: '800px',
         borderRadius: '20px',
         overflow: 'hidden',
-        
+
       }}>
-        
+
         {/* Left side - Background Image */}
         <div style={{
           flex: '1',
@@ -185,481 +185,481 @@ function Signup() {
           flexDirection: 'column',
           justifyContent: 'center'
         }}>
-        {/* Logo and Header */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '16px'
-        }}>
-          <img 
-            src={logo} 
-            alt="State Counter Logo" 
-            style={{
-              width: '80px',
-              height: '76px',
-            }}
-          />
-          <h1 style={{
-            fontSize: '22px',
-            fontWeight: '700',
-            color: '#1e293b',
-            margin: '8px 0 0 0'
-          }}>
-            Create Account
-          </h1>
-        </div>
-
-        {/* Error Message */}
-        {error && (
+          {/* Logo and Header */}
           <div style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '24px',
-            color: '#080808ff',
-            fontSize: '14px',
-            textAlign: 'center'
+            textAlign: 'center',
+            marginBottom: '16px'
           }}>
-            {error}
-          </div>
-        )}
-
-        {/* Signup Form */}
-        <form onSubmit={handleSubmit} method="post" action="/signup">
-          {/* Name Field */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
+            <img
+              src={logo}
+              alt="State Counter Logo"
+              style={{
+                width: '80px',
+                height: '76px',
+              }}
+            />
+            <h1 style={{
+              fontSize: '22px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '8px 0 0 0'
             }}>
-              Full Name
-            </label>
-            <div style={{ position: 'relative' }}>
-              <User 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Enter your full name"
-                autoComplete="name"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 12px 12px 44px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              />
-            </div>
+              Create Account
+            </h1>
           </div>
 
-          {/* Email Field */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              display: 'block',
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '24px',
+              color: '#080808ff',
               fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
+              textAlign: 'center'
             }}>
-              Email Address
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
-                autoComplete="email"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 12px 12px 44px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              />
+              {error}
             </div>
-          </div>
+          )}
 
-          {/* Company Name Field */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Company Name
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Building 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type="text"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleInputChange}
-                placeholder="Enter your company name"
-                autoComplete="organization"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 12px 12px 44px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              />
-            </div>
-          </div>
-
-          {/* Password Field */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Create a password"
-                autoComplete="new-password"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 44px 12px 44px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#9ca3af',
-                  padding: '4px'
-                }}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            
-          </div>
-
-          {/* Confirm Password Field */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Confirm Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Confirm your password"
-                autoComplete="new-password"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px 44px 12px 44px',
-                  border: `2px solid ${confirmPasswordError ? '#ef4444' : '#e5e7eb'}`,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  transition: 'border-color 0.2s',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = confirmPasswordError ? '#ef4444' : '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = confirmPasswordError ? '#ef4444' : '#e5e7eb'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#9ca3af',
-                  padding: '4px'
-                }}
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            
-            {/* Confirm Password Error */}
-            {confirmPasswordError && (
-              <div style={{
-                marginTop: '6px',
-                fontSize: '12px',
-                color: '#dc2626',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
+          {/* Signup Form */}
+          <form onSubmit={handleSubmit} method="post" action="/signup">
+            {/* Name Field */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
               }}>
-                <span style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  color: 'white',
-                  fontSize: '8px',
+                Full Name
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User
+                  size={20}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9ca3af'
+                  }}
+                />
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Enter your full name"
+                  autoComplete="name"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px 12px 12px 44px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                />
+              </div>
+            </div>
+
+            {/* Email Field */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Email Address
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail
+                  size={20}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9ca3af'
+                  }}
+                />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px 12px 12px 44px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                />
+              </div>
+            </div>
+
+            {/* Company Name Field */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Company Name
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Building
+                  size={20}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9ca3af'
+                  }}
+                />
+                <input
+                  type="text"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  placeholder="Enter your company name"
+                  autoComplete="organization"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px 12px 12px 44px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock
+                  size={20}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9ca3af'
+                  }}
+                />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Create a password"
+                  autoComplete="new-password"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px 44px 12px 44px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#9ca3af',
+                    padding: '4px'
+                  }}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+            </div>
+
+            {/* Confirm Password Field */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Confirm Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock
+                  size={20}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#9ca3af'
+                  }}
+                />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="Confirm your password"
+                  autoComplete="new-password"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '12px 44px 12px 44px',
+                    border: `2px solid ${confirmPasswordError ? '#ef4444' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = confirmPasswordError ? '#ef4444' : '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = confirmPasswordError ? '#ef4444' : '#e5e7eb'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#9ca3af',
+                    padding: '4px'
+                  }}
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+              {/* Confirm Password Error */}
+              {confirmPasswordError && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '12px',
+                  color: '#dc2626',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold'
+                  gap: '4px'
                 }}>
-                  ✗
+                  <span style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    color: 'white',
+                    fontSize: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}>
+                    ✗
+                  </span>
+                  {confirmPasswordError}
+                </div>
+              )}
+            </div>
+
+            {/* Terms and Conditions */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                fontSize: '14px',
+                color: '#374151',
+                cursor: 'pointer',
+                gap: '8px'
+              }}>
+                <input
+                  type="checkbox"
+                  required
+                  style={{
+                    marginTop: '2px',
+                    width: '16px',
+                    height: '16px',
+                    flexShrink: 0
+                  }}
+                />
+                <span>
+                  I agree to the{' '}
+                  <a
+                    href="/terms-of-service"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      navigate('/terms-of-service')
+                    }}
+                    style={{
+                      color: '#302b63',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                  >
+                    Terms of Service
+                  </a>
+                  {' '}and{' '}
+                  <a
+                    href="/privacy-policy"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      navigate('/privacy-policy')
+                    }}
+                    style={{
+                      color: '#302b63',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                  >
+                    Privacy Policy
+                  </a>
                 </span>
-                {confirmPasswordError}
-              </div>
-            )}
-          </div>
+              </label>
+            </div>
 
-          {/* Terms and Conditions */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              fontSize: '14px',
-              color: '#374151',
-              cursor: 'pointer',
-              gap: '8px'
-            }}>
-              <input
-                type="checkbox"
-                required
-                style={{
-                  marginTop: '2px',
-                  width: '16px',
-                  height: '16px',
-                  flexShrink: 0
-                }}
-              />
-              <span>
-                I agree to the{' '}
-                <a
-                  href="/terms-of-service"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate('/terms-of-service')
-                  }}
-                  style={{
-                    color: '#302b63',
-                    textDecoration: 'none',
-                    fontWeight: '500'
-                  }}
-                  onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                  onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                >
-                  Terms of Service
-                </a>
-                {' '}and{' '}
-                <a
-                  href="/privacy-policy"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate('/privacy-policy')
-                  }}
-                  style={{
-                    color: '#302b63',
-                    textDecoration: 'none',
-                    fontWeight: '500'
-                  }}
-                  onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                  onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                >
-                  Privacy Policy
-                </a>
-              </span>
-            </label>
-          </div>
-
-          {/* Signup Button */}
-          <button
-            type="submit"
-            disabled={loading || passwordErrors.length > 0 || confirmPasswordError}
-            style={{
-              width: '100%',
-              padding: '10px',
-              background: (loading || passwordErrors.length > 0 || confirmPasswordError) ? '#9ca3af' : 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: (loading || passwordErrors.length > 0 || confirmPasswordError) ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading && passwordErrors.length === 0 && !confirmPasswordError) {
-                e.target.style.transform = 'translateY(-2px)'
-                e.target.style.boxShadow = '0 8px 25px rgba(48, 43, 99, 0.4)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading && passwordErrors.length === 0 && !confirmPasswordError) {
-                e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = 'none'
-              }
-            }}
-          >
-            {loading ? (
-              <>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  border: '2px solid #ffffff',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                Creating Account...
-              </>
-            ) : (
-              'Create Account'
-            )}
-          </button>
-        </form>
-
-        {/* Login Link */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '12px',
-          paddingTop: '12px',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Already have an account?{' '}
-            <a
-              href="/login"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate('/login')
-              }}
+            {/* Signup Button */}
+            <button
+              type="submit"
+              disabled={loading || passwordErrors.length > 0 || confirmPasswordError}
               style={{
-                color: '#302b63',
-                textDecoration: 'none',
-                fontWeight: '600'
+                width: '100%',
+                padding: '10px',
+                background: (loading || passwordErrors.length > 0 || confirmPasswordError) ? '#9ca3af' : 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: (loading || passwordErrors.length > 0 || confirmPasswordError) ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
-              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+              onMouseEnter={(e) => {
+                if (!loading && passwordErrors.length === 0 && !confirmPasswordError) {
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 8px 25px rgba(48, 43, 99, 0.4)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading && passwordErrors.length === 0 && !confirmPasswordError) {
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = 'none'
+                }
+              }}
             >
-              Sign in
-            </a>
-          </p>
-        </div>
+              {loading ? (
+                <>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid #ffffff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              margin: 0
+            }}>
+              Already have an account?{' '}
+              <a
+                href="/login"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate('/login')
+                }}
+                style={{
+                  color: '#302b63',
+                  textDecoration: 'none',
+                  fontWeight: '600'
+                }}
+                onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+              >
+                Sign in
+              </a>
+            </p>
+          </div>
         </div>
       </div>
 

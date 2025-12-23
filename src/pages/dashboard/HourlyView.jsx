@@ -27,23 +27,29 @@ function HourlyView({ projectId }) {
       const response = await analyticsAPI.getHourlyData(projectId, date)
       console.log('✅ Hourly data loaded:', response.data)
 
-      // Post-process data to convert UTC hours to IST
+      // Process and sort hourly data to start from 00:00
       const processedData = {
         ...response.data,
-        hourly_stats: response.data.hourly_stats.map(stat => {
-          const istTime = formatHourToIST(response.data.date, stat.date);
-          const [hour, minute] = istTime.split(':');
-          const endHour = minute === '30' ? hour : String(Number(hour)).padStart(2, '0');
-          const endMinute = minute === '30' ? '29' : '59';
+        hourly_stats: response.data.hourly_stats
+          .map(stat => {
+            const istTime = formatHourToIST(response.data.date, stat.date);
+            const hour = istTime.split(':')[0];
+            const endHour = hour.padStart(2, '0');
+            const hourNumber = parseInt(hour, 10);
 
-          return {
-            ...stat,
-            // Store original UTC for reference if needed, but display IST
-            utc_date: stat.date,
-            date: istTime,
-            timeRange: `${istTime}-${endHour}:${endMinute}`
-          };
-        })
+            return {
+              ...stat,
+              // Store original UTC for reference if needed, but display IST
+              utc_date: stat.date,
+              date: istTime,
+              timeRange: `${hour.padStart(2, '0')}:00-${endHour}:59`,
+              _hour: hourNumber // Add hour as number for sorting
+            };
+          })
+          // Sort by hour to ensure 00:00 comes first
+          .sort((a, b) => a._hour - b._hour)
+          // Remove the temporary _hour property
+          .map(({ _hour, ...rest }) => rest)
       };
 
       setData(processedData)
@@ -60,7 +66,7 @@ function HourlyView({ projectId }) {
     }
   }
 
-  // Helper to convert UTC hour to IST
+  // Helper to convert UTC hour to IST and format as HH:00
   const formatHourToIST = (dateStr, hourStr) => {
     try {
       // hourStr is "HH:00"
@@ -69,12 +75,15 @@ function HourlyView({ projectId }) {
 
       if (isNaN(d.getTime())) return hourStr; // Fallback
 
-      return d.toLocaleTimeString('en-IN', {
+      // Get hours in 24-hour format with leading zero
+      const hours = d.toLocaleTimeString('en-IN', {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
         timeZone: 'Asia/Kolkata'
-      });
+      }).split(':')[0].padStart(2, '0');
+      
+      return `${hours}:00`; // Always return in HH:00 format
     } catch (e) {
       return hourStr;
     }
@@ -82,6 +91,7 @@ function HourlyView({ projectId }) {
 
   const generateSampleHourlyData = (selectedDate) => {
     const hours = []
+    // Generate data for all 24 hours
     for (let i = 0; i < 24; i++) {
       const hour = i.toString().padStart(2, '0')
       const timeRange = `${hour}:00-${hour}:59`
@@ -92,30 +102,35 @@ function HourlyView({ projectId }) {
       let firstTimeVisits = 0
       let returningVisits = 0
 
-      if (i >= 9 && i <= 17) { // Business hours
+      // Distribute traffic throughout the day
+      if (i >= 0 && i < 5) { // Late night (12am-5am)
+        pageViews = Math.floor(Math.random() * 5) + 1
+      } else if (i >= 5 && i < 9) { // Early morning (5am-9am)
+        pageViews = Math.floor(Math.random() * 15) + 5
+      } else if (i >= 9 && i <= 17) { // Business hours (9am-5pm)
+        pageViews = Math.floor(Math.random() * 30) + 10
+      } else if (i > 17 && i <= 22) { // Evening (6pm-10pm)
         pageViews = Math.floor(Math.random() * 20) + 5
-        uniqueVisits = Math.floor(pageViews * 0.6)
-        firstTimeVisits = Math.floor(uniqueVisits * 0.8)
-        returningVisits = uniqueVisits - firstTimeVisits
-      } else if (i >= 18 && i <= 22) { // Evening
+      } else { // Late evening (11pm)
         pageViews = Math.floor(Math.random() * 10) + 2
-        uniqueVisits = Math.floor(pageViews * 0.7)
-        firstTimeVisits = Math.floor(uniqueVisits * 0.7)
-        returningVisits = uniqueVisits - firstTimeVisits
-      } else { // Night/Early morning
-        pageViews = Math.floor(Math.random() * 3)
-        uniqueVisits = Math.floor(pageViews * 0.8)
-        firstTimeVisits = Math.floor(uniqueVisits * 0.9)
-        returningVisits = uniqueVisits - firstTimeVisits
       }
 
+      // Calculate other metrics based on page views
+      uniqueVisits = Math.floor(pageViews * (0.5 + Math.random() * 0.3)) // 50-80% of page views
+      firstTimeVisits = Math.floor(uniqueVisits * (0.6 + Math.random() * 0.3)) // 60-90% of unique visits
+      returningVisits = uniqueVisits - firstTimeVisits
+
+      // Ensure we always have at least some minimal activity
+      if (pageViews > 0 && uniqueVisits === 0) uniqueVisits = 1
+      if (uniqueVisits > 0 && firstTimeVisits === 0) firstTimeVisits = 1
+      
       hours.push({
         date: `${hour}:00`,
-        timeRange,
+        timeRange: `${hour}:00-${hour}:59`,
         page_views: pageViews,
         unique_visits: uniqueVisits,
         first_time_visits: firstTimeVisits,
-        returning_visits: returningVisits
+        returning_visits: Math.max(0, returningVisits) // Ensure non-negative
       })
     }
 

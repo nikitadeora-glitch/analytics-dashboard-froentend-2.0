@@ -20,7 +20,7 @@ function Layout() {
   return (
     <div className="app">
       {!isDashboard && (
-        <div 
+        <div
           className="sidebar"
           style={{
             backgroundImage: `url(${analyticImage})`,
@@ -40,7 +40,7 @@ function Layout() {
             backgroundColor: 'rgba(15, 23, 42, 0.85)',
             zIndex: 1
           }} />
-          
+
           {/* Content */}
           <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '30px' }}>
@@ -49,10 +49,10 @@ function Layout() {
             </div>
 
             <div style={{ marginBottom: '24px', flex: 1 }}>
-              <div style={{ 
-                fontSize: '11px', 
-                fontWeight: '600', 
-                color: '#cbd5e1', 
+              <div style={{
+                fontSize: '11px',
+                fontWeight: '600',
+                color: '#cbd5e1',
                 marginBottom: '12px',
                 letterSpacing: '0.5px',
                 display: 'flex',
@@ -71,11 +71,11 @@ function Layout() {
                   }}
                   title="View all projects"
                 >
-                
+
                 </button>
               </div>
 
-              <div 
+              <div
                 className={`menu-item ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
                 style={{
@@ -87,7 +87,7 @@ function Layout() {
                 Projects
               </div>
 
-              <div 
+              <div
                 className="menu-item"
                 onClick={() => {
                   navigate('/dashboard')
@@ -104,10 +104,10 @@ function Layout() {
 
             {/* Logout Button at Bottom */}
             <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-              <div 
+              <div
                 className="menu-item"
                 onClick={handleLogout}
-                style={{ 
+                style={{
                   color: '#f1ededff',
                   borderTop: '1px solid rgba(255, 255, 255, 0.1)',
                   paddingTop: '16px',

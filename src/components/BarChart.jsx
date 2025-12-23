@@ -18,14 +18,14 @@ ChartJS.register(
   Legend,
 )
 
-function BarChart({ 
-  displayData = [], 
-  showPageViews = true, 
-  showUniqueVisits = true, 
+function BarChart({
+  displayData = [],
+  showPageViews = true,
+  showUniqueVisits = true,
   showReturningVisits = true,
   period = 'daily',
-  stepSize = 20,
-  maxValue = 220
+  stepSize = 200,
+  maxValue = 2000
 }) {
   // Sample data matching your image if no data provided
   const sampleData = [
@@ -114,10 +114,10 @@ function BarChart({
           weight: '400'
         },
         callbacks: {
-          title: function(context) {
+          title: function (context) {
             return context[0].label
           },
-          label: function(context) {
+          label: function (context) {
             return `${context.dataset.label}: ${context.parsed.y}`
           }
         }
@@ -127,7 +127,7 @@ function BarChart({
       x: {
         grid: {
           display: true,
-         
+
           drawBorder: false,
           lineWidth: 1
         },
@@ -160,7 +160,7 @@ function BarChart({
           },
           padding: 8,
           stepSize: stepSize, // Use dynamic step size from props
-          callback: function(tickValue) {
+          callback: function (tickValue) {
             return tickValue
           }
         },
@@ -195,14 +195,14 @@ function BarChart({
   }
 
   return (
-    <div style={{ 
+    <div style={{
       height: '400px', // Fixed height like your image
       width: '100%',
       background: '#ffffff',
-      
+
       padding: '20px',
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      
+
     }}>
       <Bar data={data} options={options} />
     </div>

@@ -25,7 +25,7 @@ function PrivacyPolicy() {
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
       }}>
-        
+
         {/* Left side - Background Image */}
         <div style={{
           flex: '1',
@@ -107,9 +107,9 @@ function PrivacyPolicy() {
             textAlign: 'center',
             marginBottom: '24px'
           }}>
-            <img 
-              src={logo} 
-              alt="State Counter Logo" 
+            <img
+              src={logo}
+              alt="State Counter Logo"
               style={{
                 width: '80px',
                 height: '76px',
@@ -132,7 +132,7 @@ function PrivacyPolicy() {
             color: '#374151'
           }}>
             <p><strong>Last updated:</strong> December 2025</p>
-            
+
             <h3 style={{ color: '#302b63', marginTop: '24px' }}>1. Information We Collect</h3>
             <p>Statify collects the following types of information:</p>
             <ul>

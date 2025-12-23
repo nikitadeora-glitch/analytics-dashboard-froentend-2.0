@@ -139,12 +139,12 @@ function Projects() {
       // Create CSV content matching table structure
       const csvHeaders = [
         'Project ID',
-        'Project Name', 
-        'Domain', 
-        'Traffic (Page Views)', 
-        'Today Views', 
-        'Yesterday Views', 
-        'This Month Views', 
+        'Project Name',
+        'Domain',
+        'Traffic (Page Views)',
+        'Today Views',
+        'Yesterday Views',
+        'This Month Views',
         'Total Views',
         'Unique Visitors',
         'Live Visitors',
@@ -241,9 +241,9 @@ function Projects() {
   if (loading) return (
     <div className="main-content">
       {/* Header Skeleton - Material-UI */}
-      <Box className="header" sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <Box className="header" sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: '20px',
         marginBottom: '24px',
@@ -258,7 +258,7 @@ function Projects() {
 
       {/* Table Skeleton - Material-UI */}
       <Box sx={{ padding: '0 20px' }}>
-        <TableContainer sx={{ 
+        <TableContainer sx={{
           background: 'white',
           borderRadius: 3,
           overflow: 'hidden',
@@ -277,7 +277,7 @@ function Projects() {
                 <TableCell align="center"><Skeleton variant="text" width={60} height={16} animation="wave" /></TableCell>
               </TableRow>
             </TableHead>
-            
+
             {/* Table Body */}
             <TableBody>
               {[1, 2, 3, 4, 5].map(i => (
@@ -289,33 +289,33 @@ function Projects() {
                       <Skeleton variant="text" width={100} height={13} animation="wave" />
                     </Box>
                   </TableCell>
-                  
+
                   {/* Traffic Trend Chart */}
                   <TableCell align="center">
                     <Skeleton variant="rounded" width={160} height={35} animation="wave" sx={{ margin: '0 auto', marginBottom: 1, borderRadius: 2 }} />
                     <Skeleton variant="text" width={70} height={11} animation="wave" sx={{ margin: '0 auto' }} />
                   </TableCell>
-                  
+
                   {/* Today */}
                   <TableCell align="center">
                     <Skeleton variant="text" width={30} height={16} animation="wave" />
                   </TableCell>
-                  
+
                   {/* Yesterday */}
                   <TableCell align="center">
                     <Skeleton variant="text" width={30} height={16} animation="wave" />
                   </TableCell>
-                  
+
                   {/* This Month */}
                   <TableCell align="center">
                     <Skeleton variant="text" width={40} height={16} animation="wave" />
                   </TableCell>
-                  
+
                   {/* Total */}
                   <TableCell align="center">
                     <Skeleton variant="text" width={50} height={16} animation="wave" />
                   </TableCell>
-                  
+
                   {/* Actions */}
                   <TableCell align="center">
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
@@ -335,25 +335,25 @@ function Projects() {
 
   return (
     <div className="main-content">
-      <div className="header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div className="header" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: '20px',
         marginBottom: '24px',
         padding: '0 20px'
       }}>
         <h1 style={{ margin: 0 }}>Projects</h1>
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           gap: '12px',
           alignItems: 'center'
         }}>
-          <button 
+          <button
             onClick={() => setShowForm(true)}
-            className="btn btn-primary" 
-            style={{ 
-              background: '#10b981', 
+            className="btn btn-primary"
+            style={{
+              background: '#10b981',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -371,12 +371,12 @@ function Projects() {
           >
             <Plus size={16} /> Add Project
           </button>
-          <button 
+          <button
             onClick={handleExport}
             disabled={exporting || projects.length === 0}
-            className="btn" 
-            style={{ 
-              background: exporting ? '#e2e8f0' : '#f1f5f9', 
+            className="btn"
+            style={{
+              background: exporting ? '#e2e8f0' : '#f1f5f9',
               color: exporting ? '#94a3b8' : '#475569',
               display: 'flex',
               alignItems: 'center',
@@ -606,7 +606,7 @@ function Projects() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-               Create New Project
+                Create New Project
               </h2>
               <button
                 onClick={() => setShowForm(false)}
@@ -639,9 +639,9 @@ function Projects() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
                   fontWeight: '600',
                   color: '#475569',
                   fontSize: '14px'
@@ -653,10 +653,10 @@ function Projects() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="My Website"
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px 16px', 
-                    borderRadius: '8px', 
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
                     border: '2px solid #e2e8f0',
                     fontSize: '14px',
                     transition: 'border-color 0.2s'
@@ -668,9 +668,9 @@ function Projects() {
               </div>
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
                   fontWeight: '600',
                   color: '#475569',
                   fontSize: '14px'
@@ -682,10 +682,10 @@ function Projects() {
                   value={formData.domain}
                   onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                   placeholder="example.com"
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px 16px', 
-                    borderRadius: '8px', 
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
                     border: '2px solid #e2e8f0',
                     fontSize: '14px',
                     transition: 'border-color 0.2s'
@@ -694,18 +694,18 @@ function Projects() {
                   onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                   required
                 />
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#64748b', 
-                  marginTop: '6px' 
+                <div style={{
+                  fontSize: '12px',
+                  color: '#64748b',
+                  marginTop: '6px'
                 }}>
                   Enter your website domain (e.g., mywebsite.com)
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   style={{
                     flex: 1,
                     padding: '12px 24px',
@@ -728,8 +728,8 @@ function Projects() {
                   <Plus size={16} />
                   Create Project
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowForm(false)}
                   style={{
                     flex: 1,
@@ -755,8 +755,8 @@ function Projects() {
       )}
 
       <div className="content" style={{ padding: '0 20px' }}>
-        <div className="chart-container" style={{ 
-          padding: 0, 
+        <div className="chart-container" style={{
+          padding: 0,
           overflow: 'visible',
           marginTop: '0'
         }}>
@@ -785,17 +785,17 @@ function Projects() {
                 >
                   <td style={{ padding: '16px' }}>
                     <div>
-                      <div 
+                      <div
                         onClick={() => navigate(`/dashboard/project/${project.id}/summary`)}
-                        style={{ 
-                          fontWeight: '600', 
-                          color: '#1e40af', 
+                        style={{
+                          fontWeight: '600',
+                          color: '#1e40af',
                           marginBottom: '4px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease'
                         }}
                         onMouseEnter={(e) => {
-                      
+
                           e.currentTarget.style.padding = '4px 8px'
                           e.currentTarget.style.borderRadius = '4px'
                         }}
@@ -815,12 +815,12 @@ function Projects() {
                   </td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
                     <div style={{ width: '160px', height: '35px', margin: '0 auto' }}>
-                      <LineChart 
+                      <LineChart
                         displayData={(() => {
                           // Generate more realistic trend data based on actual project stats
                           const baseValue = Math.max(project.today, project.yesterday, 1)
                           const variation = Math.max(baseValue * 0.3, 5) // 30% variation or minimum 5
-                          
+
                           return [
                             { date: '5d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
                             { date: '4d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
@@ -835,9 +835,9 @@ function Projects() {
                         showReturningVisits={false}
                       />
                     </div>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      
+                    <div style={{
+                      fontSize: '11px',
+
                       marginTop: '6px',
                       display: 'flex',
                       alignItems: 'center',
@@ -845,8 +845,8 @@ function Projects() {
                       gap: '4px',
                       fontWeight: '500'
                     }}>
-                     
-                  
+
+
                     </div>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
@@ -929,7 +929,7 @@ function Projects() {
                         <Trash2 size={14} />
                         Delete
                       </button>
-                    
+
                     </div>
                   </td>
                 </tr>
