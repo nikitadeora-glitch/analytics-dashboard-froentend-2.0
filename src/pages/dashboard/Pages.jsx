@@ -218,44 +218,30 @@ function Pages({ projectId }) {
   const formatDate = (date) => {
     if (!date) return ''
 
-    // Ensure the date string is treated as UTC if it lacks timezone info
-    let utcString = date
-    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
-      utcString = date + 'Z'
-    }
+    const d = new Date(date)
 
-    const d = new Date(utcString)
-
-    if (isNaN(d.getTime())) return ''
+    if (isNaN(d.getTime())) return date
 
     return d.toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric',
-      timeZone: 'Asia/Kolkata'
+      year: 'numeric'
     })
   }
 
   const formatTime = (date) => {
     if (!date) return ''
 
-    // Ensure the date string is treated as UTC if it lacks timezone info
-    let utcString = date
-    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
-      utcString = date + 'Z'
-    }
+    const d = new Date(date)
 
-    const d = new Date(utcString)
-
-    if (isNaN(d.getTime())) return ''
+    if (isNaN(d.getTime())) return date
 
     return d.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false,
-      timeZone: 'Asia/Kolkata'
-    }) + ' (IST)'
+      hour12: false
+    })
   }
 
   const currentData = getCurrentData()

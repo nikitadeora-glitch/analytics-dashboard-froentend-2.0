@@ -125,12 +125,11 @@ function Signup() {
       {/* Main container with two sections */}
       <div style={{
         display: 'flex',
-        width: '1200px',
-
+        width: '100%',
+        maxWidth: '1200px',
         height: '800px',
         borderRadius: '20px',
         overflow: 'hidden',
-
       }}>
 
         {/* Left side - Background Image */}
@@ -193,6 +192,7 @@ function Signup() {
             <img
               src={logo}
               alt="State Counter Logo"
+              className="signup-logo"
               style={{
                 width: '80px',
                 height: '76px',
@@ -671,25 +671,56 @@ function Signup() {
             100% { transform: rotate(360deg); }
           }
           
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             .signup-container > div {
               flex-direction: column !important;
               height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
             }
+            /* Branding Section */
             .signup-container > div > div:first-child {
-              height: 200px !important;
+              flex: none !important;
+              height: 220px !important;
+              position: relative !important;
             }
+            .signup-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .signup-container > div > div:first-child p {
+              font-size: 13px !important;
+              max-width: 80% !important;
+              margin: 0 auto !important;
+            }
+            /* Form Section */
             .signup-container > div > div:last-child {
-              padding: 24px !important;
+              flex: none !important;
+              padding: 24px 20px !important;
+            }
+            .signup-logo {
+              width: 60px !important;
+              height: 57px !important;
+              margin-bottom: 8px !important;
+            }
+            .signup-container > div > div:last-child h1 {
+              font-size: 18px !important;
             }
           }
           
           @media (max-width: 480px) {
             .signup-container {
-              padding: 10px !important;
+              padding: 15px !important;
             }
-            .signup-container > div {
-              border-radius: 10px !important;
+            .signup-container > div > div:first-child {
+              height: 180px !important;
+            }
+            .signup-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .signup-container > div > div:first-child p {
+              font-size: 11px !important;
             }
           }
         `}

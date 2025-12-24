@@ -27,28 +27,21 @@ function HourlyView({ projectId }) {
       const response = await analyticsAPI.getHourlyData(projectId, date)
       console.log('✅ Hourly data loaded:', response.data)
 
-      // Process and sort hourly data to start from 00:00
+      // Use the data as provided by the backend, which is already in IST
       const processedData = {
         ...response.data,
         hourly_stats: response.data.hourly_stats
           .map(stat => {
-            const istTime = formatHourToIST(response.data.date, stat.date);
-            const hour = istTime.split(':')[0];
-            const endHour = hour.padStart(2, '0');
+            const hour = stat.date.split(':')[0];
             const hourNumber = parseInt(hour, 10);
 
             return {
               ...stat,
-              // Store original UTC for reference if needed, but display IST
-              utc_date: stat.date,
-              date: istTime,
-              timeRange: `${hour.padStart(2, '0')}:00-${endHour}:59`,
-              _hour: hourNumber // Add hour as number for sorting
+              timeRange: `${hour.padStart(2, '0')}:00-${hour.padStart(2, '0')}:59`,
+              _hour: hourNumber
             };
           })
-          // Sort by hour to ensure 00:00 comes first
           .sort((a, b) => a._hour - b._hour)
-          // Remove the temporary _hour property
           .map(({ _hour, ...rest }) => rest)
       };
 
@@ -66,28 +59,6 @@ function HourlyView({ projectId }) {
     }
   }
 
-  // Helper to convert UTC hour to IST and format as HH:00
-  const formatHourToIST = (dateStr, hourStr) => {
-    try {
-      // hourStr is "HH:00"
-      // dateStr is "Mon, 16 Dec 2024" or similar
-      const d = new Date(`${dateStr} ${hourStr}:00 UTC`);
-
-      if (isNaN(d.getTime())) return hourStr; // Fallback
-
-      // Get hours in 24-hour format with leading zero
-      const hours = d.toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Kolkata'
-      }).split(':')[0].padStart(2, '0');
-      
-      return `${hours}:00`; // Always return in HH:00 format
-    } catch (e) {
-      return hourStr;
-    }
-  }
 
   const generateSampleHourlyData = (selectedDate) => {
     const hours = []
@@ -123,7 +94,7 @@ function HourlyView({ projectId }) {
       // Ensure we always have at least some minimal activity
       if (pageViews > 0 && uniqueVisits === 0) uniqueVisits = 1
       if (uniqueVisits > 0 && firstTimeVisits === 0) firstTimeVisits = 1
-      
+
       hours.push({
         date: `${hour}:00`,
         timeRange: `${hour}:00-${hour}:59`,
@@ -163,7 +134,7 @@ function HourlyView({ projectId }) {
 
         <div className="content">
           {/* Summary Cards Skeleton */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0', marginBottom: '30px' }}>
+          <div className="stats-summary-grid" style={{ marginBottom: '30px' }}>
             {[1, 2, 3, 4].map((item) => (
               <div key={item} className="stat-card">
                 <Skeleton variant="text" width={100} height={20} sx={{ marginBottom: '8px' }} />
@@ -290,22 +261,22 @@ function HourlyView({ projectId }) {
 
       <div className="content">
         {/* Summary Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0', marginBottom: '30px' }}>
+        <div className="stats-summary-grid">
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Total Page Loads</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#10b981' }}>{data.totals.page_views}</div>
+            <h3>Total Page Loads</h3>
+            <div className="value">{data.totals.page_views}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Unique Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#3b82f6' }}>{data.totals.unique_visits}</div>
+            <h3>Unique Visits</h3>
+            <div className="value">{data.totals.unique_visits}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>First Time Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#f59e0b' }}>{data.totals.first_time_visits}</div>
+            <h3>First Time Visits</h3>
+            <div className="value">{data.totals.first_time_visits}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Returning Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#ef4444' }}>{data.totals.returning_visits}</div>
+            <h3>Returning Visits</h3>
+            <div className="value">{data.totals.returning_visits}</div>
           </div>
         </div>
 
@@ -401,19 +372,112 @@ function HourlyView({ projectId }) {
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
-                  <td style={{ padding: '12px', color: '#1e40af', fontWeight: '600' }}>
+                  <td data-label="Time" style={{ padding: '12px', color: '#1e40af', fontWeight: '600' }}>
                     {hour.timeRange || `${hour.date}-${hour.date.replace(':00', ':59')}`}
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.page_views}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.unique_visits}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.first_time_visits}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.returning_visits}</td>
+                  <td data-label="Page Loads" style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.page_views}</td>
+                  <td data-label="Unique Visits" style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.unique_visits}</td>
+                  <td data-label="First Time Visits" style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.first_time_visits}</td>
+                  <td data-label="Returning Visits" style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{hour.returning_visits}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      <style>
+        {`
+          .stats-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+          }
+          .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+          }
+          .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          .stat-card h3 {
+             margin: 0 0 12px 0 !important;
+             font-size: 14px !important;
+             color: #64748b !important;
+             font-weight: 600 !important;
+          }
+          .stat-card .value {
+             font-size: 32px !important;
+             font-weight: 700 !important;
+             color: #1e40af !important;
+          }
+
+          @media (max-width: 768px) {
+            .stats-summary-grid {
+              display: grid !important;
+              grid-template-columns: 1fr 1fr !important;
+              gap: 10px !important;
+            }
+            .stat-card .value {
+              font-size: 24px !important;
+            }
+            .chart-container {
+              overflow-x: hidden !important;
+              padding: 0px !important;
+              background: transparent !important;
+              box-shadow: none !important;
+            }
+            table, thead, tbody, th, td, tr {
+                display: block !important;
+                width: 100% !important;
+            }
+            thead tr {
+                display: none !important;
+            }
+            tr {
+                margin-bottom: 15px !important;
+                background: white !important;
+                border-radius: 12px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+                padding: 10px !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            td {
+                text-align: right !important;
+                padding: 10px 15px !important;
+                position: relative !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+            td:last-child {
+                border-bottom: none !important;
+            }
+            td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 13px;
+                text-align: left !important;
+            }
+            .chart-container h2 {
+              font-size: 16px !important;
+              padding: 10px !important;
+            }
+          }
+           @media (max-width: 480px) {
+            .stats-summary-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

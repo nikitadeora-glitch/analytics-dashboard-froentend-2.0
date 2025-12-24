@@ -401,6 +401,57 @@ function ForgotPassword() {
           </div>
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 1024px) {
+            .forgot-password-container > div {
+              flex-direction: column !important;
+              height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+            }
+            /* Branding Section */
+            .forgot-password-container > div > div:first-child {
+              flex: none !important;
+              height: 220px !important;
+              position: relative !important;
+            }
+            .forgot-password-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .forgot-password-container > div > div:first-child p {
+              font-size: 13px !important;
+              max-width: 80% !important;
+              margin: 0 auto !important;
+            }
+            /* Content Section */
+            .forgot-password-container > div > div:last-child {
+              flex: none !important;
+              padding: 30px 20px !important;
+            }
+            .forgot-password-container > div > div:last-child h1 {
+              font-size: 20px !important;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .forgot-password-container {
+              padding: 15px !important;
+            }
+            .forgot-password-container > div > div:first-child {
+              height: 180px !important;
+            }
+            .forgot-password-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .forgot-password-container > div > div:first-child p {
+              font-size: 11px !important;
+            }
+          }
+        `}
+      </style>
     </div>
   )
 }

@@ -306,8 +306,8 @@ function ExitLink({ projectId }) {
 
       <div className="content">
         {/* Tabs */}
-        <div className="chart-container" style={{ padding: 0, marginBottom: '20px' }}>
-          <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
+        <div className="chart-container exit-tabs-container" style={{ padding: 0, marginBottom: '20px' }}>
+          <div className="exit-tabs" style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
             <button
               onClick={() => setActiveTab('external')}
               style={{
@@ -347,7 +347,7 @@ function ExitLink({ projectId }) {
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           <div>
             {/* Table Header */}
-            <div style={{
+            <div className="exit-table-header" style={{
               display: 'grid',
               gridTemplateColumns: activeTab === 'external' ? '100px 120px 1fr 1fr' : '100px 120px 1fr 120px',
               padding: '16px 24px',
@@ -372,6 +372,7 @@ function ExitLink({ projectId }) {
               exitLinks.map((exit, idx) => (
                 <div
                   key={idx}
+                  className="exit-table-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 1fr',
@@ -384,18 +385,18 @@ function ExitLink({ projectId }) {
                   }}
                 >
                   {/* Date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
+                  <div className="exit-col" data-label="Date" style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
                     <LogOut size={14} style={{ color: '#dc2626' }} />
                     {exit.clicked_at ? formatDate(exit.clicked_at) : 'Unknown'}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
+                  <div className="exit-col" data-label="Time" style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
                     {exit.clicked_at ? formatTime(exit.clicked_at) : '--:--:--'}
                   </div>
 
                   {/* Exit Link - Clickable */}
-                  <div style={{
+                  <div className="exit-col" data-label="Exit Link Clicked" style={{
                     minWidth: 0,
                     maxWidth: '100%'
                   }}>
@@ -425,7 +426,7 @@ function ExitLink({ projectId }) {
                   </div>
 
                   {/* From Page - Clickable */}
-                  <div style={{
+                  <div className="exit-col" data-label="From Page" style={{
                     minWidth: 0,
                     maxWidth: '100%'
                   }}>
@@ -465,6 +466,7 @@ function ExitLink({ projectId }) {
               exitPages.map((page, idx) => (
                 <div
                   key={idx}
+                  className="exit-table-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 120px',
@@ -477,18 +479,18 @@ function ExitLink({ projectId }) {
                   }}
                 >
                   {/* Date - Using first visit date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
+                  <div className="exit-col" data-label="Date" style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
                     <LogOut size={14} style={{ color: '#dc2626' }} />
                     {page.visits && page.visits[0] ? formatDate(page.visits[0].visited_at) : 'Unknown'}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
+                  <div className="exit-col" data-label="Time" style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
                     {page.visits && page.visits[0] ? formatTime(page.visits[0].visited_at) : '--:--:--'}
                   </div>
 
                   {/* Exit Page URL - Clickable Link */}
-                  <div style={{
+                  <div className="exit-col" data-label="Exit Page URL" style={{
                     minWidth: 0,
                     maxWidth: '100%'
                   }}>
@@ -517,7 +519,7 @@ function ExitLink({ projectId }) {
                   </div>
 
                   {/* Exit Count */}
-                  <div style={{ textAlign: 'center', paddingTop: '2px' }}>
+                  <div className="exit-col" data-label="Exits" style={{ textAlign: 'center', paddingTop: '2px' }}>
                     <span style={{
                       background: '#fef2f2',
                       color: '#dc2626',
@@ -542,6 +544,87 @@ function ExitLink({ projectId }) {
           </div>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .header h1 {
+            font-size: 22px !important;
+          }
+          .content {
+            padding: 12px !important;
+            overflow-x: hidden !important;
+          }
+          .exit-tabs-container {
+             background: transparent !important;
+             box-shadow: none !important;
+             border: none !important;
+             margin-bottom: 12px !important;
+          }
+          .exit-tabs {
+             background: white !important;
+             border-radius: 12px !important;
+             border: 1px solid #e2e8f0 !important;
+             padding: 5px !important;
+             justify-content: center !important;
+          }
+          .exit-tabs button {
+             padding: 12px 10px !important;
+             flex: 1 !important;
+             text-align: center !important;
+             font-size: 12px !important;
+          }
+          .exit-table-header {
+            display: none !important;
+          }
+          .exit-table-row {
+            display: block !important;
+            background: white !important;
+            border-radius: 12px !important;
+            margin-bottom: 15px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 15px !important;
+          }
+          .exit-col {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 10px 0 !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            text-align: right !important;
+            min-height: 40px !important;
+          }
+          .exit-col:last-child {
+            border-bottom: none !important;
+          }
+          .exit-col:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #64748b;
+            font-size: 11px;
+            text-align: left !important;
+            margin-right: 15px !important;
+            flex-shrink: 0;
+          }
+          .exit-col > div, .exit-col > a, .exit-col > span {
+              max-width: 65% !important;
+              text-align: right !important;
+              word-break: break-all !important;
+              padding-top: 0 !important;
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideIn {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   )
 }

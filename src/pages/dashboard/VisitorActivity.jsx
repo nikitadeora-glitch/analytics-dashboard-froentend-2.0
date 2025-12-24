@@ -17,7 +17,7 @@ function VisitorActivity({ projectId }) {
   const loadVisitors = async () => {
     try {
       setError(null)
-      const response = await visitorsAPI.getActivityView(projectId)
+      const response = await visitorsAPI.getActivityView(projectId, 10000) // Increased limit to fetch all (10k)
       setVisitors(response.data)
     } catch (error) {
       console.error('Error loading visitors:', error)
@@ -49,28 +49,17 @@ function VisitorActivity({ projectId }) {
     return '💻'
   }
 
-  // Helper to format date to IST (India Standard Time)
+  // Helper to format date – showing it exactly as provided by the backend (already in IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
-    // Ensure the date string is treated as UTC if it lacks timezone info
-    let utcString = dateString
-    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
-      utcString = dateString + 'Z'
-    }
-
-    const date = new Date(utcString)
+    const date = new Date(dateString)
 
     // Check if valid date
-    if (isNaN(date.getTime())) return ''
+    if (isNaN(date.getTime())) return dateString
 
-    // Default to IST timezone
-    const defaultOptions = {
-      timeZone: 'Asia/Kolkata',
-      ...options
-    }
-
-    return date.toLocaleString('en-IN', defaultOptions)
+    // Just use the browser's default locale to format the date that came from the backend
+    return date.toLocaleString('en-IN', options)
   }
 
   if (loading) {

@@ -181,31 +181,31 @@ function TrafficSourceDetailView({ projectId }) {
 
       <div className="content">
         {/* Summary Stats */}
-        <div style={{
+        <div className="stats-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '20px',
           marginBottom: '30px'
         }}>
-          <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#3b82f6' : '#94a3b8', marginBottom: '8px' }}>
+          <div className="chart-container stat-card" style={{ padding: '20px', textAlign: 'center' }}>
+            <div className="value" style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#3b82f6' : '#94a3b8', marginBottom: '8px' }}>
               {totalSessions}
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b' }}>Total Sessions</div>
+            <div className="label" style={{ fontSize: '14px', color: '#64748b' }}>Total Sessions</div>
           </div>
 
-          <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions === 0 ? '#94a3b8' : (avgBounceRate > 70 ? '#ef4444' : '#10b981'), marginBottom: '8px' }}>
+          <div className="chart-container stat-card" style={{ padding: '20px', textAlign: 'center' }}>
+            <div className="value" style={{ fontSize: '32px', fontWeight: '700', color: totalSessions === 0 ? '#94a3b8' : (avgBounceRate > 70 ? '#ef4444' : '#10b981'), marginBottom: '8px' }}>
               {totalSessions === 0 ? 'N/A' : `${avgBounceRate}%`}
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b' }}>Avg Bounce Rate</div>
+            <div className="label" style={{ fontSize: '14px', color: '#64748b' }}>Avg Bounce Rate</div>
           </div>
 
-          <div className="chart-container" style={{ padding: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#8b5cf6' : '#94a3b8', marginBottom: '8px' }}>
+          <div className="chart-container stat-card" style={{ padding: '20px', textAlign: 'center' }}>
+            <div className="value" style={{ fontSize: '32px', fontWeight: '700', color: totalSessions > 0 ? '#8b5cf6' : '#94a3b8', marginBottom: '8px' }}>
               {totalSessions === 0 ? '0' : Math.max(1, Math.round(totalSessions / 14))}
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b' }}>Daily Average</div>
+            <div className="label" style={{ fontSize: '14px', color: '#64748b' }}>Daily Average</div>
           </div>
         </div>
 
@@ -333,6 +333,52 @@ function TrafficSourceDetailView({ projectId }) {
           )}
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .header h1 {
+              font-size: 20px !important;
+              margin-bottom: 5px !important;
+            }
+            .content {
+              padding: 12px !important;
+              overflow-x: hidden !important;
+            }
+            .stats-grid {
+              grid-template-columns: repeat(3, 1fr) !important;
+              gap: 8px !important;
+              margin-bottom: 20px !important;
+            }
+            .stats-grid .stat-card {
+                padding: 10px 5px !important;
+                min-height: auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+            .stats-grid .stat-card:last-child {
+                grid-column: span 1 !important;
+            }
+            .stat-card .value {
+                font-size: 18px !important;
+                margin-bottom: 2px !important;
+            }
+            .stat-card .label {
+                font-size: 9px !important;
+                white-space: nowrap !important;
+                color: #94a3b8 !important;
+            }
+            .chart-container {
+               padding: 12px !important;
+            }
+            .chart-container > div:last-child {
+               
+                padding: 0 !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

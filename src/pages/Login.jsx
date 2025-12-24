@@ -163,6 +163,7 @@ function Login() {
             <img
               src={logo}
               alt="State Counter Logo"
+              className="login-logo"
               style={{
                 width: '120px',
                 height: '114px',
@@ -449,25 +450,56 @@ function Login() {
             100% { transform: rotate(360deg); }
           }
           
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             .login-container > div {
               flex-direction: column !important;
               height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
             }
+            /* Branding Section */
             .login-container > div > div:first-child {
-              height: 200px !important;
+              flex: none !important;
+              height: 220px !important;
+              position: relative !important;
             }
+            .login-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .login-container > div > div:first-child p {
+              font-size: 13px !important;
+              max-width: 80% !important;
+              margin: 0 auto !important;
+            }
+            /* Form Section */
             .login-container > div > div:last-child {
-              padding: 24px !important;
+              flex: none !important;
+              padding: 30px 20px !important;
+            }
+            .login-logo {
+              width: 70px !important;
+              height: 67px !important;
+              margin-bottom: 10px !important;
+            }
+            .login-container > div > div:last-child h1 {
+              font-size: 20px !important;
             }
           }
           
           @media (max-width: 480px) {
             .login-container {
-              padding: 10px !important;
+              padding: 15px !important;
             }
-            .login-container > div {
-              border-radius: 10px !important;
+            .login-container > div > div:first-child {
+              height: 180px !important;
+            }
+            .login-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .login-container > div > div:first-child p {
+              font-size: 11px !important;
             }
           }
         `}

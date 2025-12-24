@@ -334,617 +334,689 @@ function Projects() {
   )
 
   return (
-    <div className="main-content">
-      <div className="header" style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: '20px',
-        marginBottom: '24px',
-        padding: '0 20px'
-      }}>
-        <h1 style={{ margin: 0 }}>Projects</h1>
-        <div style={{
+    <>
+      <div className="main-content">
+        <div className="header" style={{
           display: 'flex',
-          gap: '12px',
-          alignItems: 'center'
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '20px',
+          marginBottom: '24px',
+          padding: '0 20px'
         }}>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-            style={{
-              background: '#10b981',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-          >
-            <Plus size={16} /> Add Project
-          </button>
-          <button
-            onClick={handleExport}
-            disabled={exporting || projects.length === 0}
-            className="btn"
-            style={{
-              background: exporting ? '#e2e8f0' : '#f1f5f9',
-              color: exporting ? '#94a3b8' : '#475569',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '6px',
-              cursor: exporting || projects.length === 0 ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              opacity: exporting || projects.length === 0 ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!exporting && projects.length > 0) {
-                e.currentTarget.style.background = '#e2e8f0'
-                e.currentTarget.style.borderColor = '#cbd5e1'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!exporting && projects.length > 0) {
-                e.currentTarget.style.background = '#f1f5f9'
-                e.currentTarget.style.borderColor = '#e2e8f0'
-              }
-            }}
-          >
-            <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
-          </button>
-        </div>
-      </div>
-
-      {/* Tracking Code Modal */}
-      {showTrackingCode && selectedProject && (
-        <div
-          onClick={() => setShowTrackingCode(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+          <h1 style={{ margin: 0 }}>Projects</h1>
+          <div style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '700px',
-              width: '90%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              animation: 'slideIn 0.3s ease'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
-                  Tracking Code
-                </h2>
-                <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>
-                  {selectedProject.name} - {selectedProject.domain}
-                </div>
-
-
-              </div>
-              <button
-                onClick={() => setShowTrackingCode(false)}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '36px',
-                  height: '36px',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  flexShrink: 0,
-                  marginLeft: '16px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Step 1: Tracking Code */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{
-                fontSize: '16px',
-                color: '#1e293b',
-                marginBottom: '12px',
-                fontWeight: '600',
+            gap: '12px',
+            alignItems: 'center'
+          }}>
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn btn-primary add-project-btn"
+              style={{
+                background: '#10b981',
+                color: 'white',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
-              }}>
-                <span style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '700'
-                }}>1</span>
-                Install Tracking Code
-              </div>
-              <div style={{
+                gap: '8px',
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
                 fontSize: '14px',
-                color: '#475569',
-                marginBottom: '12px',
-                fontWeight: '500'
-              }}>
-                Copy and paste this code before the closing &lt;/head&gt; tag on your website:
-              </div>
-
-              <div style={{ position: 'relative' }}>
-                <pre style={{
-                  background: '#1e293b',
-                  color: '#e2e8f0',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  lineHeight: '1.6',
-                  overflow: 'auto',
-                  margin: 0,
-                  fontFamily: 'monospace'
-                }}>
-                  {getTrackingCode(selectedProject)}
-                </pre>
-
-                <button
-                  onClick={handleCopyCode}
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    padding: '8px 16px',
-                    background: copied ? '#10b981' : '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!copied) e.currentTarget.style.background = '#2563eb'
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!copied) e.currentTarget.style.background = '#3b82f6'
-                  }}
-                >
-                  {copied ? (
-                    <>
-                      <Check size={14} />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      Copy Code
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+            >
+              <Plus size={16} /> Add <span className="hide-mobile">Project</span>
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={exporting || projects.length === 0}
+              className="btn"
+              style={{
+                background: exporting ? '#e2e8f0' : '#f1f5f9',
+                color: exporting ? '#94a3b8' : '#475569',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                cursor: exporting || projects.length === 0 ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                opacity: exporting || projects.length === 0 ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!exporting && projects.length > 0) {
+                  e.currentTarget.style.background = '#e2e8f0'
+                  e.currentTarget.style.borderColor = '#cbd5e1'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!exporting && projects.length > 0) {
+                  e.currentTarget.style.background = '#f1f5f9'
+                  e.currentTarget.style.borderColor = '#e2e8f0'
+                }
+              }}
+            >
+              <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Add Project Modal */}
-      {showForm && (
-        <div
-          onClick={() => setShowForm(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
+        {/* Tracking Code Modal */}
+        {showTrackingCode && selectedProject && (
           <div
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setShowTrackingCode(false)}
             style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '500px',
-              width: '90%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              animation: 'slideIn 0.3s ease'
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              animation: 'fadeIn 0.2s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                Create New Project
-              </h2>
-              <button
-                onClick={() => setShowForm(false)}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '36px',
-                  height: '36px',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '32px',
+                maxWidth: '700px',
+                width: '90%',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                animation: 'slideIn 0.3s ease'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
+                    Tracking Code
+                  </h2>
+                  <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>
+                    {selectedProject.name} - {selectedProject.domain}
+                  </div>
 
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '600',
-                  color: '#475569',
-                  fontSize: '14px'
-                }}>
-                  Project Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="My Website"
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    fontSize: '14px',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  required
-                />
-              </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '600',
-                  color: '#475569',
-                  fontSize: '14px'
-                }}>
-                  Domain *
-                </label>
-                <input
-                  type="text"
-                  value={formData.domain}
-                  onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                  placeholder="example.com"
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: '2px solid #e2e8f0',
-                    fontSize: '14px',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  required
-                />
-                <div style={{
-                  fontSize: '12px',
-                  color: '#64748b',
-                  marginTop: '6px'
-                }}>
-                  Enter your website domain (e.g., mywebsite.com)
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
                 <button
-                  type="submit"
+                  onClick={() => setShowTrackingCode(false)}
                   style={{
-                    flex: 1,
-                    padding: '12px 24px',
-                    background: '#10b981',
-                    color: 'white',
+                    background: '#f1f5f9',
                     border: 'none',
                     borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
                     cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    fontSize: '20px',
+                    color: '#64748b',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'background 0.2s'
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                    marginLeft: '16px'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-                >
-                  <Plus size={16} />
-                  Create Project
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  style={{
-                    flex: 1,
-                    padding: '12px 24px',
-                    background: '#f1f5f9',
-                    color: '#475569',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    transition: 'background 0.2s'
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0'
+                    e.currentTarget.style.color = '#1e293b'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9'
+                    e.currentTarget.style.color = '#64748b'
+                  }}
                 >
-                  Cancel
+                  ×
                 </button>
               </div>
-            </form>
+
+              {/* Step 1: Tracking Code */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                  fontSize: '16px',
+                  color: '#1e293b',
+                  marginBottom: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>1</span>
+                  Install Tracking Code
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  color: '#475569',
+                  marginBottom: '12px',
+                  fontWeight: '500'
+                }}>
+                  Copy and paste this code before the closing &lt;/head&gt; tag on your website:
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <pre style={{
+                    background: '#1e293b',
+                    color: '#e2e8f0',
+                    padding: '20px',
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    lineHeight: '1.6',
+                    overflow: 'auto',
+                    margin: 0,
+                    fontFamily: 'monospace'
+                  }}>
+                    {getTrackingCode(selectedProject)}
+                  </pre>
+
+                  <button
+                    onClick={handleCopyCode}
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      padding: '8px 16px',
+                      background: copied ? '#10b981' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!copied) e.currentTarget.style.background = '#2563eb'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!copied) e.currentTarget.style.background = '#3b82f6'
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={14} />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        Copy Code
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="content" style={{ padding: '0 20px' }}>
-        <div className="chart-container" style={{
-          padding: 0,
-          overflow: 'visible',
-          marginTop: '0'
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#475569' }}>Project</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Traffic Trend</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Today</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Yesterday</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>This Month</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Total</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project) => (
-                <tr
-                  key={project.id}
+        {/* Add Project Modal */}
+        {showForm && (
+          <div
+            onClick={() => setShowForm(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              animation: 'fadeIn 0.2s ease'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '32px',
+                maxWidth: '500px',
+                width: '90%',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                animation: 'slideIn 0.3s ease'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+                  Create New Project
+                </h2>
+                <button
+                  onClick={() => setShowForm(false)}
                   style={{
-                    borderBottom: '1px solid #e2e8f0',
-                    transition: 'background 0.2s'
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0'
+                    e.currentTarget.style.color = '#1e293b'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9'
+                    e.currentTarget.style.color = '#64748b'
+                  }}
                 >
-                  <td style={{ padding: '16px' }}>
-                    <div>
-                      <div
-                        onClick={() => navigate(`/dashboard/project/${project.id}/summary`)}
-                        style={{
-                          fontWeight: '600',
-                          color: '#1e40af',
-                          marginBottom: '4px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
+                  ×
+                </button>
+              </div>
 
-                          e.currentTarget.style.padding = '4px 8px'
-                          e.currentTarget.style.borderRadius = '4px'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'transparent'
-                          e.currentTarget.style.transform = 'scale(1)'
-                          e.currentTarget.style.padding = '0'
-                          e.currentTarget.style.borderRadius = '0'
-                        }}
-                      >
-                        {project.name}
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>
-                        {project.domain}
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <div style={{ width: '160px', height: '35px', margin: '0 auto' }}>
-                      <LineChart
-                        displayData={(() => {
-                          // Generate more realistic trend data based on actual project stats
-                          const baseValue = Math.max(project.today, project.yesterday, 1)
-                          const variation = Math.max(baseValue * 0.3, 5) // 30% variation or minimum 5
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '600',
+                    color: '#475569',
+                    fontSize: '14px'
+                  }}>
+                    Project Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="My Website"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      fontSize: '14px',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    required
+                  />
+                </div>
 
-                          return [
-                            { date: '5d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
-                            { date: '4d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
-                            { date: '3d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.3) * variation)) },
-                            { date: '2d', page_views: project.yesterday || Math.max(1, Math.round(baseValue * 0.8)) },
-                            { date: '1d', page_views: project.today || Math.max(1, Math.round(baseValue)) },
-                            { date: 'now', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.2) * variation * 0.5)) }
-                          ]
-                        })()}
-                        showPageViews={true}
-                        showUniqueVisits={false}
-                        showReturningVisits={false}
-                      />
-                    </div>
-                    <div style={{
-                      fontSize: '11px',
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '8px',
+                    fontWeight: '600',
+                    color: '#475569',
+                    fontSize: '14px'
+                  }}>
+                    Domain *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.domain}
+                    onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
+                    placeholder="example.com"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '2px solid #e2e8f0',
+                      fontSize: '14px',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    required
+                  />
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    marginTop: '6px'
+                  }}>
+                    Enter your website domain (e.g., mywebsite.com)
+                  </div>
+                </div>
 
-                      marginTop: '6px',
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    style={{
+                      flex: 1,
+                      padding: '12px 24px',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
-                      fontWeight: '500'
-                    }}>
-
-
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
-                    {project.today}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
-                    {project.yesterday}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
-                    {project.month}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#3b82f6' }}>
-                    {project.total.toLocaleString()}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        onClick={() => navigate(`/dashboard/project/${project.id}/summary`)}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-                      >
-                        <BarChart2 size={14} />
-                        View Stats
-                      </button>
-                      <button
-                        onClick={() => handleShowTrackingCode(project)}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-                      >
-                        <Code size={14} />
-                        Get Code
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProject(project)}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
-
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {projects.length === 0 && !showForm && (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
-              <p>No projects yet. Create your first project to get started!</p>
+                      gap: '8px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                  >
+                    <Plus size={16} />
+                    Create Project
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    style={{
+                      flex: 1,
+                      padding: '12px 24px',
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-          )}
+          </div>
+        )}
+
+        <div className="content" style={{ padding: '0 20px' }}>
+          <div className="table-responsive-wrapper" style={{
+            padding: 0,
+            overflowX: 'auto',
+            marginTop: '0',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#475569', minWidth: '200px' }}>Project</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569', minWidth: '180px' }}>Traffic Trend</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Today</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Yesterday</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569', minWidth: '100px' }}>This Month</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569' }}>Total</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#475569', minWidth: '250px' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projects.map((project) => (
+                  <tr
+                    key={project.id}
+                    style={{
+                      borderBottom: '1px solid #e2e8f0',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td data-label="Project" style={{ padding: '16px' }}>
+                      <div>
+                        <div
+                          onClick={() => navigate(`/dashboard/project/${project.id}/summary`)}
+                          style={{
+                            fontWeight: '600',
+                            color: '#1e40af',
+                            marginBottom: '4px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+
+                            e.currentTarget.style.padding = '4px 8px'
+                            e.currentTarget.style.borderRadius = '4px'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent'
+                            e.currentTarget.style.transform = 'scale(1)'
+                            e.currentTarget.style.padding = '0'
+                            e.currentTarget.style.borderRadius = '0'
+                          }}
+                        >
+                          {project.name}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>
+                          {project.domain}
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Traffic Trend" style={{ padding: '16px', textAlign: 'center' }}>
+                      <div style={{ width: '160px', height: '35px', margin: '0 auto' }}>
+                        <LineChart
+                          displayData={(() => {
+                            // Generate more realistic trend data based on actual project stats
+                            const baseValue = Math.max(project.today, project.yesterday, 1)
+                            const variation = Math.max(baseValue * 0.3, 5) // 30% variation or minimum 5
+
+                            return [
+                              { date: '5d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
+                              { date: '4d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
+                              { date: '3d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.3) * variation)) },
+                              { date: '2d', page_views: project.yesterday || Math.max(1, Math.round(baseValue * 0.8)) },
+                              { date: '1d', page_views: project.today || Math.max(1, Math.round(baseValue)) },
+                              { date: 'now', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.2) * variation * 0.5)) }
+                            ]
+                          })()}
+                          showPageViews={true}
+                          showUniqueVisits={false}
+                          showReturningVisits={false}
+                        />
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+
+                        marginTop: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        fontWeight: '500'
+                      }}>
+
+
+                      </div>
+                    </td>
+                    <td data-label="Today" style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
+                      {project.today}
+                    </td>
+                    <td data-label="Yesterday" style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
+                      {project.yesterday}
+                    </td>
+                    <td data-label="This Month" style={{ padding: '16px', textAlign: 'center', fontWeight: '500', color: '#1e293b' }}>
+                      {project.month}
+                    </td>
+                    <td data-label="Total" style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#3b82f6' }}>
+                      {project.total.toLocaleString()}
+                    </td>
+                    <td data-label="Actions" style={{ padding: '16px', textAlign: 'center' }}>
+                      <div className="actions-container" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => navigate(`/dashboard/project/${project.id}/summary`)}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                        >
+                          <BarChart2 size={14} />
+                          View Stats
+                        </button>
+                        <button
+                          onClick={() => handleShowTrackingCode(project)}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                        >
+                          <Code size={14} />
+                          Get Code
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProject(project)}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {projects.length === 0 && !showForm && (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+                <p>No projects yet. Create your first project to get started!</p>
+              </div>
+            )}
+          </div>
+          <style>
+            {`
+            @media (max-width: 768px) {
+              .header {
+                padding: 15px !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+              }
+              .header h1 {
+                font-size: 24px !important;
+                margin-bottom: 10px !important;
+              }
+              .content {
+                padding: 10px !important;
+              }
+              .table-responsive-wrapper {
+                margin: 0 !important;
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+              }
+              table, thead, tbody, th, td, tr {
+                display: block !important;
+                width: 100% !important;
+              }
+              thead tr {
+                display: none !important;
+              }
+              tr {
+                margin-bottom: 15px !important;
+                background: white !important;
+                border-radius: 12px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+                padding: 10px !important;
+                border: 1px solid #e2e8f0 !important;
+              }
+              td {
+                text-align: right !important;
+                padding: 10px 15px !important;
+                position: relative !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+              }
+              td:last-child {
+                border-bottom: none !important;
+              }
+              td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 13px;
+                text-align: left !important;
+              }
+              td[data-label="Traffic Trend"] > div {
+                margin: 0 !important;
+                width: 120px !important;
+              }
+              .actions-container {
+                justify-content: flex-end !important;
+                flex-wrap: wrap !important;
+                gap: 5px !important;
+              }
+            }
+        `}
+          </style>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

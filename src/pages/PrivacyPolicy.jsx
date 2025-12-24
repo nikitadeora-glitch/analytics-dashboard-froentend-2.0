@@ -186,25 +186,47 @@ function PrivacyPolicy() {
       {/* Responsive Styles */}
       <style>
         {`
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             .privacy-container > div {
               flex-direction: column !important;
               height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
             }
+            /* Branding Section */
             .privacy-container > div > div:first-child {
-              height: 200px !important;
+              flex: none !important;
+              height: 180px !important;
+              position: relative !important;
             }
+            .privacy-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .privacy-container > div > div:first-child p {
+              font-size: 13px !important;
+            }
+            /* Content Section */
             .privacy-container > div > div:last-child {
-              padding: 24px !important;
+              flex: none !important;
+              padding: 24px 20px !important;
+              max-height: 500px !important;
             }
           }
           
           @media (max-width: 480px) {
             .privacy-container {
-              padding: 10px !important;
+              padding: 15px !important;
             }
-            .privacy-container > div {
-              border-radius: 10px !important;
+            .privacy-container > div > div:first-child {
+              height: 150px !important;
+            }
+            .privacy-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .privacy-container > div > div:first-child p {
+              font-size: 11px !important;
             }
           }
         `}

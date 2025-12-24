@@ -171,25 +171,47 @@ function TermsOfService() {
       {/* Responsive Styles */}
       <style>
         {`
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             .terms-container > div {
               flex-direction: column !important;
               height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
             }
+            /* Branding Section */
             .terms-container > div > div:first-child {
-              height: 200px !important;
+              flex: none !important;
+              height: 180px !important;
+              position: relative !important;
             }
+            .terms-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .terms-container > div > div:first-child p {
+              font-size: 13px !important;
+            }
+            /* Content Section */
             .terms-container > div > div:last-child {
-              padding: 24px !important;
+              flex: none !important;
+              padding: 24px 20px !important;
+              max-height: 500px !important;
             }
           }
           
           @media (max-width: 480px) {
             .terms-container {
-              padding: 10px !important;
+              padding: 15px !important;
             }
-            .terms-container > div {
-              border-radius: 10px !important;
+            .terms-container > div > div:first-child {
+              height: 150px !important;
+            }
+            .terms-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .terms-container > div > div:first-child p {
+              font-size: 11px !important;
             }
           }
         `}
