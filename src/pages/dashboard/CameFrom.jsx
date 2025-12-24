@@ -63,16 +63,22 @@ function CameFrom({ projectId }) {
     setSelectedReferrer(null)
   }
 
-  // Helper to format date – showing it exactly as provided by the backend (already in IST)
+  // Helper to format date – treats backend data as UTC and converts to local (IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
-    const date = new Date(dateString)
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
 
     // Check if valid date
     if (isNaN(date.getTime())) return dateString
 
-    // Just use the browser's default locale to format the date
+    // Format using browser's locale
     return date.toLocaleString('en-IN', options)
   }
 

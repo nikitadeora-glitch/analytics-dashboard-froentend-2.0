@@ -218,7 +218,13 @@ function Pages({ projectId }) {
   const formatDate = (date) => {
     if (!date) return ''
 
-    const d = new Date(date)
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = date
+    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
+      utcString = date + 'Z'
+    }
+
+    const d = new Date(utcString)
 
     if (isNaN(d.getTime())) return date
 
@@ -232,7 +238,13 @@ function Pages({ projectId }) {
   const formatTime = (date) => {
     if (!date) return ''
 
-    const d = new Date(date)
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = date
+    if (typeof date === 'string' && !date.endsWith('Z') && !date.includes('+')) {
+      utcString = date + 'Z'
+    }
+
+    const d = new Date(utcString)
 
     if (isNaN(d.getTime())) return date
 

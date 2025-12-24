@@ -1,312 +1,160 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { visitorsAPI } from '../../api/api'
 
+// Helper function to process and calculate time spent for session journey
+const processSessionJourney = (sessionData, visit) => {
+  const journey = sessionData?.page_journey
+  if (!journey || journey.length === 0) return []
+
+  const result = []
+  const sessionDuration = sessionData.session_duration
+
+  for (let i = 0; i < journey.length; i++) {
+    const page = journey[i]
+    let timeSpent = Number(page.time_spent) || 0
+
+    if (timeSpent === 0) {
+      if (journey.length > 1) {
+        const currentTs = page.timestamp || page.visited_at || page.created_at || page.time
+        const currentPageTime = currentTs ? new Date(currentTs).getTime() : NaN
+
+        const nextPage = journey[i + 1]
+        if (nextPage && !isNaN(currentPageTime)) {
+          const nextTs = nextPage.timestamp || nextPage.visited_at || nextPage.created_at || nextPage.time
+          const nextPageTime = nextTs ? new Date(nextTs).getTime() : NaN
+
+          if (!isNaN(nextPageTime)) {
+            const diff = Math.floor((nextPageTime - currentPageTime) / 1000)
+            timeSpent = (diff > 0 && diff < 1800) ? diff : 45
+          }
+        } else if (i === journey.length - 1) {
+          timeSpent = Math.min(60, sessionDuration || 45)
+        }
+      } else {
+        timeSpent = sessionDuration || 60
+      }
+      if (timeSpent === 0) timeSpent = 30
+    }
+
+    result.push({
+      ...page,
+      time_spent: timeSpent,
+      time_spent_original: page.time_spent,
+      time_spent_calculated: timeSpent !== (Number(page.time_spent) || 0)
+    })
+  }
+  return result
+}
+
+// Internal helper to process a single visitor's session details
+const processSingleVisitorSession = async (visit, projectId, allVisitorsData) => {
+  const visitorData = allVisitorsData?.find(v => v.visitor_id === visit.visitor_id) || {}
+
+  try {
+    const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
+    const sessions = pathResponse.data?.sessions || []
+    const sessionData = sessions.find(s => s.session_number === visit.session_id)
+
+    const processedJourney = processSessionJourney(sessionData, visit)
+
+    return {
+      ...visitorData, // Original visitor info (country, city, etc)
+      ...visit,       // Visit specific info (visited_at, etc)
+      path: processedJourney,
+      entry_page: sessionData?.entry_page,
+      exit_page: sessionData?.exit_page,
+      total_time: sessionData?.session_duration || visit.time_spent || 0 // Restored original key 'total_time'
+    }
+  } catch (error) {
+    console.warn(`Could not fetch details for visitor ${visit.visitor_id}:`, error)
+    return { ...visitorData, ...visit, path: [] }
+  }
+}
+
 // Async thunk for fetching initial session details
 export const fetchSessionDetails = createAsyncThunk(
   'session/fetchSessionDetails',
   async ({ projectId, selectedPageSessions, limit = 10 }, { rejectWithValue }) => {
     try {
-      // Reduced logging for better performance
-      console.log('Loading session details for', selectedPageSessions?.visits?.length || 0, 'visits')
-      
-      if (!selectedPageSessions?.visits || selectedPageSessions.visits.length === 0) {
-        throw new Error('No visits data available')
+      if (!selectedPageSessions?.visits?.length) {
+        return { sessions: [], hasMore: false, currentLimit: limit, totalSessions: 0, visitors: [] }
       }
 
-      // Get all visitors first (keeping original logic but optimized)
-      const allVisitors = await visitorsAPI.getActivity(projectId, 1000)
-      
-      // Process only the requested number of sessions (pagination)
+      // Fetch all visitors - we'll store this to reuse during pagination
+      const visitorsResponse = await visitorsAPI.getActivity(projectId, 1000)
+      const allVisitors = visitorsResponse.data || []
+
       const visitsToProcess = selectedPageSessions.visits.slice(0, limit)
-      
-      // Process sessions in parallel for better performance
-      const detailsPromises = visitsToProcess.map(async (visit, index) => {
-        const visitorData = allVisitors.data.find(v => v.visitor_id === visit.visitor_id)
-        
-        // Get visitor's complete path for this session
-        try {
-          const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
-          
-          // Backend returns { sessions: [...] }, find matching session
-          const sessions = pathResponse.data.sessions || []
-          const sessionData = sessions.find(s => s.session_number === visit.session_id)
-          
-          // Process and calculate time spent data (optimized)
-          if (sessionData?.page_journey) {
-            // Process and calculate time spent data
-            const processedJourney = sessionData.page_journey.map((page, idx) => {
-              let calculatedTimeSpent = Number(page.time_spent) || 0
-              
-              // Optimized time calculation - if time_spent is 0 or null
-              if (calculatedTimeSpent === 0) {
-                if (sessionData.page_journey.length > 1) {
-                  // Try to get timestamps from various fields
-                  const currentPageTime = new Date(
-                    page.timestamp || 
-                    page.visited_at || 
-                    page.created_at || 
-                    page.time
-                  ).getTime()
-                  
-                  const nextPage = sessionData.page_journey[idx + 1]
-                  
-                  if (nextPage && !isNaN(currentPageTime)) {
-                    const nextPageTime = new Date(
-                      nextPage.timestamp || 
-                      nextPage.visited_at || 
-                      nextPage.created_at || 
-                      nextPage.time
-                    ).getTime()
-                    
-                    if (!isNaN(nextPageTime)) {
-                      const timeDiff = Math.floor((nextPageTime - currentPageTime) / 1000)
-                      
-                      // Use calculated time if it's reasonable (between 1 second and 30 minutes)
-                      if (timeDiff > 0 && timeDiff < 1800) {
-                        calculatedTimeSpent = timeDiff
-                      } else {
-                        // Use a reasonable default based on page type
-                        calculatedTimeSpent = Math.floor(Math.random() * 60) + 30 // 30-90 seconds
-                      }
-                    }
-                  } else if (idx === sessionData.page_journey.length - 1) {
-                    // For last page, use session duration or reasonable default
-                    calculatedTimeSpent = Math.min(60, sessionData.session_duration || 45)
-                  }
-                } else {
-                  // Single page session - use session duration or default
-                  calculatedTimeSpent = sessionData.session_duration || 60
-                }
-                
-                // If still 0, use a minimum default
-                if (calculatedTimeSpent === 0) {
-                  calculatedTimeSpent = Math.floor(Math.random() * 120) + 15 // 15-135 seconds
-                }
-              }
-              
-              return {
-                ...page,
-                time_spent: calculatedTimeSpent,
-                time_spent_original: page.time_spent,
-                time_spent_calculated: calculatedTimeSpent !== (Number(page.time_spent) || 0),
-                time_spent_formatted: formatTimeSpent(calculatedTimeSpent)
-              }
-            })
-            
-            return {
-              ...visitorData,
-              ...visit,
-              visited_at: visit.visited_at,
-              path: processedJourney,
-              entry_page: sessionData?.entry_page,
-              exit_page: sessionData?.exit_page,
-              total_time: sessionData?.session_duration || visit.time_spent || 0
-            }
-          }
-          
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: [],
-            entry_page: sessionData?.entry_page,
-            exit_page: sessionData?.exit_page,
-            total_time: sessionData?.session_duration || visit.time_spent || 0
-          }
-        } catch (error) {
-          console.error('Error loading path for visitor:', visit.visitor_id, error)
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: []
-          }
-        }
-      })
-      
-      // Use Promise.allSettled for better error handling and performance
+      const detailsPromises = visitsToProcess.map(visit =>
+        processSingleVisitorSession(visit, projectId, allVisitors)
+      )
+
       const results = await Promise.allSettled(detailsPromises)
-      const details = results
-        .filter(result => result.status === 'fulfilled')
-        .map(result => result.value)
-      
-      console.log(`Successfully processed ${details.length} sessions`)
-      
+      const details = results.filter(r => r.status === 'fulfilled').map(r => r.value)
+
       return {
         sessions: details,
         hasMore: selectedPageSessions.visits.length > limit,
         currentLimit: limit,
-        totalSessions: selectedPageSessions.visits.length
+        totalSessions: selectedPageSessions.visits.length,
+        visitors: allVisitors // Pass this to state for caching
       }
     } catch (error) {
-      console.error('Redux fetchSessionDetails error:', error)
       return rejectWithValue(error.message)
     }
   }
 )
 
-// Async thunk for fetching more session details (pagination) - OPTIMIZED
+// Async thunk for fetching more session details (pagination)
 export const fetchMoreSessionDetails = createAsyncThunk(
   'session/fetchMoreSessionDetails',
   async ({ projectId, selectedPageSessions, limit }, { rejectWithValue, getState }) => {
     try {
-      const currentState = getState().session
-      const currentLimit = currentState.currentLimit
-      
-      console.log(`Loading more sessions: ${currentLimit} → ${limit}`)
-      
-      if (!selectedPageSessions?.visits || selectedPageSessions.visits.length === 0) {
+      const { currentLimit, cachedVisitors } = getState().session
+
+      if (!selectedPageSessions?.visits?.length) {
         throw new Error('No visits data available')
       }
 
-      // Only process NEW sessions (from currentLimit to new limit)
       const newVisits = selectedPageSessions.visits.slice(currentLimit, limit)
-      console.log(`Processing only ${newVisits.length} NEW sessions`)
-      
       if (newVisits.length === 0) {
-        return {
-          newSessions: [],
-          hasMore: selectedPageSessions.visits.length > limit,
-          currentLimit: limit,
-          totalSessions: selectedPageSessions.visits.length
-        }
+        return { newSessions: [], hasMore: false, currentLimit, totalSessions: selectedPageSessions.visits.length }
       }
 
-      // Get all visitors first (keeping original logic but optimized)
-      const allVisitors = await visitorsAPI.getActivity(projectId, 1000)
-      
-      // Process only NEW sessions in parallel for better performance
-      const detailsPromises = newVisits.map(async (visit) => {
-        const visitorData = allVisitors.data.find(v => v.visitor_id === visit.visitor_id)
-        
-        // Get visitor's complete path for this session
-        try {
-          const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
-          
-          // Backend returns { sessions: [...] }, find matching session
-          const sessions = pathResponse.data.sessions || []
-          const sessionData = sessions.find(s => s.session_number === visit.session_id)
-          
-          // Process and calculate time spent data (optimized)
-          if (sessionData?.page_journey) {
-            // Process and calculate time spent data
-            const processedJourney = sessionData.page_journey.map((page, idx) => {
-              let calculatedTimeSpent = Number(page.time_spent) || 0
-              
-              // Optimized time calculation - if time_spent is 0 or null
-              if (calculatedTimeSpent === 0) {
-                if (sessionData.page_journey.length > 1) {
-                  // Try to get timestamps from various fields
-                  const currentPageTime = new Date(
-                    page.timestamp || 
-                    page.visited_at || 
-                    page.created_at || 
-                    page.time
-                  ).getTime()
-                  
-                  const nextPage = sessionData.page_journey[idx + 1]
-                  
-                  if (nextPage && !isNaN(currentPageTime)) {
-                    const nextPageTime = new Date(
-                      nextPage.timestamp || 
-                      nextPage.visited_at || 
-                      nextPage.created_at || 
-                      nextPage.time
-                    ).getTime()
-                    
-                    if (!isNaN(nextPageTime)) {
-                      const timeDiff = Math.floor((nextPageTime - currentPageTime) / 1000)
-                      
-                      // Use calculated time if it's reasonable (between 1 second and 30 minutes)
-                      if (timeDiff > 0 && timeDiff < 1800) {
-                        calculatedTimeSpent = timeDiff
-                      } else {
-                        // Use a reasonable default based on page type
-                        calculatedTimeSpent = Math.floor(Math.random() * 60) + 30 // 30-90 seconds
-                      }
-                    }
-                  } else if (idx === sessionData.page_journey.length - 1) {
-                    // For last page, use session duration or reasonable default
-                    calculatedTimeSpent = Math.min(60, sessionData.session_duration || 45)
-                  }
-                } else {
-                  // Single page session - use session duration or default
-                  calculatedTimeSpent = sessionData.session_duration || 60
-                }
-                
-                // If still 0, use a minimum default
-                if (calculatedTimeSpent === 0) {
-                  calculatedTimeSpent = Math.floor(Math.random() * 120) + 15 // 15-135 seconds
-                }
-              }
-              
-              return {
-                ...page,
-                time_spent: calculatedTimeSpent,
-                time_spent_original: page.time_spent,
-                time_spent_calculated: calculatedTimeSpent !== (Number(page.time_spent) || 0),
-                time_spent_formatted: formatTimeSpent(calculatedTimeSpent)
-              }
-            })
-            
-            return {
-              ...visitorData,
-              ...visit,
-              visited_at: visit.visited_at,
-              path: processedJourney,
-              entry_page: sessionData?.entry_page,
-              exit_page: sessionData?.exit_page,
-              total_time: sessionData?.session_duration || visit.time_spent || 0
-            }
-          }
-          
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: [],
-            entry_page: sessionData?.entry_page,
-            exit_page: sessionData?.exit_page,
-            total_time: sessionData?.session_duration || visit.time_spent || 0
-          }
-        } catch (error) {
-          console.error('Error loading path for visitor:', visit.visitor_id, error)
-          return {
-            ...visitorData,
-            ...visit,
-            visited_at: visit.visited_at,
-            path: []
-          }
-        }
-      })
-      
-      // Use Promise.allSettled for better error handling and performance
+      // Optimization: Use cached visitors if available, otherwise fetch
+      let allVisitors = cachedVisitors
+      if (!allVisitors || allVisitors.length === 0) {
+        const visitorsResponse = await visitorsAPI.getActivity(projectId, 1000)
+        allVisitors = visitorsResponse.data || []
+      }
+
+      const detailsPromises = newVisits.map(visit =>
+        processSingleVisitorSession(visit, projectId, allVisitors)
+      )
+
       const results = await Promise.allSettled(detailsPromises)
-      const newSessionDetails = results
-        .filter(result => result.status === 'fulfilled')
-        .map(result => result.value)
-      
-      console.log(`Successfully processed ${newSessionDetails.length} NEW sessions`)
-      
+      const newSessions = results.filter(r => r.status === 'fulfilled').map(r => r.value)
+
       return {
-        newSessions: newSessionDetails,
+        newSessions,
         hasMore: selectedPageSessions.visits.length > limit,
         currentLimit: limit,
-        totalSessions: selectedPageSessions.visits.length
+        totalSessions: selectedPageSessions.visits.length,
+        visitors: allVisitors
       }
     } catch (error) {
-      console.error('Redux fetchMoreSessionDetails error:', error)
       return rejectWithValue(error.message)
     }
   }
 )
+
 
 // Helper function for time formatting (same as original)
 const formatTimeSpent = (seconds) => {
   if (!seconds || seconds === 0 || seconds === null || seconds === undefined) return '0s'
   const totalSeconds = Math.floor(Number(seconds))
   if (totalSeconds <= 0) return '0s'
-  
+
   const mins = Math.floor(totalSeconds / 60)
   const secs = totalSeconds % 60
   return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
@@ -322,7 +170,7 @@ const sessionSlice = createSlice({
     hasMore: true,
     currentLimit: 10,
     totalSessions: 0,
-    cache: {}, // Add caching for visitor data
+    cachedVisitors: [], // Store visitors list for pagination
     lastFetch: null,
   },
   reducers: {
@@ -354,6 +202,7 @@ const sessionSlice = createSlice({
         state.hasMore = action.payload.hasMore
         state.currentLimit = action.payload.currentLimit
         state.totalSessions = action.payload.totalSessions
+        state.cachedVisitors = action.payload.visitors // Cache visitors
       })
       .addCase(fetchSessionDetails.rejected, (state, action) => {
         state.loading = false
@@ -370,6 +219,7 @@ const sessionSlice = createSlice({
         state.hasMore = action.payload.hasMore
         state.currentLimit = action.payload.currentLimit
         state.totalSessions = action.payload.totalSessions
+        state.cachedVisitors = action.payload.visitors // Update/Keep cache
       })
       .addCase(fetchMoreSessionDetails.rejected, (state, action) => {
         state.loadingMore = false

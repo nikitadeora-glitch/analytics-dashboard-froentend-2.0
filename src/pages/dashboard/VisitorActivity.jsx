@@ -17,8 +17,10 @@ function VisitorActivity({ projectId }) {
   const loadVisitors = async () => {
     try {
       setError(null)
-      const response = await visitorsAPI.getActivityView(projectId, 10000) // Increased limit to fetch all (10k)
-      setVisitors(response.data)
+      // PERFORMANCE FIX: Reduced limit from 10,000 to 100. 
+      // Fetching 10k records in one go was the main reason for the extreme slowness.
+      const response = await visitorsAPI.getActivityView(projectId, 100)
+      setVisitors(response.data || [])
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor activity. Please try again.')
@@ -28,7 +30,7 @@ function VisitorActivity({ projectId }) {
   }
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 4)
+    setDisplayCount(prev => prev + 10) // Increased increment for better UX
   }
 
   const getCountryFlag = (country) => {
@@ -49,16 +51,22 @@ function VisitorActivity({ projectId }) {
     return '💻'
   }
 
-  // Helper to format date – showing it exactly as provided by the backend (already in IST)
+  // Helper to format date – treats backend data as UTC and converts to local (IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
-    const date = new Date(dateString)
+    // Ensure the date string is treated as UTC if it lacks timezone info
+    let utcString = dateString
+    if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
+      utcString = dateString + 'Z'
+    }
+
+    const date = new Date(utcString)
 
     // Check if valid date
     if (isNaN(date.getTime())) return dateString
 
-    // Just use the browser's default locale to format the date that came from the backend
+    // Format using browser's locale (converts UTC to Local/IST)
     return date.toLocaleString('en-IN', options)
   }
 
