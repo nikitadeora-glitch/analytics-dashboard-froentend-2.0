@@ -245,13 +245,13 @@ function VisitorPath({ projectId }) {
           </button>
         </div>
 
-        <div className="content" style={{ overflowX: 'hidden' }}>
+        <div className="content visitor-journey-content">
           {/* Simple Table Layout */}
           <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
             {selectedVisitorSessions.sessions.map((session, sessionIdx) => (
               <div
                 key={sessionIdx}
-                className="chart-container"
+                className="chart-container journey-session-card"
                 style={{
                   background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                   padding: '14px',
@@ -271,7 +271,7 @@ function VisitorPath({ projectId }) {
                 }}
               >
                 {/* Session Header */}
-                <div style={{
+                <div className="session-card-header" style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -289,7 +289,7 @@ function VisitorPath({ projectId }) {
                       <span>🕐 {formatTime(session.visited_at)}</span>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div className="header-right" style={{ textAlign: 'right' }}>
                     <div style={{
                       fontSize: '16px',
                       fontWeight: '700',
@@ -309,7 +309,7 @@ function VisitorPath({ projectId }) {
                 </div>
 
                 {/* Session Details Grid */}
-                <div style={{
+                <div className="entry-exit-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '16px',
@@ -347,14 +347,14 @@ function VisitorPath({ projectId }) {
                 </div>
 
                 {/* Device & Browser Info */}
-                <div style={{
+                <div className="device-stats-grid-container" style={{
                   background: 'white',
                   padding: '16px',
                   borderRadius: '12px',
                   marginBottom: '20px',
                   border: '2px solid #e2e8f0'
                 }}>
-                  <div style={{
+                  <div className="device-stats-grid" style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '16px',
@@ -444,7 +444,7 @@ function VisitorPath({ projectId }) {
                             {pageIdx + 1}
                           </div>
 
-                          <div style={{
+                          <div className="timeline-card" style={{
                             background: 'white',
                             padding: '16px',
                             borderRadius: '12px',
@@ -461,8 +461,8 @@ function VisitorPath({ projectId }) {
                               e.currentTarget.style.transform = 'translateX(0)'
                               e.currentTarget.style.boxShadow = 'none'
                             }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                              <div style={{ flex: 1 }}>
+                            <div className="timeline-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                              <div className="timeline-info-left" style={{ flex: 1 }}>
                                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', marginBottom: '6px' }}>
                                   📄 {page.title || 'Untitled Page'}
                                 </div>
@@ -484,11 +484,11 @@ function VisitorPath({ projectId }) {
                                   {page.url} <ExternalLink size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
                                 </a>
                               </div>
-                              <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
+                              <div className="timeline-info-right" style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
                                 {/* Actual Time - Primary */}
                                 {page.viewed_at && (
                                   <>
-                                    <div style={{
+                                    <div className="visit-time-badge" style={{
                                       fontSize: '20px',
                                       color: '#3b82f6',
                                       fontWeight: '700',
@@ -1176,6 +1176,7 @@ function VisitorPath({ projectId }) {
               {visitors.slice(0, displayCount).map((visitor, idx) => (
                 <div
                   key={idx}
+                  className="visitor-row"
                   style={{
                     padding: '16px 20px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
@@ -1189,7 +1190,7 @@ function VisitorPath({ projectId }) {
                   }}>
 
                   {/* Location */}
-                  <div style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
+                  <div className="visitor-col" data-label="Location" style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
                     <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {getCountryCode(visitor.country)} {visitor.country || 'Unknown'}
                     </div>
@@ -1199,7 +1200,7 @@ function VisitorPath({ projectId }) {
                   </div>
 
                   {/* Session */}
-                  <div style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
+                  <div className="visitor-col" data-label="Session" style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
                     <div style={{ fontSize: '13px', fontWeight: '600', color: '#3b82f6', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       Session #{visitor.id}
                     </div>
@@ -1209,8 +1210,8 @@ function VisitorPath({ projectId }) {
                   </div>
 
                   {/* Entry Page - Clickable Link Only */}
-                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{ fontSize: '11px', color: 'rgba(1, 6, 13, 0.89)', marginBottom: '4px' }}>
+                  <div className="visitor-col" data-label="Entry Page" style={{ minWidth: 0, maxWidth: '100%' }}>
+                    <div className="referrer-label" style={{ fontSize: '11px', color: 'rgba(1, 6, 13, 0.89)', marginBottom: '4px' }}>
                       {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring' : 'Direct'}
                     </div>
                     <a
@@ -1239,16 +1240,16 @@ function VisitorPath({ projectId }) {
                   </div>
 
                   {/* Device & Time */}
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'start', minWidth: 0, maxWidth: '100%' }}>
+                  <div className="visitor-col" data-label="Device & Time" style={{ display: 'flex', gap: '8px', alignItems: 'start', minWidth: 0, maxWidth: '100%' }}>
                     <div style={{ display: 'flex', gap: '4px', flexShrink: 0, paddingTop: '2px' }}>
                       <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
                       <span style={{ fontSize: '18px', lineHeight: 1 }}>🌐</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
-                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="device-info" style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {visitor.device || 'Unknown'}, {visitor.browser || 'Unknown'}
                       </div>
-                      <div style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="time-info" style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {formatDate(visitor.visited_at)} {formatTime(visitor.visited_at)}
                       </div>
                     </div>
@@ -1292,6 +1293,119 @@ function VisitorPath({ projectId }) {
           )}
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .header h1 {
+              font-size: 20px !important;
+            }
+            .visitor-journey-content {
+                padding: 10px !important;
+            }
+            .journey-session-card {
+                padding: 12px !important;
+                border: 1px solid #e2e8f0 !important;
+                margin-bottom: 15px !important;
+            }
+            .session-card-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 10px !important;
+                padding-bottom: 12px !important;
+            }
+            .session-card-header .header-right {
+                text-align: left !important;
+                width: 100% !important;
+            }
+            .session-card-header .header-right > div {
+                justify-content: flex-start !important;
+            }
+            .entry-exit-grid {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+            .device-stats-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
+            }
+            .timeline-card {
+                padding: 12px !important;
+            }
+            .timeline-card-inner {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+            .timeline-info-right {
+                margin-left: 0 !important;
+                text-align: left !important;
+                width: 100% !important;
+            }
+            .visit-time-badge {
+                justify-content: flex-start !important;
+                font-size: 16px !important;
+                padding: 6px 10px !important;
+            }
+            .timeline-info-right > div {
+                justify-content: flex-start !important;
+            }
+
+            /* Visitor List Responsive */
+            .visitor-row {
+                display: block !important;
+                background: white !important;
+                border-radius: 12px !important;
+                margin-bottom: 15px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+                border: 1px solid #e2e8f0 !important;
+                padding: 15px !important;
+            }
+            .visitor-col {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                padding: 10px 0 !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                text-align: right !important;
+            }
+            .visitor-col:last-child {
+                border-bottom: none !important;
+            }
+            .visitor-col:after {
+                content: "";
+                display: table;
+                clear: both;
+            }
+            .visitor-col:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 12px;
+                text-align: left !important;
+                margin-right: 15px !important;
+                flex-shrink: 0;
+            }
+            .visitor-col > div, .visitor-col > a {
+                max-width: 65% !important;
+                text-align: right !important;
+            }
+            .referrer-label {
+                display: none !important;
+            }
+            .device-info, .time-info {
+                text-align: right !important;
+            }
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        `}
+      </style>
     </>
   )
 }

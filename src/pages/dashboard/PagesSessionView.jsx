@@ -100,12 +100,11 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     return codes[country] || 'XX'
   }
 
-  // Helper to format date to IST (India Standard Time)
+  // Helper to format date – treats backend data as UTC and converts to local (IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
     // Ensure the date string is treated as UTC if it lacks timezone info
-    // If it doesn't end with 'Z' and doesn't have offset info (like +05:30), append 'Z'
     let utcString = dateString
     if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.includes('+')) {
       utcString = dateString + 'Z'
@@ -114,15 +113,10 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
     const date = new Date(utcString)
 
     // Check if valid date
-    if (isNaN(date.getTime())) return ''
+    if (isNaN(date.getTime())) return dateString
 
-    // Default to IST timezone
-    const defaultOptions = {
-      timeZone: 'Asia/Kolkata',
-      ...options
-    }
-
-    return date.toLocaleString('en-IN', defaultOptions)
+    // Format using browser's locale
+    return date.toLocaleString('en-IN', options)
   }
 
   if (loading) return (
@@ -317,8 +311,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             return (
               <div
                 key={idx}
+                className="session-card"
                 style={{
-                  padding: '10px 20px',
+                  padding: '15px 20px',
                   borderBottom: idx < sessionDetails.length - 1 ? '1px solid #e2e8f0' : 'none',
                   transition: 'background 0.2s'
                 }}
@@ -326,14 +321,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Main Row */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '260px 300px 260px 260px 400px',
-                  alignItems: 'start',
-                  gap: '20px'
-                }}>
+                <div className="session-grid">
                   {/* Date Only - First Column */}
-                  <div>
+                  <div className="session-col" data-label="Visited At">
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
                       {formatToIST(session.visited_at, {
                         day: 'numeric',
@@ -344,7 +334,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   </div>
 
                   {/* Time + URLs - Second Column */}
-                  <div>
+                  <div className="session-col" data-label="Time & URLs">
                     {/* Time */}
                     <div>
                       {/* Time */}
@@ -403,7 +393,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   </div>
 
                   {/* Location & IP - Third Column */}
-                  <div>
+                  <div className="session-col" data-label="Location & IP">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                       <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                         {getCountryCode(session.country)} {session.city || 'Unknown'}, {session.country || 'Unknown'}
@@ -430,7 +420,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   </div>
 
                   {/* Session Number & Total Time - Fourth Column */}
-                  <div style={{ textAlign: 'center' }}>
+                  <div className="session-col" data-label="Session Info">
                     <div style={{
 
                       flexDirection: 'column',
@@ -458,7 +448,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                   </div>
 
                   {/* Device & Browser - Fifth Column */}
-                  <div style={{ textAlign: 'right' }}>
+                  <div className="session-col" data-label="Device & Browser">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginBottom: '3px' }}>
                       <span style={{ fontSize: '14px' }}>💻</span>
                       <span style={{ fontSize: '14px' }}>🌐</span>
@@ -474,13 +464,11 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
                 {/* Session Stats - Only show if there's meaningful time data */}
                 {session.path && session.path.length > 0 && totalSessionTime > 0 && (
-                  <div style={{
+                  <div className="session-stats-bar" style={{
                     marginTop: '12px',
                     padding: '8px 16px',
-
                     borderRadius: '6px',
                     fontSize: '10px',
-
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -503,10 +491,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
                 {/* Visitor Journey - Show only for entry and top pages, not for exit pages */}
                 {pageType !== 'exit' && session.path && session.path.length > 0 && (
-                  <div style={{
+                  <div className="visitor-journey-container" style={{
                     marginTop: '16px',
                     paddingLeft: '20px',
-
                   }}>
                     <div style={{
                       fontSize: '11px',
@@ -522,6 +509,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                     {session.path.map((page, pidx) => (
                       <div
                         key={pidx}
+                        className="journey-step"
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '40px 1fr 120px',
@@ -529,7 +517,6 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                           gap: '12px',
                           marginBottom: '8px',
                           padding: '8px 5px',
-
                           position: 'relative'
                         }}
                       >
@@ -592,7 +579,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
                         </div>
 
                         {/* Time Spent - Enhanced Display */}
-                        <div style={{
+                        <div className="journey-time" style={{
                           textAlign: 'right',
                           flexShrink: 0
                         }}>
@@ -703,6 +690,87 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
           )}
         </div>
       </div>
+      <style>
+        {`
+          .session-grid {
+            display: grid;
+            grid-template-columns: 260px 300px 260px 260px 400px;
+            align-items: start;
+            gap: 20px;
+          }
+
+          @media (max-width: 768px) {
+            .header h1 {
+              font-size: 20px !important;
+            }
+            .content {
+              padding: 10px !important;
+              overflow-x: hidden !important;
+            }
+            .chart-container {
+               background: transparent !important;
+               box-shadow: none !important;
+               border-radius: 0 !important;
+            }
+            .session-card {
+              background: white !important;
+              border-radius: 12px !important;
+              margin-bottom: 15px !important;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+              border: 1px solid #e2e8f0 !important;
+              padding: 15px !important;
+            }
+            .session-grid {
+              display: block !important;
+            }
+            .session-col {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              padding: 8px 0 !important;
+              border-bottom: 1px solid #f1f5f9 !important;
+              text-align: right !important;
+            }
+            .session-col:last-child {
+              border-bottom: none !important;
+            }
+            .session-col:before {
+              content: attr(data-label);
+              font-weight: 600;
+              color: #64748b;
+              font-size: 11px;
+              text-align: left !important;
+              margin-right: 15px !important;
+            }
+            .session-col > div {
+                max-width: 65% !important;
+            }
+            .session-stats-bar {
+                flex-direction: column !important;
+                gap: 8px !important;
+                text-align: center !important;
+                background: #f8fafc !important;
+                padding: 12px !important;
+            }
+            .visitor-journey-container {
+                padding-left: 0 !important;
+                margin-top: 20px !important;
+            }
+            .journey-step {
+                grid-template-columns: 35px 1fr !important;
+                gap: 10px !important;
+            }
+            .journey-time {
+                grid-column: 2 / 3 !important;
+                text-align: left !important;
+                margin-top: 5px !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

@@ -170,7 +170,7 @@ function TrafficSourcesSimple({ projectId }) {
       <div className="content">
         <div className="chart-container" style={{ padding: 0 }}>
           {/* Table Header */}
-          <div style={{
+          <div className="traffic-header" style={{
             display: 'grid',
             gridTemplateColumns: '2fr 120px 120px 200px 120px',
             padding: '16px 24px',
@@ -197,6 +197,7 @@ function TrafficSourcesSimple({ projectId }) {
               return (
                 <div
                   key={idx}
+                  className="traffic-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '2fr 120px 120px 200px 120px',
@@ -222,7 +223,7 @@ function TrafficSourcesSimple({ projectId }) {
                   onClick={() => handleSourceClick(stdSource, data)}
                 >
                   {/* Traffic Source Name */}
-                  <div>
+                  <div className="traffic-col" data-label="Traffic Source">
                     <div style={{
                       fontSize: '15px',
                       fontWeight: '600',
@@ -250,7 +251,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Sessions */}
-                  <div style={{
+                  <div className="traffic-col" data-label="Sessions" style={{
                     textAlign: 'center',
                     fontSize: '16px',
                     fontWeight: '700',
@@ -260,7 +261,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Bounce % */}
-                  <div style={{
+                  <div className="traffic-col" data-label="Bounce %" style={{
                     textAlign: 'center',
                     fontSize: '16px',
                     fontWeight: '600',
@@ -270,7 +271,7 @@ function TrafficSourcesSimple({ projectId }) {
                   </div>
 
                   {/* Session Log Bar - Thin & Elegant */}
-                  <div style={{
+                  <div className="traffic-col" data-label="2 Weeks Trend" style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -339,6 +340,60 @@ function TrafficSourcesSimple({ projectId }) {
           </div>
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .header h1 {
+              font-size: 22px !important;
+            }
+            .content {
+              padding: 12px !important;
+              overflow-x: hidden !important;
+            }
+            .chart-container {
+               background: transparent !important;
+               box-shadow: none !important;
+               border: none !important;
+            }
+            .traffic-header {
+              display: none !important;
+            }
+            .traffic-row {
+              display: block !important;
+              background: white !important;
+              border-radius: 12px !important;
+              margin-bottom: 15px !important;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+              border: 1px solid #e2e8f0 !important;
+              padding: 15px !important;
+              opacity: 1 !important; /* Ensure visibility on mobile */
+            }
+            .traffic-col {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              padding: 10px 0 !important;
+              border-bottom: 1px solid #f1f5f9 !important;
+              text-align: right !important;
+            }
+            .traffic-col:last-child {
+              border-bottom: none !important;
+            }
+            .traffic-col:before {
+              content: attr(data-label);
+              font-weight: 600;
+              color: #64748b;
+              font-size: 12px;
+              text-align: left !important;
+              margin-right: 15px !important;
+            }
+            .traffic-col > div {
+                max-width: 65% !important;
+                text-align: right !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

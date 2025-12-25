@@ -25,7 +25,7 @@ function TermsOfService() {
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
       }}>
-        
+
         {/* Left side - Background Image */}
         <div style={{
           flex: '1',
@@ -107,9 +107,9 @@ function TermsOfService() {
             textAlign: 'center',
             marginBottom: '24px'
           }}>
-            <img 
-              src={logo} 
-              alt="State Counter Logo" 
+            <img
+              src={logo}
+              alt="State Counter Logo"
               style={{
                 width: '80px',
                 height: '76px',
@@ -132,7 +132,7 @@ function TermsOfService() {
             color: '#374151'
           }}>
             <p><strong>Last updated:</strong> December 2025</p>
-            
+
             <h3 style={{ color: '#302b63', marginTop: '24px' }}>1. Acceptance of Terms</h3>
             <p>By accessing and using Statify ("Service"), you accept and agree to be bound by the terms and provision of this agreement.</p>
 
@@ -171,25 +171,47 @@ function TermsOfService() {
       {/* Responsive Styles */}
       <style>
         {`
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             .terms-container > div {
               flex-direction: column !important;
               height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
             }
+            /* Branding Section */
             .terms-container > div > div:first-child {
-              height: 200px !important;
+              flex: none !important;
+              height: 180px !important;
+              position: relative !important;
             }
+            .terms-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .terms-container > div > div:first-child p {
+              font-size: 13px !important;
+            }
+            /* Content Section */
             .terms-container > div > div:last-child {
-              padding: 24px !important;
+              flex: none !important;
+              padding: 24px 20px !important;
+              max-height: 500px !important;
             }
           }
           
           @media (max-width: 480px) {
             .terms-container {
-              padding: 10px !important;
+              padding: 15px !important;
             }
-            .terms-container > div {
-              border-radius: 10px !important;
+            .terms-container > div > div:first-child {
+              height: 150px !important;
+            }
+            .terms-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .terms-container > div > div:first-child p {
+              font-size: 11px !important;
             }
           }
         `}

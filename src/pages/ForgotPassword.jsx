@@ -51,7 +51,7 @@ function ForgotPassword() {
           overflow: 'hidden',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}>
-          
+
           <div style={{
             flex: '1',
             backgroundImage: `url(${backgroundImage})`,
@@ -118,7 +118,7 @@ function ForgotPassword() {
             }}>
               Check Your Email
             </h1>
-            
+
             <p style={{
               fontSize: '16px',
               color: '#64748b',
@@ -134,7 +134,7 @@ function ForgotPassword() {
               margin: '0 0 32px 0',
               lineHeight: '1.5'
             }}>
-              Please check your email and click the link to reset your password. 
+              Please check your email and click the link to reset your password.
               If you don't see the email, check your spam folder.
             </p>
 
@@ -211,7 +211,7 @@ function ForgotPassword() {
         overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
       }}>
-        
+
         <div style={{
           flex: '1',
           backgroundImage: `url(${backgroundImage})`,
@@ -265,9 +265,9 @@ function ForgotPassword() {
             textAlign: 'center',
             marginBottom: '32px'
           }}>
-            <img 
-              src={logo} 
-              alt="State Counter Logo" 
+            <img
+              src={logo}
+              alt="State Counter Logo"
               style={{
                 width: '120px',
                 height: '114px',
@@ -318,8 +318,8 @@ function ForgotPassword() {
                 Email Address
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail 
-                  size={20} 
+                <Mail
+                  size={20}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -401,6 +401,57 @@ function ForgotPassword() {
           </div>
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 1024px) {
+            .forgot-password-container > div {
+              flex-direction: column !important;
+              height: auto !important;
+              max-width: 500px !important;
+              margin: 20px auto !important;
+              box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+            }
+            /* Branding Section */
+            .forgot-password-container > div > div:first-child {
+              flex: none !important;
+              height: 220px !important;
+              position: relative !important;
+            }
+            .forgot-password-container > div > div:first-child h2 {
+              font-size: 24px !important;
+              margin-bottom: 4px !important;
+            }
+            .forgot-password-container > div > div:first-child p {
+              font-size: 13px !important;
+              max-width: 80% !important;
+              margin: 0 auto !important;
+            }
+            /* Content Section */
+            .forgot-password-container > div > div:last-child {
+              flex: none !important;
+              padding: 30px 20px !important;
+            }
+            .forgot-password-container > div > div:last-child h1 {
+              font-size: 20px !important;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .forgot-password-container {
+              padding: 15px !important;
+            }
+            .forgot-password-container > div > div:first-child {
+              height: 180px !important;
+            }
+            .forgot-password-container > div > div:first-child h2 {
+              font-size: 20px !important;
+            }
+            .forgot-password-container > div > div:first-child p {
+              font-size: 11px !important;
+            }
+          }
+        `}
+      </style>
     </div>
   )
 }

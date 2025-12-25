@@ -63,7 +63,7 @@ function CameFrom({ projectId }) {
     setSelectedReferrer(null)
   }
 
-  // Helper to format date to IST (India Standard Time)
+  // Helper to format date – treats backend data as UTC and converts to local (IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
@@ -76,15 +76,10 @@ function CameFrom({ projectId }) {
     const date = new Date(utcString)
 
     // Check if valid date
-    if (isNaN(date.getTime())) return ''
+    if (isNaN(date.getTime())) return dateString
 
-    // Default to IST timezone
-    const defaultOptions = {
-      timeZone: 'Asia/Kolkata',
-      ...options
-    }
-
-    return date.toLocaleString('en-IN', defaultOptions)
+    // Format using browser's locale
+    return date.toLocaleString('en-IN', options)
   }
 
   const formatDate = (date) => {
@@ -312,7 +307,7 @@ function CameFrom({ projectId }) {
           {displayedVisitors.length > 0 ? (
             <div>
               {/* Table Header */}
-              <div style={{
+              <div className="camefrom-table-header" style={{
                 display: 'grid',
                 gridTemplateColumns: '100px 120px 1fr 1fr',
                 padding: '16px 24px',
@@ -336,6 +331,7 @@ function CameFrom({ projectId }) {
               {displayedVisitors.map((visitor, idx) => (
                 <div
                   key={idx}
+                  className="camefrom-table-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '100px 120px 1fr 1fr',
@@ -348,18 +344,18 @@ function CameFrom({ projectId }) {
                   }}
                 >
                   {/* Date */}
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
+                  <div className="camefrom-col" data-label="Date" style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
 
                     {formatDate(visitor.visited_at)}
                   </div>
 
                   {/* Time */}
-                  <div style={{ fontSize: '14px', color: '#64748b', paddingTop: '2px' }}>
+                  <div className="camefrom-col" data-label="Time" style={{ fontSize: '14px', color: '#64748b', paddingTop: '2px' }}>
                     {formatTime(visitor.visited_at)}
                   </div>
 
                   {/* Referrer - Non-clickable */}
-                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
+                  <div className="camefrom-col" data-label="Referrer" style={{ minWidth: 0, maxWidth: '100%' }}>
                     <div
                       style={{
                         fontSize: '14px',
@@ -376,7 +372,7 @@ function CameFrom({ projectId }) {
                   </div>
 
                   {/* Entry Page */}
-                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
+                  <div className="camefrom-col" data-label="Entry Page" style={{ minWidth: 0, maxWidth: '100%' }}>
                     <a
                       href={visitor.entry_page}
                       target="_blank"
@@ -471,6 +467,54 @@ function CameFrom({ projectId }) {
       </div>
 
       <style>{`
+        @media (max-width: 768px) {
+          .header h1 {
+            font-size: 22px !important;
+          }
+          .content {
+            padding: 12px !important;
+            overflow-x: hidden !important;
+          }
+          .camefrom-table-header {
+            display: none !important;
+          }
+          .camefrom-table-row {
+            display: block !important;
+            background: white !important;
+            border-radius: 12px !important;
+            margin-bottom: 15px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 15px !important;
+          }
+          .camefrom-col {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 10px 0 !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            text-align: right !important;
+            min-height: 40px !important;
+          }
+          .camefrom-col:last-child {
+            border-bottom: none !important;
+          }
+          .camefrom-col:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #64748b;
+            font-size: 12px;
+            text-align: left !important;
+            margin-right: 15px !important;
+            flex-shrink: 0;
+          }
+          .camefrom-col > div, .camefrom-col > a {
+              max-width: 65% !important;
+              text-align: right !important;
+              word-break: break-all !important;
+              padding-top: 0 !important;
+          }
+        }
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }

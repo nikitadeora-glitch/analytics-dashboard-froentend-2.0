@@ -201,7 +201,7 @@ function PagesView({ projectId }) {
 
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           {/* Table Header */}
-          <div style={{
+          <div className="pages-table-header" style={{
             display: 'grid',
             gridTemplateColumns: '80px 100px 50px 200px 250px 1fr',
             padding: '16px 20px',
@@ -252,6 +252,7 @@ function PagesView({ projectId }) {
               return (
                 <div
                   key={idx}
+                  className="pages-table-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '80px 100px 50px 200px 250px 1fr',
@@ -264,7 +265,7 @@ function PagesView({ projectId }) {
                   }}
                 >
                   {/* Date */}
-                  <div style={{
+                  <div className="pages-col" data-label="Date" style={{
                     fontSize: '13px',
                     color: '#1e293b',
                     fontWeight: '500',
@@ -274,7 +275,7 @@ function PagesView({ projectId }) {
                   </div>
 
                   {/* Time */}
-                  <div style={{
+                  <div className="pages-col" data-label="Time" style={{
                     fontSize: '13px',
                     color: '#64748b',
                     paddingTop: '2px'
@@ -288,7 +289,7 @@ function PagesView({ projectId }) {
                   </div>
 
                   {/* Icon (Browser/Device) */}
-                  <div style={{
+                  <div className="pages-col pages-icon-col" style={{
                     fontSize: '20px',
                     textAlign: 'center',
                     paddingTop: '0px'
@@ -297,93 +298,99 @@ function PagesView({ projectId }) {
                   </div>
 
                   {/* System (Browser + OS + Resolution) */}
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#1e293b',
-                      marginBottom: '2px'
-                    }}>
-                      {visitor.browser || 'Unknown Browser'}
-                    </div>
-                    <div style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      {visitor.os || 'Unknown OS'}
-                    </div>
-                    <div style={{
-                      fontSize: '10px',
-                      color: '#94a3b8'
-                    }}>
-                      {visitor.screen_resolution || 'Unknown'}
+                  <div className="pages-col" data-label="System" style={{ minWidth: 0 }}>
+                    <div className="system-content">
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#1e293b',
+                        marginBottom: '2px'
+                      }}>
+                        {visitor.browser || 'Unknown Browser'}
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#64748b'
+                      }}>
+                        {visitor.os || 'Unknown OS'}
+                      </div>
+                      <div style={{
+                        fontSize: '10px',
+                        color: '#94a3b8'
+                      }}>
+                        {visitor.screen_resolution || 'Unknown'}
+                      </div>
                     </div>
                   </div>
 
                   {/* Location / Language */}
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#1e293b',
-                      marginBottom: '2px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {getCountryFlag(visitor.country)} {visitor.country || 'Unknown'},
-                    </div>
-                    <div style={{
-                      fontSize: '11px',
-                      color: '#64748b',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {visitor.city || 'Unknown'}
+                  <div className="pages-col" data-label="Location" style={{ minWidth: 0 }}>
+                    <div className="location-content">
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#1e293b',
+                        marginBottom: '2px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {getCountryFlag(visitor.country)} {visitor.country || 'Unknown'},
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#64748b',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {visitor.city || 'Unknown'}
+                      </div>
                     </div>
                   </div>
 
                   {/* Host Name/Web Page/Referrer */}
-                  <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#1e293b',
-                      marginBottom: '2px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'}
-                    </div>
-                    <div style={{
-                      fontSize: '10px',
-                      color: referrerColor,
-                      marginBottom: '2px',
-                      wordBreak: 'break-all',
-                      lineHeight: '1.4'
-                    }}>
-                      {referrerText}
-                    </div>
-                    <a
-                      href={visitor.entry_page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: '11px',
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        display: 'inline-block',
+                  <div className="pages-col" data-label="Page Details" style={{ minWidth: 0, maxWidth: '100%' }}>
+                    <div className="page-details-content">
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#1e293b',
+                        marginBottom: '2px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'}
+                      </div>
+                      <div style={{
+                        fontSize: '10px',
+                        color: referrerColor,
+                        marginBottom: '2px',
                         wordBreak: 'break-all',
-                        lineHeight: '1.4',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                    >
-                      {visitor.entry_page} ↗
-                    </a>
+                        lineHeight: '1.4'
+                      }}>
+                        {referrerText}
+                      </div>
+                      <a
+                        href={visitor.entry_page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: '11px',
+                          color: '#3b82f6',
+                          textDecoration: 'none',
+                          display: 'inline-block',
+                          wordBreak: 'break-all',
+                          lineHeight: '1.4',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                      >
+                        {visitor.entry_page} ↗
+                      </a>
+                    </div>
                   </div>
                 </div>
               )
@@ -455,6 +462,62 @@ function PagesView({ projectId }) {
           )}
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .header h1 {
+              font-size: 22px !important;
+            }
+            .content {
+              padding: 12px !important;
+              overflow-x: hidden !important;
+            }
+            .pages-table-header {
+              display: none !important;
+            }
+            .pages-table-row {
+              display: block !important;
+              background: white !important;
+              border-radius: 12px !important;
+              margin-bottom: 15px !important;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+              border: 1px solid #e2e8f0 !important;
+              padding: 15px !important;
+            }
+            .pages-col {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              padding: 8px 0 !important;
+              border-bottom: 1px solid #f1f5f9 !important;
+              text-align: right !important;
+            }
+            .pages-col:last-child {
+              border-bottom: none !important;
+            }
+            .pages-col:before {
+              content: attr(data-label);
+              font-weight: 600;
+              color: #64748b;
+              font-size: 12px;
+              text-align: left !important;
+              margin-right: 15px !important;
+              flex-shrink: 0;
+            }
+            .pages-col > div, .pages-col > a {
+                max-width: 65% !important;
+                text-align: right !important;
+                word-break: break-all !important;
+            }
+            .pages-icon-col {
+              display: none !important; /* Hide icon col on mobile cards as it's repetitive */
+            }
+            .system-content, .location-content, .page-details-content {
+                width: 100% !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

@@ -59,9 +59,9 @@ function Summary({ projectId }) {
 
       <div className="content">
         {/* Summary Cards - Material-UI Grid */}
-        <Grid container spacing={0} sx={{ marginBottom: 3 }}>
+        <Grid container spacing={2} sx={{ marginBottom: 3 }}>
           {[1, 2, 3, 4].map(i => (
-            <Grid item xs={3} key={i}>
+            <Grid item xs={12} sm={6} md={3} key={i}>
               <Box className="stat-card" sx={{ padding: 2 }}>
                 <Skeleton variant="text" width="80%" height={13} animation="wave" sx={{ marginBottom: 1 }} />
                 <Skeleton variant="text" width={60} height={32} animation="wave" />
@@ -73,7 +73,7 @@ function Summary({ projectId }) {
         {/* Chart Container */}
         <Box className="chart-container">
           {/* Controls Bar */}
-          <Box sx={{
+          <Box className="controls-wrapper" sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -182,6 +182,17 @@ function Summary({ projectId }) {
     navigate(`/dashboard/project/${projectId}/hourly/${encodedDate}`)
   }
 
+  // Dynamic max value for chart
+  const getChartMax = () => {
+    if (!displayData || displayData.length === 0) return 100
+    const max = Math.max(...displayData.map(d => Math.max(d.page_views || 0, d.unique_visits || 0, d.returning_visits || 0)))
+    if (max === 0) return 100
+    return Math.ceil(max * 1.2 / 10) * 10
+  }
+
+  const chartMax = getChartMax()
+  const chartStep = Math.ceil(chartMax / 5)
+
 
 
   return (
@@ -194,9 +205,9 @@ function Summary({ projectId }) {
 
       <div className="content">
         <div className="chart-container" style={{ marginBottom: '30px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
+          <div className="controls-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
+              <div className="period-dropdown" style={{ position: 'relative', display: 'inline-block' }}>
                 <div
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   style={{
@@ -434,7 +445,7 @@ function Summary({ projectId }) {
                   title="Last page"
                 >»</button>
               </div>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
+              <div className="date-range-dropdown" style={{ position: 'relative', display: 'inline-block' }}>
                 <div
                   onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
                   style={{
@@ -573,9 +584,11 @@ function Summary({ projectId }) {
                 showUniqueVisits={showUniqueVisits}
                 showReturningVisits={showReturningVisits}
                 period={period}
+                maxValue={chartMax}
+                stepSize={chartStep}
               />
             </div>
-            <div style={{
+            <div className="pagination-container" style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -601,22 +614,22 @@ function Summary({ projectId }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0' }}>
+        <div className="stats-summary-grid">
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Average Daily Page Views</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#1e40af' }}>{data.averages.page_views}</div>
+            <h3>Average Daily Page Views</h3>
+            <div className="value">{data.averages.page_views}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Average Daily Unique Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#1e40af' }}>{data.averages.unique_visits}</div>
+            <h3>Average Daily Unique Visits</h3>
+            <div className="value">{data.averages.unique_visits}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Average Daily First Time Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#1e40af' }}>{data.averages.first_time_visits}</div>
+            <h3>Average Daily First Time Visits</h3>
+            <div className="value">{data.averages.first_time_visits}</div>
           </div>
           <div className="stat-card">
-            <h3 style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Average Daily Returning Visits</h3>
-            <div className="value" style={{ fontSize: '32px', color: '#1e40af' }}>{data.averages.returning_visits}</div>
+            <h3>Average Daily Returning Visits</h3>
+            <div className="value">{data.averages.returning_visits}</div>
           </div>
         </div>
 
@@ -646,7 +659,7 @@ function Summary({ projectId }) {
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
-                  <td
+                  <td data-label="Date"
                     onClick={() => handleDateClick(day)}
                     style={{
                       padding: '12px',
@@ -666,17 +679,198 @@ function Summary({ projectId }) {
                   >
                     {day.date}
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.page_views}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.unique_visits}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.first_time_visits}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.returning_visits}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', fontWeight: '500' }}>{day.returning_visits}</td>
+                  <td data-label="Page Views" style={{ padding: '12px', textAlign: 'center' }}>{day.page_views}</td>
+                  <td data-label="Unique Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.unique_visits}</td>
+                  <td data-label="First Time Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.first_time_visits}</td>
+                  <td data-label="Returning Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.returning_visits}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      <style>
+        {`
+          .stats-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+          }
+          .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+          }
+          .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          .stat-card h3 {
+             margin: 0 0 12px 0 !important;
+             font-size: 14px !important;
+             color: #64748b !important;
+             font-weight: 600 !important;
+          }
+          .stat-card .value {
+             font-size: 32px !important;
+             font-weight: 700 !important;
+             color: #1e40af !important;
+          }
+
+          @media (max-width: 768px) {
+            .stats-summary-grid {
+              display: grid !important;
+              grid-template-columns: 1fr 1fr !important;
+              gap: 12px !important;
+              margin-bottom: 20px !important;
+            }
+            .stat-card {
+              padding: 16px !important;
+              text-align: center !important;
+            }
+            .stat-card .value {
+              font-size: 22px !important;
+              margin-top: 4px !important;
+            }
+            .stat-card h3 {
+              font-size: 11px !important;
+              min-height: 32px !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              line-height: 1.2 !important;
+            }
+            .chart-container {
+              overflow-x: hidden !important;
+              padding: 0 !important;
+              background: transparent !important;
+              box-shadow: none !important;
+              margin-bottom: 20px !important;
+              width: 100% !important;
+              margin: 0 !important;
+            }
+            .chart-container > div:last-child {
+                height: 280px !important; /* Adjust BarChart height for mobile */
+                padding: 10px !important;
+            }
+            table, thead, tbody, th, td, tr {
+                display: block !important;
+                width: 100% !important;
+            }
+            thead tr {
+                display: none !important;
+            }
+            tr {
+                margin-bottom: 15px !important;
+                background: white !important;
+                border-radius: 12px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+                padding: 8px !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            td {
+                text-align: right !important;
+                padding: 12px 15px !important;
+                position: relative !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                font-size: 13px !important;
+            }
+            td:last-child {
+                border-bottom: none !important;
+            }
+            td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                font-size: 12px;
+                text-align: left !important;
+                margin-right: 15px !important;
+            }
+            .content {
+               padding: 12px !important;
+               overflow-x: hidden !important;
+            }
+            .header {
+              padding: 20px 15px 10px 15px !important;
+            }
+            .header h1 {
+              font-size: 22px !important;
+              margin: 0 !important;
+            }
+            .controls-wrapper {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 15px !important;
+              padding: 15px !important;
+              background: #ffffff !important;
+              border-bottom: 1px solid #e2e8f0 !important;
+              border-radius: 12px !important;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+              margin-bottom: 20px !important;
+            }
+            .controls-wrapper > div:first-child {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                order: 2 !important;
+                gap: 15px !important;
+                width: 100% !important;
+            }
+            .controls-wrapper > div:first-child > div {
+                width: 100% !important;
+                display: flex !important;
+                justify-content: center !important;
+                margin: 0 !important;
+                gap: 5px !important;
+            }
+            .controls-wrapper .period-dropdown, 
+            .controls-wrapper .date-range-dropdown {
+                width: 100% !important;
+                max-width:166px !important;
+            }
+            .controls-wrapper .period-dropdown > div,
+            .controls-wrapper .date-range-dropdown > div {
+              
+                text-align: center !important;
+                padding: 12px !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+            .controls-wrapper > div:last-child {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                gap: 12px !important;
+                order: 1 !important;
+                padding-bottom: 12px !important;
+                border-bottom: 1px dashed #e2e8f0 !important;
+            }
+            .chart-container > div:last-child {
+                height: 350px !important;
+                padding: 15px 0 !important;
+            }
+            .pagination-container {
+               margin-top: 20px !important;
+               justify-content: center !important;
+               gap: 15px !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .stats-summary-grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

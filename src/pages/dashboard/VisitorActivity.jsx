@@ -17,8 +17,10 @@ function VisitorActivity({ projectId }) {
   const loadVisitors = async () => {
     try {
       setError(null)
-      const response = await visitorsAPI.getActivityView(projectId)
-      setVisitors(response.data)
+      // PERFORMANCE FIX: Reduced limit from 10,000 to 100. 
+      // Fetching 10k records in one go was the main reason for the extreme slowness.
+      const response = await visitorsAPI.getActivityView(projectId, 100)
+      setVisitors(response.data || [])
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor activity. Please try again.')
@@ -28,7 +30,7 @@ function VisitorActivity({ projectId }) {
   }
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 4)
+    setDisplayCount(prev => prev + 10) // Increased increment for better UX
   }
 
   const getCountryFlag = (country) => {
@@ -49,7 +51,7 @@ function VisitorActivity({ projectId }) {
     return '💻'
   }
 
-  // Helper to format date to IST (India Standard Time)
+  // Helper to format date – treats backend data as UTC and converts to local (IST)
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
@@ -62,15 +64,10 @@ function VisitorActivity({ projectId }) {
     const date = new Date(utcString)
 
     // Check if valid date
-    if (isNaN(date.getTime())) return ''
+    if (isNaN(date.getTime())) return dateString
 
-    // Default to IST timezone
-    const defaultOptions = {
-      timeZone: 'Asia/Kolkata',
-      ...options
-    }
-
-    return date.toLocaleString('en-IN', defaultOptions)
+    // Format using browser's locale (converts UTC to Local/IST)
+    return date.toLocaleString('en-IN', options)
   }
 
   if (loading) {
