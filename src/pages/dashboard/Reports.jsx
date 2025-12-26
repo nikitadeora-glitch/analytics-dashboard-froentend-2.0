@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { reportsAPI, analyticsAPI, visitorsAPI, pagesAPI, trafficAPI } from '../../api/api'
+import { reportsAPI, analyticsAPI, visitorsAPI, pagesAPI, trafficAPI, projectsAPI } from '../../api/api'
 import { Download, TrendingUp, Users, Globe, BarChart3, Eye, RefreshCw, AlertCircle, CheckCircle, ArrowLeft, ExternalLink, Clock, MapPin } from 'lucide-react'
 import { Skeleton, Box, Grid, Card, CardContent } from '@mui/material'
 
@@ -12,6 +12,7 @@ function Reports({ projectId }) {
   const [error, setError] = useState(null)
   const [exportStatus, setExportStatus] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [project, setProject] = useState(null)
   const [detailData, setDetailData] = useState(null)
   const [visitorDisplayLimit, setVisitorDisplayLimit] = useState(50)
   const [visitorSearchTerm, setVisitorSearchTerm] = useState('')
@@ -34,8 +35,18 @@ function Reports({ projectId }) {
   useEffect(() => {
     if (projectId) {
       fetchReportData()
+      loadProjectInfo()
     }
   }, [projectId, selectedPeriod])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   // Update detailed data when period changes
   useEffect(() => {
@@ -1784,8 +1795,21 @@ function Reports({ projectId }) {
   if (loadingData) {
     return (
       <>
-        <div className="header">
-          <h1>Reports & Analytics</h1>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+          <h1 style={{ margin: 0 }}>Reports & Analytics</h1>
+          {project && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+
+              <span>Project: {project.name}</span>
+            </div>
+          )}
         </div>
 
         <div className="content">
@@ -1852,52 +1876,67 @@ function Reports({ projectId }) {
           }
         `}
       </style>
-      <div className="header">
-        <h1>
-          {selectedCategory ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button
-                onClick={handleBackToCategories}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <ArrowLeft size={20} style={{ color: '#64748b' }} />
-              </button>
-              {selectedCategory.title} Details
-            </span>
-          ) : (
-            'Reports & Analytics'
-          )}
-        </h1>
-        <div style={{ display: 'flex', gap: '12px', paddingRight: '40px', alignItems: 'center' }}>
-          {exportStatus && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              background: exportStatus === 'success' ? '#dcfce7' : '#fef2f2',
-              color: exportStatus === 'success' ? '#166534' : '#dc2626'
-            }}>
-              {exportStatus === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-              {exportStatus === 'success' ? 'Export successful!' : 'Export failed. Please try again.'}
-            </div>
-          )}
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <h1 style={{ margin: 0 }}>
+            {selectedCategory ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={handleBackToCategories}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <ArrowLeft size={20} style={{ color: '#64748b' }} />
+                </button>
+                {selectedCategory.title} Details
+              </span>
+            ) : (
+              'Reports & Analytics'
+            )}
+          </h1>
+          <div style={{ display: 'flex', gap: '12px', paddingRight: '40px', alignItems: 'center' }}>
+            {exportStatus && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                background: exportStatus === 'success' ? '#dcfce7' : '#fef2f2',
+                color: exportStatus === 'success' ? '#166534' : '#dc2626'
+              }}>
+                {exportStatus === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                {exportStatus === 'success' ? 'Export successful!' : 'Export failed. Please try again.'}
+              </div>
+            )}
 
-          <button className="btn btn-primary" onClick={handleExportCSV} disabled={loading}>
-            <Download size={16} />
-            {loading ? 'Exporting...' : `Export Last ${selectedPeriod} Days`}
-          </button>
+            <button className="btn btn-primary" onClick={handleExportCSV} disabled={loading}>
+              <Download size={16} />
+              {loading ? 'Exporting...' : `Export Last ${selectedPeriod} Days`}
+            </button>
+          </div>
         </div>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            <Globe size={14} />
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

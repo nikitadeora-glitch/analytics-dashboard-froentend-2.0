@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { pagesAPI } from '../../api/api'
+import { pagesAPI, projectsAPI } from '../../api/api'
+import { Globe } from 'lucide-react'
 import PagesSessionView from './PagesSessionView'
 import VisitorPathSimple from './VisitorPathSimple'
 import { Skeleton, Box, Tabs, Tab } from '@mui/material'
@@ -11,6 +12,7 @@ function Pages({ projectId }) {
   const [mostVisited, setMostVisited] = useState([])
   const [entryPages, setEntryPages] = useState([])
   const [exitPages, setExitPages] = useState([])
+  const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [selectedPage, setSelectedPage] = useState(null)
@@ -27,7 +29,17 @@ function Pages({ projectId }) {
 
   useEffect(() => {
     loadInitialData()
+    loadProjectInfo()
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadInitialData = async () => {
     setLoading(true)
@@ -116,15 +128,21 @@ function Pages({ projectId }) {
   if (loading) return (
     <>
       {/* Header */}
-      <div className="header">
-        <h1>Pages</h1>
-        <Box sx={{
-          display: 'flex',
-          gap: 1,
-          paddingRight: '40px',
-          alignItems: 'center'
-        }}>
-        </Box>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Pages</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -265,6 +283,7 @@ function Pages({ projectId }) {
         projectId={projectId}
         selectedPageSessions={selectedPageSessions}
         pageType={activeTab}
+        project={project}
         onBack={() => {
           setShowAllSessions(false)
           setSelectedPageSessions(null)
@@ -279,6 +298,7 @@ function Pages({ projectId }) {
       <VisitorPathSimple
         projectId={projectId}
         visitorId={selectedVisitorId}
+        project={project}
         onBack={() => setSelectedVisitorId(null)}
       />
     )
@@ -286,182 +306,190 @@ function Pages({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Pages</h1>
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          paddingRight: '40px',
-          alignItems: 'center'
-        }}>
-        </div>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Pages</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Page Details Modal */}
-      {selectedPage && (
-        <div
-          onClick={closeModal}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
+      {
+        selectedPage && (
           <div
-            onClick={(e) => e.stopPropagation()}
+            onClick={closeModal}
             style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '600px',
-              width: '90%',
-              maxHeight: '80vh',
-              overflow: 'auto',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              animation: 'slideIn 0.3s ease'
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              animation: 'fadeIn 0.2s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
-                  {selectedPage.title || 'Untitled Page'}
-                </h2>
-                <a
-                  href={selectedPage.url || selectedPage.page}
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '32px',
+                maxWidth: '600px',
+                width: '90%',
+                maxHeight: '80vh',
+                overflow: 'auto',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                animation: 'slideIn 0.3s ease'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
+                    {selectedPage.title || 'Untitled Page'}
+                  </h2>
+                  <a
+                    href={selectedPage.url || selectedPage.page}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '14px',
+                      color: '#3b82f6',
+                      textDecoration: 'none',
+                      wordBreak: 'break-all'
+                    }}
+                  >
+                    🔗 {selectedPage.url || selectedPage.page}
+                  </a>
+                </div>
+                <button
+                  onClick={closeModal}
                   style={{
-                    fontSize: '14px',
-                    color: '#3b82f6',
-                    textDecoration: 'none',
-                    wordBreak: 'break-all'
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                    marginLeft: '16px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0'
+                    e.currentTarget.style.color = '#1e293b'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9'
+                    e.currentTarget.style.color = '#64748b'
                   }}
                 >
-                  🔗 {selectedPage.url || selectedPage.page}
-                </a>
+                  ×
+                </button>
               </div>
-              <button
-                onClick={closeModal}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '36px',
-                  height: '36px',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  flexShrink: 0,
-                  marginLeft: '16px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
 
-            {/* Sessions List */}
-            {selectedPage.visits && selectedPage.visits.length > 0 ? (
-              <div>
+              {/* Sessions List */}
+              {selectedPage.visits && selectedPage.visits.length > 0 ? (
+                <div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#64748b',
+                    marginBottom: '16px',
+                    padding: '12px 16px',
+                    background: '#f8fafc',
+                    borderRadius: '8px'
+                  }}>
+                    📊 All Sessions ({selectedPage.visits.length})
+                  </div>
+                  <div style={{ display: 'grid', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                    {selectedPage.visits.map((visit, vidx) => (
+                      <div
+                        key={vidx}
+                        onClick={(e) => handleVisitorClick(e, visit.visitor_id)}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '120px 1fr 160px',
+                          padding: '16px',
+                          background: '#f8fafc',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          border: '2px solid #e2e8f0',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#eff6ff'
+                          e.currentTarget.style.borderColor = '#3b82f6'
+                          e.currentTarget.style.transform = 'translateX(4px)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#f8fafc'
+                          e.currentTarget.style.borderColor = '#e2e8f0'
+                          e.currentTarget.style.transform = 'translateX(0)'
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '14px',
+                          color: '#3b82f6',
+                          fontWeight: '700',
+                          background: 'white',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          textAlign: 'center'
+                        }}>
+                          Session #{visit.session_id}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600', marginBottom: '4px' }}>
+                            👤 Visitor ID: {visit.visitor_id}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            Click to view visitor journey
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'right' }}>
+                          🕒 {formatDate(visit.visited_at)}<br />
+                          {formatTime(visit.visited_at)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#64748b',
-                  marginBottom: '16px',
-                  padding: '12px 16px',
                   background: '#f8fafc',
-                  borderRadius: '8px'
+                  padding: '40px',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  color: '#94a3b8'
                 }}>
-                  📊 All Sessions ({selectedPage.visits.length})
+                  <p style={{ fontSize: '14px' }}>No session data available for this page</p>
                 </div>
-                <div style={{ display: 'grid', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                  {selectedPage.visits.map((visit, vidx) => (
-                    <div
-                      key={vidx}
-                      onClick={(e) => handleVisitorClick(e, visit.visitor_id)}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '120px 1fr 160px',
-                        padding: '16px',
-                        background: '#f8fafc',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: '2px solid #e2e8f0',
-                        alignItems: 'center',
-                        gap: '12px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#eff6ff'
-                        e.currentTarget.style.borderColor = '#3b82f6'
-                        e.currentTarget.style.transform = 'translateX(4px)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#f8fafc'
-                        e.currentTarget.style.borderColor = '#e2e8f0'
-                        e.currentTarget.style.transform = 'translateX(0)'
-                      }}
-                    >
-                      <div style={{
-                        fontSize: '14px',
-                        color: '#3b82f6',
-                        fontWeight: '700',
-                        background: 'white',
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        textAlign: 'center'
-                      }}>
-                        Session #{visit.session_id}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600', marginBottom: '4px' }}>
-                          👤 Visitor ID: {visit.visitor_id}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>
-                          Click to view visitor journey
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'right' }}>
-                        🕒 {formatDate(visit.visited_at)}<br />
-                        {formatTime(visit.visited_at)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div style={{
-                background: '#f8fafc',
-                padding: '40px',
-                borderRadius: '8px',
-                textAlign: 'center',
-                color: '#94a3b8'
-              }}>
-                <p style={{ fontSize: '14px' }}>No session data available for this page</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <div className="content">
         {/* Simple Tabs */}

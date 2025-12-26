@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { visitorsAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, ChevronRight, X } from 'lucide-react'
+import { visitorsAPI, projectsAPI } from '../../api/api'
+import { Filter, Download, ExternalLink, ChevronRight, X, Globe } from 'lucide-react'
 
 function VisitorPath({ projectId }) {
   const location = useLocation()
@@ -11,16 +11,27 @@ function VisitorPath({ projectId }) {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedVisitorSessions, setSelectedVisitorSessions] = useState(null)
   const [loadingVisitorSessions, setLoadingVisitorSessions] = useState(false)
+  const [project, setProject] = useState(null)
   const [displayCount, setDisplayCount] = useState(10)
 
   useEffect(() => {
     loadVisitors()
+    loadProjectInfo()
 
     // Check if we received a visitor_id from navigation state
     if (location.state?.selectedVisitorId) {
       loadVisitorSessions(location.state.selectedVisitorId)
     }
   }, [projectId, location.state])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadVisitors = async () => {
     try {
@@ -144,8 +155,21 @@ function VisitorPath({ projectId }) {
 
   if (loading) return (
     <>
-      <div className="header">
-        <h1>Visitor Paths</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Visitor Paths</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -563,8 +587,21 @@ function VisitorPath({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Visitor Path</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Visitor Path</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            <Globe size={14} />
+            <span>Viewing: {project.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Referrer Details Modal - Keep this as popup */}
@@ -1170,9 +1207,29 @@ function VisitorPath({ projectId }) {
         </div>
 
         {/* Visitor List */}
-        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden', width: '100%' }}>
+        <div className="chart-container" style={{ padding: 0, overflowX: 'hidden', width: '100%', background: 'white' }}>
           {visitors.length > 0 ? (
             <div>
+              {/* Table Header */}
+              <div className="visitor-header" style={{
+                display: 'grid',
+                gridTemplateColumns: '90px 120px 250px 180px 1fr',
+                gap: '20px',
+                padding: '16px 20px',
+                background: '#f8fafc',
+                borderBottom: '1px solid #e2e8f0',
+                fontSize: '11px',
+                fontWeight: '700',
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                <div>DATE</div>
+                <div>TIME</div>
+                <div>SYSTEM</div>
+                <div>LOCATION</div>
+                <div>PAGE DETAILS</div>
+              </div>
               {visitors.slice(0, displayCount).map((visitor, idx) => (
                 <div
                   key={idx}
@@ -1181,7 +1238,7 @@ function VisitorPath({ projectId }) {
                     padding: '16px 20px',
                     borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
                     display: 'grid',
-                    gridTemplateColumns: '140px 110px 1fr 190px',
+                    gridTemplateColumns: '90px 120px 250px 180px 1fr',
                     gap: '20px',
                     alignItems: 'start',
                     minWidth: 0,
@@ -1189,30 +1246,51 @@ function VisitorPath({ projectId }) {
                     overflowX: 'hidden'
                   }}>
 
-                  {/* Location */}
-                  <div className="visitor-col" data-label="Location" style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {getCountryCode(visitor.country)} {visitor.country || 'Unknown'}
+                  {/* DATE */}
+                  <div className="visitor-col" data-label="DATE" style={{ fontSize: '13px', fontWeight: '500', color: '#1e293b' }}>
+                    {formatDate(visitor.visited_at)}
+                  </div>
+
+                  {/* TIME */}
+                  <div className="visitor-col" data-label="TIME" style={{ fontSize: '13px', color: '#64748b' }}>
+                    {formatTime(visitor.visited_at)}
+                  </div>
+
+                  {/* SYSTEM */}
+                  <div className="visitor-col" data-label="SYSTEM" style={{ display: 'flex', gap: '12px', alignItems: 'start' }}>
+                    <div style={{ padding: '4px', background: '#f1f5f9', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {visitor.browser || 'Unknown Browser'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {visitor.device || 'Unknown OS'}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                        {visitor.screen_resolution || '1024×1024'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* LOCATION */}
+                  <div className="visitor-col" data-label="LOCATION" style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: '#94a3b8' }}>{getCountryCode(visitor.country).toLowerCase()}</span> {visitor.country || 'Unknown'}
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {visitor.city || 'Unknown City'}
                     </div>
                   </div>
 
-                  {/* Session */}
-                  <div className="visitor-col" data-label="Session" style={{ minWidth: 0, maxWidth: '100%', paddingTop: '2px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#3b82f6', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      Session #{visitor.id}
+                  {/* PAGE DETAILS */}
+                  <div className="visitor-col" data-label="PAGE DETAILS" style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown Domain'}
                     </div>
-                    <div style={{ fontSize: '10px', color: '#0c0c0cff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring link:' : 'No referring link:'}
-                    </div>
-                  </div>
-
-                  {/* Entry Page - Clickable Link Only */}
-                  <div className="visitor-col" data-label="Entry Page" style={{ minWidth: 0, maxWidth: '100%' }}>
-                    <div className="referrer-label" style={{ fontSize: '11px', color: 'rgba(1, 6, 13, 0.89)', marginBottom: '4px' }}>
-                      {visitor.referrer && visitor.referrer !== 'direct' ? 'Referring' : 'Direct'}
+                    <div style={{ fontSize: '11px', color: '#10b981', marginBottom: '6px' }}>
+                      {visitor.referrer && visitor.referrer !== 'direct' ? '(Referring link)' : '(No referring link)'}
                     </div>
                     <a
                       href={visitor.entry_page}
@@ -1222,37 +1300,17 @@ function VisitorPath({ projectId }) {
                       style={{
                         fontSize: '11px',
                         color: '#3b82f6',
-                        fontWeight: '500',
                         textDecoration: 'none',
                         wordBreak: 'break-all',
                         overflowWrap: 'anywhere',
                         lineHeight: '1.4',
-                        cursor: 'pointer',
-                        display: 'block',
-                        maxWidth: '100%',
-                        whiteSpace: 'normal'
+                        display: 'block'
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                       onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
-                      {visitor.entry_page || 'Unknown'}
+                      {visitor.entry_page} <ExternalLink size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
                     </a>
-                  </div>
-
-                  {/* Device & Time */}
-                  <div className="visitor-col" data-label="Device & Time" style={{ display: 'flex', gap: '8px', alignItems: 'start', minWidth: 0, maxWidth: '100%' }}>
-                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0, paddingTop: '2px' }}>
-                      <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
-                      <span style={{ fontSize: '18px', lineHeight: 1 }}>🌐</span>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
-                      <div className="device-info" style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {visitor.device || 'Unknown'}, {visitor.browser || 'Unknown'}
-                      </div>
-                      <div className="time-info" style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {formatDate(visitor.visited_at)} {formatTime(visitor.visited_at)}
-                      </div>
-                    </div>
                   </div>
                 </div>
               ))}
@@ -1350,6 +1408,9 @@ function VisitorPath({ projectId }) {
             }
 
             /* Visitor List Responsive */
+            .visitor-header {
+                display: none !important;
+            }
             .visitor-row {
                 display: block !important;
                 background: white !important;

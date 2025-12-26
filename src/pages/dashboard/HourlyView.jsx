@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Skeleton } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { analyticsAPI } from '../../api/api'
+import { analyticsAPI, projectsAPI } from '../../api/api'
 import BarChart from '../../components/BarChart'
+import { Globe } from 'lucide-react'
 
 function HourlyView({ projectId }) {
   const { date } = useParams()
@@ -13,10 +14,23 @@ function HourlyView({ projectId }) {
   const [showPageViews, setShowPageViews] = useState(true)
   const [showUniqueVisits, setShowUniqueVisits] = useState(true)
   const [showReturningVisits, setShowReturningVisits] = useState(true)
+  const [project, setProject] = useState(null)
 
   useEffect(() => {
     loadHourlyData()
+    if (projectId) {
+      loadProjectInfo()
+    }
   }, [projectId, date])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadHourlyData = async () => {
     try {
@@ -128,7 +142,7 @@ function HourlyView({ projectId }) {
   if (loading) {
     return (
       <>
-        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', marginBottom: '24px' }}>
           <Skeleton variant="rectangular" width={140} height={40} sx={{ borderRadius: '6px' }} />
         </div>
 
@@ -199,7 +213,7 @@ function HourlyView({ projectId }) {
   if (!data) {
     return (
       <div className="content">
-        <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', marginBottom: '24px' }}>
           <button
             onClick={() => navigate(`/dashboard/project/${projectId}/summary`)}
             style={{
@@ -220,6 +234,19 @@ function HourlyView({ projectId }) {
             Back to Summary
           </button>
           <h1>No Data Available</h1>
+          {project && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+
+              <span>Project: {project.name}</span>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -227,7 +254,7 @@ function HourlyView({ projectId }) {
 
   return (
     <>
-      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', marginBottom: '24px' }}>
         <button
           onClick={() => navigate(`/dashboard/project/${projectId}/summary`)}
           style={{
@@ -256,7 +283,20 @@ function HourlyView({ projectId }) {
           <ArrowLeft size={16} />
           Back to Summary
         </button>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500',
+            marginTop: '8px'
+          }}>
 
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { visitorsAPI } from '../../api/api'
+import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
 
@@ -27,11 +27,22 @@ const redIcon = new L.Icon({
 function VisitorMap({ projectId }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
+  const [project, setProject] = useState(null)
   const [dateRange, setDateRange] = useState('30') // Default 30 days
 
   useEffect(() => {
     loadMap()
+    loadProjectInfo()
   }, [projectId, dateRange])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadMap = async () => {
     setLoading(true)
@@ -47,27 +58,42 @@ function VisitorMap({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Visitor Map</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: 'white',
-              fontSize: '14px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="1">Today</option>
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 3 Months</option>
-          </select>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+          <h1 style={{ margin: 0 }}>Visitor Map</h1>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: 'white',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="1">Today</option>
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 3 Months</option>
+            </select>
+          </div>
         </div>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -132,7 +158,7 @@ function VisitorMap({ projectId }) {
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 fontSize: '12px',
-                zIndex: 1000
+                zIndex: 900
               }}>
                 <div style={{ fontWeight: '700', marginBottom: '8px', color: '#1e293b' }}>
                   📊 Legend

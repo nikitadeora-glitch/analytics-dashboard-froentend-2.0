@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { trafficAPI } from '../../api/api'
+import { trafficAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box } from '@mui/material'
+import { Globe } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 
 function TrafficSourceDetailView({ projectId }) {
@@ -10,6 +11,7 @@ function TrafficSourceDetailView({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [chartData, setChartData] = useState([])
   const [sourceInfo, setSourceInfo] = useState(null)
+  const [project, setProject] = useState(null)
 
   // Get traffic source info from location state
   useEffect(() => {
@@ -21,6 +23,21 @@ function TrafficSourceDetailView({ projectId }) {
       navigate(-1)
     }
   }, [location.state, navigate])
+
+  useEffect(() => {
+    if (projectId) {
+      loadProjectInfo()
+    }
+  }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadChartData = async (source) => {
     try {
@@ -85,9 +102,9 @@ function TrafficSourceDetailView({ projectId }) {
   if (loading) {
     return (
       <>
-        <div className="header">
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
           <div>
-            <h1>Traffic Source Details</h1>
+            <h1 style={{ margin: 0 }}>Traffic Source Details</h1>
             <button
               onClick={handleBack}
               style={{
@@ -105,6 +122,19 @@ function TrafficSourceDetailView({ projectId }) {
               ← Back
             </button>
           </div>
+          {project && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+
+              <span>Project: {project.name}</span>
+            </div>
+          )}
         </div>
 
         <div className="content">
@@ -119,9 +149,9 @@ function TrafficSourceDetailView({ projectId }) {
   if (!sourceInfo) {
     return (
       <>
-        <div className="header">
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
           <div>
-            <h1>Traffic Source Details</h1>
+            <h1 style={{ margin: 0 }}>Traffic Source Details</h1>
             <button
               onClick={handleBack}
               style={{
@@ -139,6 +169,19 @@ function TrafficSourceDetailView({ projectId }) {
               ← Back
             </button>
           </div>
+          {project && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+
+              <span>Project: {project.name}</span>
+            </div>
+          )}
         </div>
         <div className="content">
           <div className="chart-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -155,9 +198,9 @@ function TrafficSourceDetailView({ projectId }) {
 
   return (
     <>
-      <div className="header">
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
         <div>
-          <h1>{sourceInfo.name} - Analytics</h1>
+          <h1 style={{ margin: 0 }}>{sourceInfo.name} - Analytics</h1>
 
           <button
             onClick={handleBack}
@@ -177,6 +220,19 @@ function TrafficSourceDetailView({ projectId }) {
             ← Back
           </button>
         </div>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

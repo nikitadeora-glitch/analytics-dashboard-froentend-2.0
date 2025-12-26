@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { visitorsAPI } from '../../api/api'
-import { ExternalLink, Search, ChevronDown } from 'lucide-react'
+import { visitorsAPI, projectsAPI } from '../../api/api'
+import { ExternalLink, Search, ChevronDown, Globe } from 'lucide-react'
 import { Skeleton, Box, List, ListItem } from '@mui/material'
 
 function CameFrom({ projectId }) {
@@ -11,10 +11,21 @@ function CameFrom({ projectId }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [selectedReferrer, setSelectedReferrer] = useState(null)
+  const [project, setProject] = useState(null)
 
   useEffect(() => {
     loadVisitors()
+    loadProjectInfo()
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadVisitors = async () => {
     try {
@@ -97,8 +108,21 @@ function CameFrom({ projectId }) {
 
   if (loading) return (
     <>
-      <div className="header">
-        <h1>Came From</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Came From</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -125,8 +149,21 @@ function CameFrom({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Came From </h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Came From</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Referrer Details Modal */}

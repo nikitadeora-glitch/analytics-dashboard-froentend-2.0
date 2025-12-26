@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { trafficAPI, pagesAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, LogOut, Search } from 'lucide-react'
+import { trafficAPI, pagesAPI, projectsAPI } from '../../api/api'
+import { Filter, Download, ExternalLink, LogOut, Search, Globe } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
 
 function ExitLink({ projectId }) {
@@ -9,10 +9,21 @@ function ExitLink({ projectId }) {
   const [exitPages, setExitPages] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedExit, setSelectedExit] = useState(null)
+  const [project, setProject] = useState(null)
 
   useEffect(() => {
     loadExitData()
+    loadProjectInfo()
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadExitData = async () => {
     try {
@@ -88,8 +99,20 @@ function ExitLink({ projectId }) {
 
   if (loading) return (
     <>
-      <div className="header">
-        <h1>Exit Links</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Exit Links</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -116,8 +139,21 @@ function ExitLink({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Exit Link</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Exit Link</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Exit Link Details Modal */}

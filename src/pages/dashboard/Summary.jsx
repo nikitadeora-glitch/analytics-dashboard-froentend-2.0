@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analyticsAPI } from '../../api/api'
+import { analyticsAPI, projectsAPI } from '../../api/api'
+import { Globe } from 'lucide-react'
 import BarChart from '../../components/BarChart'
 import { Skeleton, Box, Grid, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
 function Summary({ projectId }) {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
+  const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('daily')
   const [dateRange, setDateRange] = useState(7)
@@ -20,10 +22,17 @@ function Summary({ projectId }) {
 
   useEffect(() => {
     loadSummary()
-    // Remove auto-refresh to improve performance
-    // const interval = setInterval(loadSummary, 30000)
-    // return () => clearInterval(interval)
+    loadProjectInfo()
   }, [projectId, dateRange])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   // Removed excessive logging for better performance
 
@@ -53,8 +62,21 @@ function Summary({ projectId }) {
   if (loading) return (
     <>
       {/* Header */}
-      <div className="header">
-        <h1>Summary</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Summary</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>{project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -197,8 +219,21 @@ function Summary({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Summary</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Summary</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
 

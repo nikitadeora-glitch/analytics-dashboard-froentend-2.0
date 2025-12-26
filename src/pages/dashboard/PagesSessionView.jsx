@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchSessionDetails, clearSessionDetails, fetchMoreSessionDetails } from '../../store/slices/sessionSlice'
 import { Skeleton, Box } from '@mui/material'
+import { Globe } from 'lucide-react'
 
-function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack }) {
+function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, project }) {
   const dispatch = useDispatch()
   const { sessionDetails, loading, loadingMore, error, hasMore, currentLimit } = useSelector(state => state.session)
 
@@ -122,9 +123,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
   if (loading) return (
     <>
       {/* Header */}
-      <div className="header">
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
         <div>
-          <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
+          <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
           <button
             onClick={onBack}
             style={{
@@ -144,6 +145,19 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             ← Back
           </button>
         </div>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -266,9 +280,9 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
 
   return (
     <>
-      <div className="header">
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
         <div>
-          <h1>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
+          <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
           <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
 
           </div>
@@ -290,6 +304,19 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack })
             ← Back
           </button>
         </div>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

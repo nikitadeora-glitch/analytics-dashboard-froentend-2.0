@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { visitorsAPI } from '../../api/api'
-import { Eye, ChevronDown } from 'lucide-react'
+import { visitorsAPI, projectsAPI } from '../../api/api'
+import { Eye, ChevronDown, Globe } from 'lucide-react'
 
 function PagesView({ projectId }) {
   const [allVisitors, setAllVisitors] = useState([])
@@ -8,17 +8,28 @@ function PagesView({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [project, setProject] = useState(null)
   const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
     console.log('🎯 PagesView useEffect - projectId:', projectId)
     if (projectId) {
       loadVisitors()
+      loadProjectInfo()
     } else {
       console.log('❌ No projectId provided')
       setLoading(false)
     }
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadVisitors = async () => {
     try {
@@ -112,8 +123,21 @@ function PagesView({ projectId }) {
 
   if (loading) return (
     <>
-      <div className="header">
-        <h1>Pages View</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Pages View</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -183,16 +207,21 @@ function PagesView({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Pages View</h1>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          paddingRight: '40px',
-          alignItems: 'center'
-        }}>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Pages View</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
 
-        </div>
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

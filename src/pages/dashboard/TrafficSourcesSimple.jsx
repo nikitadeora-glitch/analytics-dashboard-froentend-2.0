@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { trafficAPI } from '../../api/api'
-import { TrendingUp } from 'lucide-react'
+import { trafficAPI, projectsAPI } from '../../api/api'
+import { TrendingUp, Globe } from 'lucide-react'
 import { Skeleton, Box, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
 function TrafficSourcesSimple({ projectId }) {
   const navigate = useNavigate()
   const [sources, setSources] = useState([])
+  const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // Define all standard traffic source categories
@@ -23,7 +24,17 @@ function TrafficSourcesSimple({ projectId }) {
 
   useEffect(() => {
     loadData()
+    loadProjectInfo()
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -85,8 +96,21 @@ function TrafficSourcesSimple({ projectId }) {
 
   if (loading) return (
     <>
-      <div className="header">
-        <h1>Traffic Sources</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Traffic Sources</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
@@ -163,8 +187,21 @@ function TrafficSourcesSimple({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Traffic Sources</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Traffic Sources</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">

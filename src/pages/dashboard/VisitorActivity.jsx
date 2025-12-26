@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react'
-import { visitorsAPI } from '../../api/api'
+import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
+import { Globe } from 'lucide-react'
 
 function VisitorActivity({ projectId }) {
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
+  const [project, setProject] = useState(null)
   const [error, setError] = useState(null)
   const [displayCount, setDisplayCount] = useState(10)
 
   useEffect(() => {
     loadVisitors()
+    loadProjectInfo()
     const interval = setInterval(loadVisitors, 30000)
     return () => clearInterval(interval)
   }, [projectId])
+
+  const loadProjectInfo = async () => {
+    try {
+      const response = await projectsAPI.getOne(projectId)
+      setProject(response.data)
+    } catch (error) {
+      console.error('Error loading project info:', error)
+    }
+  }
 
   const loadVisitors = async () => {
     try {
@@ -73,8 +85,21 @@ function VisitorActivity({ projectId }) {
   if (loading) {
     return (
       <>
-        <div className="header">
-          <h1>Visitor Activity</h1>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+          <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+          {project && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+
+              <span>Project: {project.name}</span>
+            </div>
+          )}
         </div>
         <div className="content">
           {/* Visitor List - Material-UI */}
@@ -190,8 +215,21 @@ function VisitorActivity({ projectId }) {
 
   return (
     <>
-      <div className="header">
-        <h1>Visitor Activity</h1>
+      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+        <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+        {project && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#64748b',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+
+            <span>Project: {project.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="content">
