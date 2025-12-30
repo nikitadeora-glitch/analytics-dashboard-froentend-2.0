@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { ExternalLink, Search, ChevronDown, Globe } from 'lucide-react'
 import { Skeleton, Box, List, ListItem } from '@mui/material'
+import { formatUrl } from '../../utils/urlUtils'
 
 function CameFrom({ projectId }) {
   const [allVisitors, setAllVisitors] = useState([])
@@ -404,7 +405,7 @@ function CameFrom({ projectId }) {
                         lineHeight: '1.4'
                       }}
                     >
-                      {visitor.referrer}
+                      {formatUrl(visitor.referrer)}
                     </div>
                   </div>
 
@@ -428,7 +429,7 @@ function CameFrom({ projectId }) {
 
                       onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                     >
-                      {visitor.entry_page || 'Unknown'}
+                      {formatUrl(visitor.entry_page)}
                       <ExternalLink size={12} />
                     </a>
                   </div>

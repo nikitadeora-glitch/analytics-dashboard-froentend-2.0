@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
+import { formatUrl } from '../../utils/urlUtils'
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -56,10 +57,12 @@ function VisitorMap({ projectId }) {
     }
   }
 
+  console.log('VisitorMap: Rendering with projectId:', projectId)
+
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '98%', alignItems: 'center' }}>
           <h1 style={{ margin: 0 }}>Visitor Map</h1>
           <div style={{ display: 'flex', gap: '10px' }}>
             <select
@@ -98,7 +101,15 @@ function VisitorMap({ projectId }) {
 
       <div className="content">
         {/* Interactive Real World Map */}
-        <div className="chart-container" style={{ padding: 0, height: 'calc(100vh - 160px)', position: 'relative' }}>
+        <div className="chart-container" style={{
+          padding: 0,
+          height: 'calc(100vh - 160px)',
+          minHeight: '500px', // Force minimum height
+          position: 'relative',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
 
           {loading && (
             <div style={{
@@ -114,7 +125,7 @@ function VisitorMap({ projectId }) {
             </div>
           )}
 
-          {locations.length > 0 ? (
+          {!loading && locations.length > 0 ? (
             <div style={{ height: '100%', width: '100%' }}>
               <MapContainer
                 center={[20, 0]}
@@ -175,7 +186,7 @@ function VisitorMap({ projectId }) {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : !loading && (
             <div style={{
               height: '100%',
               display: 'flex',
@@ -187,7 +198,7 @@ function VisitorMap({ projectId }) {
               <div style={{ textAlign: 'center' }}>
                 <Globe size={64} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
                 <p style={{ fontSize: '16px', fontWeight: '500' }}>No location data yet</p>
-                <p style={{ fontSize: '14px' }}>Try selecting a different date range</p>
+                <p style={{ fontSize: '14px' }}>Try selecting a different date range or checking if visitors have location data.</p>
               </div>
             </div>
           )}
@@ -369,22 +380,40 @@ function MapPopup({ loc, projectId, days }) {
 
               <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 <strong>Entry Page:</strong>
-                <a href={currentVisitor.entry_page} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', marginLeft: '4px' }}>
-                  {currentVisitor.entry_page} ↗
+                <a 
+                  href={currentVisitor.entry_page} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ color: '#3b82f6', textDecoration: 'none', marginLeft: '4px' }}
+                  title={currentVisitor.entry_page}
+                >
+                  {formatUrl(currentVisitor.entry_page)} ↗
                 </a>
               </div>
 
               <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 <strong>Exit Page:</strong>
-                <a href={currentVisitor.exit_page} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', marginLeft: '4px' }}>
-                  {currentVisitor.exit_page || 'N/A'} ↗
+                <a 
+                  href={currentVisitor.exit_page} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ color: '#3b82f6', textDecoration: 'none', marginLeft: '4px' }}
+                  title={currentVisitor.exit_page}
+                >
+                  {currentVisitor.exit_page ? formatUrl(currentVisitor.exit_page) : 'N/A'} ↗
                 </a>
               </div>
 
               <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 <strong>Referring URL:</strong>
-                <a href={currentVisitor.referrer} target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', textDecoration: 'none', marginLeft: '4px' }}>
-                  {currentVisitor.referrer || 'Direct'} ↗
+                <a 
+                  href={currentVisitor.referrer} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ color: '#22c55e', textDecoration: 'none', marginLeft: '4px' }}
+                  title={currentVisitor.referrer}
+                >
+                  {currentVisitor.referrer ? formatUrl(currentVisitor.referrer) : 'Direct'} ↗
                 </a>
               </div>
             </div>

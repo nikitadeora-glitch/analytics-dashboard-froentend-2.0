@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Filter, Download, ExternalLink, ChevronRight, X, Globe } from 'lucide-react'
+import { formatUrl } from '../../utils/urlUtils'
 
 function VisitorPath({ projectId }) {
   const location = useLocation()
@@ -930,13 +931,15 @@ function VisitorPath({ projectId }) {
                                       textDecoration: 'none',
                                       wordBreak: 'break-all',
                                       overflowWrap: 'anywhere',
-                                      display: 'block',
                                       lineHeight: '1.4',
+                                      display: 'block',
                                       maxWidth: '100%',
                                       whiteSpace: 'normal'
                                     }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    title={page.url}
                                   >
-                                    {page.url}
+                                    {formatUrl(page.url)}
                                   </a>
                                 </div>
                                 <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
@@ -1088,7 +1091,7 @@ function VisitorPath({ projectId }) {
                 </div>
                 <div style={{ fontSize: '18px', fontWeight: '700', color: '#1d4ed8', marginBottom: '8px' }}>
                   {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct'
-                    ? selectedReferrer.referrer
+                    ? formatUrl(selectedReferrer.referrer)
                     : 'Direct Traffic'}
                 </div>
                 {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' && (
@@ -1304,12 +1307,12 @@ function VisitorPath({ projectId }) {
                         wordBreak: 'break-all',
                         overflowWrap: 'anywhere',
                         lineHeight: '1.4',
-                        display: 'block'
+                        display: 'block',
+                        maxWidth: '200px'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                      title={visitor.entry_page}
                     >
-                      {visitor.entry_page} <ExternalLink size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                      {formatUrl(visitor.entry_page)}
                     </a>
                   </div>
                 </div>

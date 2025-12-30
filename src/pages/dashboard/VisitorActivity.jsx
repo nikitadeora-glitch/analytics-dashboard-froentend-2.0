@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
 import { Globe } from 'lucide-react'
+import { formatUrl } from '../../utils/urlUtils'
 
 function VisitorActivity({ projectId }) {
   const [visitors, setVisitors] = useState([])
@@ -31,7 +32,7 @@ function VisitorActivity({ projectId }) {
       setError(null)
       // PERFORMANCE FIX: Reduced limit from 10,000 to 100. 
       // Fetching 10k records in one go was the main reason for the extreme slowness.
-      const response = await visitorsAPI.getActivityView(projectId, 100)
+      const response = await visitorsAPI.getActivityView(projectId, 1000)
       setVisitors(response.data || [])
     } catch (error) {
       console.error('Error loading visitors:', error)
@@ -399,28 +400,22 @@ function VisitorActivity({ projectId }) {
                         </div>
                         {visitor.entry_page ? (
                           <a
-                            href={`/project/${projectId}/visitor-path`}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              // Navigate to visitor path with visitor_id
-                              window.location.href = `/project/${projectId}/visitor-path?visitor_id=${visitor.visitor_id}`
-                            }}
+                            href={visitor.entry_page}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             style={{
-                              fontSize: '12px',
-                              fontWeight: '600',
+                              fontSize: '14px',
                               color: '#3b82f6',
                               textDecoration: 'none',
-                              cursor: 'pointer',
-                              display: 'block',
-                              wordBreak: 'break-word',
+                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                              display: 'block',
+                              maxWidth: '300px'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                            title={visitor.entry_page}
                           >
-                            {visitor.entry_page} →
+                            {formatUrl(visitor.entry_page)}
                           </a>
                         ) : (
                           <div style={{

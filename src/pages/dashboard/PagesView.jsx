@@ -405,6 +405,7 @@ function PagesView({ projectId }) {
                         href={visitor.entry_page}
                         target="_blank"
                         rel="noopener noreferrer"
+                        title={visitor.entry_page}
                         style={{
                           fontSize: '11px',
                           color: '#3b82f6',
@@ -412,7 +413,11 @@ function PagesView({ projectId }) {
                           display: 'inline-block',
                           wordBreak: 'break-all',
                           lineHeight: '1.4',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word',
+                          maxWidth: '100%',
+                          padding: '2px 0'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                         onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}

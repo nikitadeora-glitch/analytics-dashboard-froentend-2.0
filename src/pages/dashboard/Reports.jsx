@@ -1933,7 +1933,6 @@ function Reports({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-            <Globe size={14} />
             <span>Project: {project.name}</span>
           </div>
         )}

@@ -73,7 +73,7 @@ function Dashboard() {
         right: 0,
         zIndex: 1001,
         backdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
