@@ -62,10 +62,8 @@ function HourlyView({ projectId }) {
       setData(processedData)
     } catch (error) {
       console.error('❌ Error loading hourly data:', error)
-      console.error('❌ Error details:', error.response?.data)
 
       // Fallback to sample data if API fails
-      console.log('🔄 Falling back to sample data')
       const hourlyData = generateSampleHourlyData(date)
       setData(hourlyData)
     } finally {
@@ -372,7 +370,7 @@ function HourlyView({ projectId }) {
               showReturningVisits={showReturningVisits}
               period="hourly"
               stepSize={5}
-              maxValue={50}
+              maxValue={100}
             />
           </div>
         </div>

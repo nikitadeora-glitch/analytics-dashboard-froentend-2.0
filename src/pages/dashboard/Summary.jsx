@@ -38,6 +38,7 @@ function Summary({ projectId }) {
 
   const loadSummary = async () => {
     try {
+      setLoading(true)
       const response = await analyticsAPI.getSummaryView(projectId, dateRange)
       setData(response.data)
       setCurrentPage(0)
