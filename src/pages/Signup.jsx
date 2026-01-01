@@ -7,9 +7,9 @@ import backgroundImage from '../assets/analytic.png'
 
 function Signup() {
   const [formData, setFormData] = useState({
-    fullName: '',
+    full_name: '',
     email: '',
-    companyName: '',
+    company_name: '',
     password: '',
     confirmPassword: ''
   })
@@ -66,11 +66,11 @@ function Signup() {
 
     try {
       // Call signup API
-      const response = await authAPI.signup(formData)
+      const response = await authAPI.register(formData)
 
       // Store token if provided (auto-login after signup)
-      if (response.data.token) {
-        tokenManager.setToken(response.data.token)
+      if (response.data.access_token) {
+        tokenManager.setToken(response.data.access_token)
         navigate('/dashboard')
       } else {
         // If email verification required
@@ -250,8 +250,8 @@ function Signup() {
                 />
                 <input
                   type="text"
-                  name="fullName"
-                  value={formData.fullName}
+                  name="full_name"
+                  value={formData.full_name}
                   onChange={handleInputChange}
                   placeholder="Enter your full name"
                   autoComplete="name"
@@ -342,8 +342,8 @@ function Signup() {
                 />
                 <input
                   type="text"
-                  name="companyName"
-                  value={formData.companyName}
+                  name="company_name"
+                  value={formData.company_name}
                   onChange={handleInputChange}
                   placeholder="Enter your company name"
                   autoComplete="organization"

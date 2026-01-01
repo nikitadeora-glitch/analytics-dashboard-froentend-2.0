@@ -9,7 +9,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-
 // Token management
 const getToken = () => localStorage.getItem('authToken');
 const setToken = (token) => {
@@ -53,7 +52,7 @@ api.interceptors.response.use(
 // API Endpoints
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
+  register: (userData) => api.post('/auth/signup', userData),
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
   resetPassword: (data) => api.post('/auth/reset-password', data),
   verifyResetToken: (token) => api.get(`/auth/verify-reset-token?token=${token}`),

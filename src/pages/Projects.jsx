@@ -44,7 +44,7 @@ function Projects() {
   useEffect(() => {
     loadProjects()
     const interval = setInterval(() => {
-      // Only auto-refresh if cache is expired
+      // Only auto-refresh if cache is expired AND we have projects
       const now = Date.now()
       if (!lastFetch || (now - lastFetch) > CACHE_DURATION) {
         loadProjects()
@@ -66,7 +66,7 @@ function Projects() {
   const loadProjects = async (forceRefresh = false) => {
     // Check cache first
     const now = Date.now()
-    if (!forceRefresh && lastFetch && (now - lastFetch) < CACHE_DURATION && projects.length > 0) {
+    if (!forceRefresh && lastFetch && (now - lastFetch) < CACHE_DURATION) {
       setLoading(false)
       return
     }
