@@ -65,8 +65,11 @@ function Signup() {
     }
 
     try {
+      // Prepare data for API (exclude confirmPassword)
+      const { confirmPassword, ...apiData } = formData
+
       // Call signup API
-      const response = await authAPI.register(formData)
+      const response = await authAPI.register(apiData)
 
       // Store token if provided (auto-login after signup)
       if (response.data.access_token) {

@@ -15,12 +15,17 @@ const setToken = (token) => {
   if (token) {
     localStorage.setItem('authToken', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    localStorage.removeItem('authToken');
+    delete api.defaults.headers.common['Authorization'];
   }
 };
 const removeToken = () => {
   localStorage.removeItem('authToken');
   delete api.defaults.headers.common['Authorization'];
 };
+
+export { getToken, setToken, removeToken };
 
 // Request interceptor
 api.interceptors.request.use(

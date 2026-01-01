@@ -57,7 +57,7 @@ function Login() {
       const response = await authAPI.login(formData)
 
       // Store token
-      tokenManager.setToken(response.data.token)
+      tokenManager.setToken(response.data.access_token)
 
       // On successful login, navigate to dashboard
       navigate('/dashboard')
