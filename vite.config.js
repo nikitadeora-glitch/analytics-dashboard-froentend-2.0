@@ -7,6 +7,6 @@ export default defineConfig({
     port: 3000,
   },
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://127.0.0.1:8000/api')
+    'import.meta.env.VITE_API_URL': JSON.stringify('https://api.seo.prpwebs.com/api/')
   }
 })
