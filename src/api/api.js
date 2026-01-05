@@ -56,13 +56,14 @@ api.interceptors.response.use(
 
 // API Endpoints
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/signup', userData),
-  forgotPassword: (data) => api.post('/auth/forgot-password', data),
-  resetPassword: (data) => api.post('/auth/reset-password', data),
-  verifyResetToken: (token) => api.get(`/auth/verify-reset-token?token=${token}`),
-  getMe: () => api.get('/auth/me'),
-  logout: () => api.post('/auth/logout'),
+  login: (credentials) => api.post('/login', credentials),
+  register: (userData) => api.post('/signup', userData),
+  forgotPassword: (data) => api.post('/forgot-password', data),
+  googleLogin: (data) => api.post("/google", data),
+  resetPassword: (data) => api.post('/reset-password', data),
+  verifyResetToken: (token) => api.get(`/verify-reset-token?token=${token}`),
+  getMe: () => api.get('/me'),
+  logout: () => api.post('/logout'),
 };
 
 export const visitorsAPI = {

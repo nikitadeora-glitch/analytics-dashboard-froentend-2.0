@@ -320,7 +320,12 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
       </div>
 
       <div className="content">
-        <div className="chart-container" style={{ padding: 0 }}>
+        <div className="chart-container" style={{ 
+          padding: 0,
+          maxWidth: '100%',
+          overflowX: 'hidden',
+          width: '100%'
+        }}>
           {sessionDetails.length === 0 ? (
             <div style={{
               padding: '60px 20px',

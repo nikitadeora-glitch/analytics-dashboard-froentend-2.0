@@ -5,6 +5,10 @@ import { authAPI, tokenManager } from '../api/api'
 import logo from '/favicon.png'
 import backgroundImage from '../assets/analytic.png'
 
+import { useEffect } from "react"
+
+
+
 function Login() {
   const [formData, setFormData] = useState({
     email: '',
@@ -82,6 +86,58 @@ function Login() {
       setPasswordErrors(errors)
     }
   }
+
+useEffect(() => {
+  // Load Google Sign-In script
+  const loadGoogleScript = () => {
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = initializeGoogleSignIn
+    document.head.appendChild(script)
+  }
+
+  const initializeGoogleSignIn = () => {
+    if (!window.google) return
+
+    window.google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    })
+
+    window.google.accounts.id.renderButton(
+      document.getElementById("google-signin-button"),
+      {
+        theme: "outline",
+        size: "large",
+        width: "100%"
+      }
+    )
+  }
+
+  loadGoogleScript()
+}, [])
+
+const handleGoogleLogin = async (response) => {
+  console.log("GOOGLE RESPONSE ", response)
+
+  try {
+    const res = await authAPI.googleLogin({
+      id_token: response.credential
+    })
+
+    console.log("BACKEND RESPONSE 👉", res.data)
+
+    tokenManager.setToken(res.data.access_token)
+    navigate("/dashboard")
+  } catch (err) {
+    console.error("GOOGLE LOGIN ERROR 👉", err)
+    setError("Google login failed")
+  }
+}
+
+
 
   return (
     <div className="login-container" style={{
@@ -408,17 +464,64 @@ function Login() {
             </button>
           </form>
 
+          {/* Google Sign-In Button */}
+          <div style={{
+            marginTop: '16px',
+            textAlign: 'center'
+          }}>
+            <div
+              id="google-signin-button"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                border: '1px solid #dadce0',
+                borderRadius: '8px',
+                backgroundColor: '#ffffff',
+                color: '#3c4043',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                fontFamily: 'Roboto, sans-serif'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)'
+                e.target.style.backgroundColor = '#f8f9fa'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'
+                e.target.style.backgroundColor = '#ffffff'
+              }}
+              onClick={() => {
+                // Handle Google Sign-In
+                console.log('Google Sign-In clicked')
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" style={{ display: 'block' }}>
+                <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 2.1-1.4 2.82v2.43h2.23c1.3-1.2 2.05-3 2.05-5.05 0-.5-.05-.88-.15-1.25z"/>
+                <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.95l-2.23-2.43c-.62.43-1.43.67-2.4.67-1.85 0-3.41-1.25-3.96-2.93H2.8v2.51C4.12 15.37 6.38 17 8.98 17z"/>
+                <path fill="#FBBC05" d="M5.02 10.33c-.15-.43-.23-.88-.23-1.33s.08-.9.23-1.33V5.16H2.8C2.3 6.17 2 7.32 2 8.5s.3 2.33.8 3.34l2.22-2.51z"/>
+                <path fill="#EA4335" d="M8.98 3.67c1.04 0 1.96.35 2.7.95l1.97-1.97C12.95 1.35 11.14.63 8.98.63 6.38.63 4.12 2.26 2.8 4.16l2.22 2.51c.55-1.68 2.11-2.93 3.96-2.93z"/>
+              </svg>
+              Sign in with Google
+            </div>
+          </div>
+
           {/* Sign Up Link */}
           <div style={{
             textAlign: 'center',
             marginTop: '24px',
-            paddingTop: '24px',
+           
             borderTop: '1px solid #e5e7eb'
           }}>
             <p style={{
               fontSize: '14px',
               color: '#6b7280',
-              margin: 0
+              margin: 0,
+              marginBottom: '10px'
             }}>
               Don't have an account?{' '}
               <a
