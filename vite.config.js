@@ -5,6 +5,22 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    historyApiFallback: true,
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          charts: ['chart.js', 'react-chartjs-2', 'recharts'],
+          ui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled']
+        }
+      }
+    }
   },
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.NODE_ENV === 'production' 
