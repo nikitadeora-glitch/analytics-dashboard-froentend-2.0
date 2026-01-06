@@ -19,7 +19,7 @@ function HourlyView({ projectId }) {
 
   // Get navigation state from Summary component
   const navigationState = location.state || {}
-  const { period, dateRange, weekData, actualStartDate, actualEndDate } = navigationState
+  const { period, dateRange, weekData, actualStartDate, actualEndDate, isMonthlyRange, monthData } = navigationState
 
   useEffect(() => {
     loadHourlyData()
@@ -57,11 +57,12 @@ function HourlyView({ projectId }) {
         ...response.data,
         hourly_stats: response.data.hourly_stats
           .map(stat => {
-            const hour = stat.date.split(':')[0];
+            const hour = stat.hour ? stat.hour.split(':')[0] : '00';
             const hourNumber = parseInt(hour, 10);
 
             return {
               ...stat,
+              date: stat.hour || `${hour}:00`, // Add 'date' field for BarChart
               timeRange: `${hour.padStart(2, '0')}:00-${hour.padStart(2, '0')}:59`,
               _hour: hourNumber
             };
@@ -85,8 +86,9 @@ function HourlyView({ projectId }) {
 
   // Handle back navigation with filter state
   const handleBackToSummary = () => {
-    // Preserve filter state when going back
-    const state = period && dateRange ? { period, dateRange } : {}
+    // Preserve filter state when going back - use original currentPage from navigation state
+    const originalCurrentPage = navigationState.currentPage || 0
+    const state = period && dateRange ? { period, dateRange, currentPage: originalCurrentPage } : { currentPage: originalCurrentPage }
     navigate(`/dashboard/project/${projectId}/summary`, { state })
   }
 

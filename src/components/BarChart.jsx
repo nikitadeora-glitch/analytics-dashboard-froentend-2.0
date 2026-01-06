@@ -25,7 +25,8 @@ function BarChart({
   showReturningVisits = true,
   period = 'daily',
   stepSize = 200,
-  maxValue = 2000
+  maxValue = 2000,
+  onDateClick = null
 }) {
   // Sample data matching your image if no data provided
   const sampleData = [
@@ -92,6 +93,13 @@ function BarChart({
     maintainAspectRatio: false,
     categoryPercentage: 0.6, // Controls spacing between groups (reduced from 0.7 to 0.5)
     barPercentage: 0.9, // Controls bar width within groups (reduced from 0.8 to 0.6)
+    onClick: (event, elements) => {
+      if (elements.length > 0 && onDateClick) {
+        const index = elements[0].index;
+        const clickedData = chartData[index];
+        onDateClick(clickedData, index);
+      }
+    },
     plugins: {
       legend: {
         display: false, // Hide legend for now, can be enabled later

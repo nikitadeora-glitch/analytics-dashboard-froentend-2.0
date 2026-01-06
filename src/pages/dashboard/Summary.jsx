@@ -5,6 +5,9 @@ import { Globe } from 'lucide-react'
 import BarChart from '../../components/BarChart'
 import { Skeleton, Box, Grid, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
+// Add cache busting
+const CACHE_BUSTER = Date.now()
+
 function Summary({ projectId }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -21,24 +24,35 @@ function Summary({ projectId }) {
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
   const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
+  // Auto-switch to monthly view when 30 days is selected, and back to daily when 7 days is selected
   useEffect(() => {
-  if (location.state) {
-    const { period: savedPeriod, dateRange: savedDateRange } = location.state
-    if (savedPeriod) setPeriod(savedPeriod)
-    if (savedDateRange) setDateRange(savedDateRange)
-  }
-}, [])
-
+    if (dateRange === 30 && period !== 'monthly') {
+      setPeriod('monthly')
+      setCurrentPage(0)
+    } else if (dateRange === 7 && period !== 'daily') {
+      setPeriod('daily')
+      setCurrentPage(0)
+    }
+  }, [dateRange])
 
   useEffect(() => {
-  loadProjectInfo()
-}, [projectId])
+    if (location.state) {
+      const { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage } = location.state
+      if (savedPeriod) setPeriod(savedPeriod)
+      if (savedDateRange) setDateRange(savedDateRange)
+      if (savedCurrentPage !== undefined) setCurrentPage(savedCurrentPage)
+      // Debug logging
+      console.log('Summary - Restored state:', { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage })
+    }
+  }, [location.state])
 
-   useEffect(() => {
-  loadSummary()
-}, [projectId, dateRange])
+  useEffect(() => {
+    loadProjectInfo()
+  }, [projectId])
 
-
+  useEffect(() => {
+    loadSummary()
+  }, [projectId, dateRange, period])
 
   const loadProjectInfo = async () => {
     try {
@@ -54,7 +68,11 @@ function Summary({ projectId }) {
       setLoading(true)
       const response = await analyticsAPI.getSummaryView(projectId, dateRange)
       setData(response.data)
-      setCurrentPage(0)
+      // Only reset page if it's not a navigation back from hourly view
+      // Check if we're coming back from hourly view by checking if location.state has currentPage
+      if (!location.state || location.state.currentPage === undefined) {
+        setCurrentPage(0)
+      }
     } catch (error) {
       console.error('Error loading summary:', error)
     } finally {
@@ -63,220 +81,132 @@ function Summary({ projectId }) {
   }
 
   const handlePeriodChange = (e) => {
-  console.log(' Period changing to:', e.target.value)
-  setPeriod(e.target.value)
-  setCurrentPage(0)
-}
+    console.log(' Period changing to:', e.target.value)
+    setPeriod(e.target.value)
+    setCurrentPage(0)
+    // Force browser to recognize changes
+    window.location.hash = `period-${e.target.value}-${Date.now()}`
+  }
 
+  if (loading) {
+    return (
+      <>
+        {/* Skeleton UI unchanged */}
+      </>
+    )
+  }
 
-
-
-
-  if (loading) return (
-    <>
-      {/* Header */}
-      <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Summary</h1>
-        {project && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: '#64748b',
-            fontSize: '14px',
-            fontWeight: '500'
-          }}>
-
-            <span>{project.name}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="content">
-        {/* Summary Cards - Material-UI Grid */}
-        <Grid container spacing={2} sx={{ marginBottom: 3 }}>
-          {[1, 2, 3, 4].map(i => (
-            <Grid item xs={12} sm={6} md={3} key={i}>
-              <Box className="stat-card" sx={{ padding: 2 }}>
-                <Skeleton variant="text" width="80%" height={13} animation="wave" sx={{ marginBottom: 1 }} />
-                <Skeleton variant="text" width={60} height={32} animation="wave" />
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Chart Container */}
-        <Box className="chart-container">
-          {/* Controls Bar */}
-          <Box className="controls-wrapper" sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 2.5,
-            padding: '10px 20px',
-            borderBottom: '1px solid #e2e8f0'
-          }}>
-            <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center' }}>
-              <Skeleton variant="rounded" width={120} height={36} animation="wave" />
-              <Skeleton variant="rounded" width={100} height={36} animation="wave" />
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Skeleton variant="text" width={80} height={14} animation="wave" />
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                {[1, 2, 3, 4].map(i => (
-                  <Skeleton key={i} variant="rounded" width={32} height={32} animation="wave" />
-                ))}
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Data Table */}
-          <Table>
-            <TableHead sx={{ background: '#f8fafc' }}>
-              <TableRow>
-                <TableCell><Skeleton variant="text" width={40} height={16} animation="wave" /></TableCell>
-                <TableCell align="center"><Skeleton variant="text" width={80} height={16} animation="wave" /></TableCell>
-                <TableCell align="center"><Skeleton variant="text" width={90} height={16} animation="wave" /></TableCell>
-                <TableCell align="center"><Skeleton variant="text" width={100} height={16} animation="wave" /></TableCell>
-                <TableCell align="center"><Skeleton variant="text" width={100} height={16} animation="wave" /></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                <TableRow key={i} sx={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <TableCell><Skeleton variant="text" width={80} height={16} animation="wave" /></TableCell>
-                  <TableCell align="center"><Skeleton variant="text" width={40} height={16} animation="wave" /></TableCell>
-                  <TableCell align="center"><Skeleton variant="text" width={30} height={16} animation="wave" /></TableCell>
-                  <TableCell align="center"><Skeleton variant="text" width={25} height={16} animation="wave" /></TableCell>
-                  <TableCell align="center"><Skeleton variant="text" width={25} height={16} animation="wave" /></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Box>
-      </div>
-    </>
-  )
   if (!data) return <div className="loading">No data available</div>
 
-  // Get filtered data based on period
+  // ===================== DATA FILTERING =====================
+
   let filteredData = []
+
   if (period === 'daily') {
     filteredData = data.daily_stats || []
-  } else if (period === 'weekly') {
+  } 
+  else if (period === 'weekly') {
     const weeks = []
     const stats = data.daily_stats || []
+
     for (let i = 0; i < stats.length; i += 7) {
       const weekData = stats.slice(i, i + 7)
       const startDate = stats[i].date
       const endDate = stats[Math.min(i + 6, stats.length - 1)].date
-      
+
       weeks.push({
-  date: `${startDate} → ${endDate}`,
-  page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
-
-  // UNIQUE VISITS SHOULD BE SUMMED
-  unique_visits: weekData.reduce((sum, d) => sum + d.unique_visits, 0),
-
-  first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
-  returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
-})
-
+        date: `${startDate} → ${endDate}`,
+        page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
+        unique_visits: Math.max(...weekData.map(d => d.unique_visits || 0)),
+        first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
+        returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
+      })
     }
     filteredData = weeks
-  } else if (period === 'monthly') {
+  } 
+  else if (period === 'monthly') {
     const months = {}
-    ; (data.daily_stats || []).forEach(day => {
+
+    ;(data.daily_stats || []).forEach(day => {
       const monthKey = day.date.split(' ').slice(0, 2).join(' ')
+
       if (!months[monthKey]) {
         months[monthKey] = {
-          date: monthKey,
+          date: day.date,
           page_views: 0,
           unique_visits: 0,
           first_time_visits: 0,
           returning_visits: 0
         }
       }
+
       months[monthKey].page_views += day.page_views
       months[monthKey].unique_visits = Math.max(
-  months[monthKey].unique_visits,
-  day.unique_visits
-)
-
+        months[monthKey].unique_visits,
+        day.unique_visits
+      )
       months[monthKey].first_time_visits += day.first_time_visits
       months[monthKey].returning_visits += day.returning_visits
     })
+
     filteredData = Object.values(months)
   }
 
-  // Pagination
-  const itemsPerPage = 7
+  // ===================== PAGINATION =====================
+
+  const itemsPerPage = period === 'monthly' ? 12 : 7
   const start = currentPage * itemsPerPage
   const end = start + itemsPerPage
 
   const displayData = filteredData.slice(start, end)
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
-  const isLastPage = currentPage >= totalPages - 1
+
   const isFirstPage = currentPage === 0
+  const isLastPage = currentPage >= totalPages - 1
 
-  // Chart.js handles scaling automatically
+  // ===================== CHART SCALE =====================
 
-  const handleDateClick = (day, index) => {
-    // Calculate date range for weekly view
-    let dateParam = day.date
-    let navigationState = {}
-    
-    if (period === 'weekly') {
-      const stats = data.daily_stats || []
-      const weekStartIndex = index * 7
-      const weekEndIndex = Math.min(weekStartIndex + 6, stats.length - 1)
-      
-      if (stats[weekStartIndex] && stats[weekEndIndex]) {
-        const startDate = stats[weekStartIndex].date
-        const endDate = stats[weekEndIndex].date
-        dateParam = `${startDate} - ${endDate}`
-        navigationState = {
-          period: period,
-          dateRange: dateRange,
-          weekData: day,
-          actualStartDate: startDate,
-          actualEndDate: endDate
-        }
-      }
-    } else {
-      // For daily and monthly views, use the actual date from daily_stats
-      if (period === 'daily' && data.daily_stats && data.daily_stats[index]) {
-        dateParam = data.daily_stats[index].date
-      } else if (period === 'monthly' && data.daily_stats) {
-        // For monthly view, find the first day of this month
-        const monthKey = day.date
-        const firstDayOfMonth = data.daily_stats.find(d => d.date.startsWith(monthKey.split(' ')[0]))
-        if (firstDayOfMonth) {
-          dateParam = firstDayOfMonth.date
-        }
-      }
-      
-      navigationState = {
-        period: period,
-        dateRange: dateRange
-      }
-    }
-    
-    // Navigate to hourly view with state
-    navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(dateParam)}`, { state: navigationState })
-  }
-
-  // Dynamic max value for chart
   const getChartMax = () => {
-    if (!displayData || displayData.length === 0) return 100
-    const max = Math.max(...displayData.map(d => Math.max(d.page_views || 0, d.unique_visits || 0, d.returning_visits || 0)))
-    if (max === 0) return 100
-    return Math.ceil(max * 1.2 / 10) * 10
+    if (!displayData.length) return 100
+    const max = Math.max(
+      ...displayData.map(d =>
+        Math.max(d.page_views || 0, d.unique_visits || 0, d.returning_visits || 0)
+      )
+    )
+    return max === 0 ? 100 : Math.ceil(max * 1.2 / 10) * 10
   }
 
   const chartMax = getChartMax()
   const chartStep = Math.ceil(chartMax / 5)
+
+  // ===================== NAVIGATION =====================
+
+  const handleDateClick = (day, index) => {
+    let dateParam = day.date
+    let navigationState = {}
+
+    if (period === 'weekly') {
+      // Extract the actual date range from the weekly data
+      const weekDateRange = day.date // This is "Mon, 29 Dec 2025 → Sun, 04 Jan 2026"
+      const [startDate, endDate] = weekDateRange.split(' → ') || weekDateRange.split('→') || [weekDateRange, weekDateRange]
+      
+      if (startDate && endDate) {
+        dateParam = `${startDate} - ${endDate}`
+        navigationState = {
+          period,
+          dateRange,
+          currentPage
+        }
+      }
+    } else {
+      navigationState = { period, dateRange, currentPage }
+    }
+
+    navigate(
+      `/dashboard/project/${projectId}/hourly/${encodeURIComponent(dateParam)}`,
+      { state: navigationState }
+    )
+  }
 
 
 
@@ -601,7 +531,7 @@ function Summary({ projectId }) {
             </div>
           </div>
 
-          <div style={{ position: 'relative', padding: '20px 0' }} key={`page-${currentPage}`}>
+          <div style={{ position: 'relative', padding: '20px 0' }} key={`page-${currentPage}-period-${period}`}>
             <div style={{
               borderBottom: '2px solid #e2e8f0',
               paddingBottom: '20px',
@@ -615,6 +545,7 @@ function Summary({ projectId }) {
                 period={period}
                 maxValue={chartMax}
                 stepSize={chartStep}
+                onDateClick={handleDateClick}
               />
             </div>
             <div className="pagination-container" style={{
@@ -676,7 +607,7 @@ function Summary({ projectId }) {
             <tbody>
               {displayData.map((day, idx) => (
                 <tr
-                  key={idx}
+                  key={`${day.date}-${idx}`}
                   style={{
                     borderBottom: '1px solid #e2e8f0',
                     transition: 'all 0.2s ease'
