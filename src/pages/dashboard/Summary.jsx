@@ -24,17 +24,6 @@ function Summary({ projectId }) {
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
   const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
-  // Auto-switch to monthly view when 30 days is selected, and back to daily when 7 days is selected
-  useEffect(() => {
-    if (dateRange === 30 && period !== 'monthly') {
-      setPeriod('monthly')
-      setCurrentPage(0)
-    } else if (dateRange === 7 && period !== 'daily') {
-      setPeriod('daily')
-      setCurrentPage(0)
-    }
-  }, [dateRange])
-
   useEffect(() => {
     if (location.state) {
       const { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage } = location.state
