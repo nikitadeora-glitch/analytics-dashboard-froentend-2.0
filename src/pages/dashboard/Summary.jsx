@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { analyticsAPI, projectsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
 import BarChart from '../../components/BarChart'
@@ -7,6 +7,7 @@ import { Skeleton, Box, Grid, Table, TableHead, TableBody, TableRow, TableCell }
 
 function Summary({ projectId }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [data, setData] = useState(null)
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,9 +22,23 @@ function Summary({ projectId }) {
   const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
   useEffect(() => {
-    loadSummary()
-    loadProjectInfo()
-  }, [projectId, dateRange])
+  if (location.state) {
+    const { period: savedPeriod, dateRange: savedDateRange } = location.state
+    if (savedPeriod) setPeriod(savedPeriod)
+    if (savedDateRange) setDateRange(savedDateRange)
+  }
+}, [])
+
+
+  useEffect(() => {
+  loadProjectInfo()
+}, [projectId])
+
+   useEffect(() => {
+  loadSummary()
+}, [projectId, dateRange])
+
+
 
   const loadProjectInfo = async () => {
     try {
@@ -33,8 +48,6 @@ function Summary({ projectId }) {
       console.error('Error loading project info:', error)
     }
   }
-
-  // Removed excessive logging for better performance
 
   const loadSummary = async () => {
     try {
@@ -50,11 +63,10 @@ function Summary({ projectId }) {
   }
 
   const handlePeriodChange = (e) => {
-    setPeriod(e.target.value)
-    setCurrentPage(0) // Reset to first page when period changes
-  }
-
-
+  console.log(' Period changing to:', e.target.value)
+  setPeriod(e.target.value)
+  setCurrentPage(0)
+}
 
 
 
@@ -157,33 +169,44 @@ function Summary({ projectId }) {
     const stats = data.daily_stats || []
     for (let i = 0; i < stats.length; i += 7) {
       const weekData = stats.slice(i, i + 7)
+      const startDate = stats[i].date
+      const endDate = stats[Math.min(i + 6, stats.length - 1)].date
+      
       weeks.push({
-        date: `Week ${Math.floor(i / 7) + 1}`,
-        page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
-        unique_visits: weekData.reduce((sum, d) => sum + d.unique_visits, 0),
-        first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
-        returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
-      })
+  date: `${startDate} → ${endDate}`,
+  page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
+
+  // UNIQUE VISITS SHOULD BE SUMMED
+  unique_visits: weekData.reduce((sum, d) => sum + d.unique_visits, 0),
+
+  first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
+  returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
+})
+
     }
     filteredData = weeks
   } else if (period === 'monthly') {
     const months = {}
-      ; (data.daily_stats || []).forEach(day => {
-        const monthKey = day.date.split(' ').slice(0, 2).join(' ')
-        if (!months[monthKey]) {
-          months[monthKey] = {
-            date: monthKey,
-            page_views: 0,
-            unique_visits: 0,
-            first_time_visits: 0,
-            returning_visits: 0
-          }
+    ; (data.daily_stats || []).forEach(day => {
+      const monthKey = day.date.split(' ').slice(0, 2).join(' ')
+      if (!months[monthKey]) {
+        months[monthKey] = {
+          date: monthKey,
+          page_views: 0,
+          unique_visits: 0,
+          first_time_visits: 0,
+          returning_visits: 0
         }
-        months[monthKey].page_views += day.page_views
-        months[monthKey].unique_visits += day.unique_visits
-        months[monthKey].first_time_visits += day.first_time_visits
-        months[monthKey].returning_visits += day.returning_visits
-      })
+      }
+      months[monthKey].page_views += day.page_views
+      months[monthKey].unique_visits = Math.max(
+  months[monthKey].unique_visits,
+  day.unique_visits
+)
+
+      months[monthKey].first_time_visits += day.first_time_visits
+      months[monthKey].returning_visits += day.returning_visits
+    })
     filteredData = Object.values(months)
   }
 
@@ -199,10 +222,49 @@ function Summary({ projectId }) {
 
   // Chart.js handles scaling automatically
 
-  const handleDateClick = (day) => {
-    // Navigate to hourly view for the selected date
-    const encodedDate = encodeURIComponent(day.date)
-    navigate(`/dashboard/project/${projectId}/hourly/${encodedDate}`)
+  const handleDateClick = (day, index) => {
+    // Calculate date range for weekly view
+    let dateParam = day.date
+    let navigationState = {}
+    
+    if (period === 'weekly') {
+      const stats = data.daily_stats || []
+      const weekStartIndex = index * 7
+      const weekEndIndex = Math.min(weekStartIndex + 6, stats.length - 1)
+      
+      if (stats[weekStartIndex] && stats[weekEndIndex]) {
+        const startDate = stats[weekStartIndex].date
+        const endDate = stats[weekEndIndex].date
+        dateParam = `${startDate} - ${endDate}`
+        navigationState = {
+          period: period,
+          dateRange: dateRange,
+          weekData: day,
+          actualStartDate: startDate,
+          actualEndDate: endDate
+        }
+      }
+    } else {
+      // For daily and monthly views, use the actual date from daily_stats
+      if (period === 'daily' && data.daily_stats && data.daily_stats[index]) {
+        dateParam = data.daily_stats[index].date
+      } else if (period === 'monthly' && data.daily_stats) {
+        // For monthly view, find the first day of this month
+        const monthKey = day.date
+        const firstDayOfMonth = data.daily_stats.find(d => d.date.startsWith(monthKey.split(' ')[0]))
+        if (firstDayOfMonth) {
+          dateParam = firstDayOfMonth.date
+        }
+      }
+      
+      navigationState = {
+        period: period,
+        dateRange: dateRange
+      }
+    }
+    
+    // Navigate to hourly view with state
+    navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(dateParam)}`, { state: navigationState })
   }
 
   // Dynamic max value for chart
@@ -243,102 +305,33 @@ function Summary({ projectId }) {
         <div className="chart-container" style={{ marginBottom: '30px' }}>
           <div className="controls-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <div className="period-dropdown" style={{ position: 'relative', display: 'inline-block' }}>
-                <div
-                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                  style={{
-                    padding: '8px 40px 8px 16px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    background: '#1e40af',
-                    color: 'white',
-                    fontWeight: '500',
-                    fontSize: '13px',
-                    minWidth: '120px',
-                    position: 'relative',
-                    userSelect: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
-                </div>
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: '0',
-                    top: '0',
-                    bottom: '0',
-                    width: '40px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'white',
-                    fontSize: '12px',
-                    borderRadius: '0 6px 6px 0',
-                    transition: 'background 0.2s',
-                    pointerEvents: 'none'
-                  }}
-                >
-                  ▼
-                </div>
-                {showPeriodDropdown && (
-                  <>
-                    <div
-                      onClick={() => setShowPeriodDropdown(false)}
-                      style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: 999
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      marginTop: '4px',
-                      background: 'white',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '6px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      minWidth: '120px',
-                      zIndex: 1000,
-                      overflow: 'hidden'
-                    }}>
-                      {['daily', 'weekly', 'monthly'].map((option) => (
-                        <div
-                          key={option}
-                          onClick={() => {
-                            setPeriod(option)
-                            setShowPeriodDropdown(false)
-                            setCurrentPage(0)
-                          }}
-                          style={{
-                            padding: '10px 16px',
-                            cursor: 'pointer',
-                            background: period === option ? '#eff6ff' : 'white',
-                            color: period === option ? '#1e40af' : '#1e293b',
-                            fontWeight: period === option ? '600' : '500',
-                            fontSize: '13px',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (period !== option) e.currentTarget.style.background = '#f8fafc'
-                          }}
-                          onMouseLeave={(e) => {
-                            if (period !== option) e.currentTarget.style.background = 'white'
-                          }}
-                        >
-                          {option.charAt(0).toUpperCase() + option.slice(1)}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+              <select
+                value={period}
+                onChange={(e) => {
+                  console.log(' Period changing to:', e.target.value)
+                  setPeriod(e.target.value)
+                  setShowPeriodDropdown(false)
+                  setCurrentPage(0)
+                }}
+                style={{
+                  padding: '8px 40px 8px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#1e40af',
+                  color: 'white',
+                  fontWeight: '500',
+                  fontSize: '13px',
+                  minWidth: '120px',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none'
+                }}
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   type="button"
@@ -546,7 +539,7 @@ function Summary({ projectId }) {
                       zIndex: 1000,
                       overflow: 'hidden'
                     }}>
-                      {[7, 30, 90].map((days) => (
+                      {[7, 30].map((days) => (
                         <div
                           key={days}
                           onClick={() => {
@@ -696,7 +689,7 @@ function Summary({ projectId }) {
                   }}
                 >
                   <td data-label="Date"
-                    onClick={() => handleDateClick(day)}
+                    onClick={() => handleDateClick(day, idx)}
                     style={{
                       padding: '12px',
                       color: '#1e40af',

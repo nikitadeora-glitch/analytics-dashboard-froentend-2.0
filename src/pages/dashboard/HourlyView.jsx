@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Skeleton } from '@mui/material'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { analyticsAPI, projectsAPI } from '../../api/api'
 import BarChart from '../../components/BarChart'
@@ -9,12 +9,17 @@ import { Globe } from 'lucide-react'
 function HourlyView({ projectId }) {
   const { date } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showPageViews, setShowPageViews] = useState(true)
   const [showUniqueVisits, setShowUniqueVisits] = useState(true)
   const [showReturningVisits, setShowReturningVisits] = useState(true)
   const [project, setProject] = useState(null)
+
+  // Get navigation state from Summary component
+  const navigationState = location.state || {}
+  const { period, dateRange, weekData, actualStartDate, actualEndDate } = navigationState
 
   useEffect(() => {
     loadHourlyData()
@@ -35,11 +40,17 @@ function HourlyView({ projectId }) {
   const loadHourlyData = async () => {
     try {
       setLoading(true)
-      console.log('🕐 Loading hourly data for date:', date)
 
-      // Call real API to get hourly data
-      const response = await analyticsAPI.getHourlyData(projectId, date)
-      console.log('✅ Hourly data loaded:', response.data)
+      let response
+      
+      // Use actual date range if available (for weekly/monthly summaries)
+      if (actualStartDate && actualEndDate) {
+        // For weekly/monthly data, use the new date range API endpoint
+        response = await analyticsAPI.getHourlyDataRange(projectId, actualStartDate, actualEndDate)
+      } else {
+        // For single day data
+        response = await analyticsAPI.getHourlyData(projectId, date)
+      }
 
       // Use the data as provided by the backend, which is already in IST
       const processedData = {
@@ -61,16 +72,23 @@ function HourlyView({ projectId }) {
 
       setData(processedData)
     } catch (error) {
-      console.error('❌ Error loading hourly data:', error)
+      console.error('Error loading hourly data:', error)
 
       // Fallback to sample data if API fails
-      const hourlyData = generateSampleHourlyData(date)
+      const hourlyData = generateSampleHourlyData(actualStartDate && actualEndDate ? `${actualStartDate} - ${actualEndDate}` : date)
       setData(hourlyData)
     } finally {
       setLoading(false)
     }
   }
 
+
+  // Handle back navigation with filter state
+  const handleBackToSummary = () => {
+    // Preserve filter state when going back
+    const state = period && dateRange ? { period, dateRange } : {}
+    navigate(`/dashboard/project/${projectId}/summary`, { state })
+  }
 
   const generateSampleHourlyData = (selectedDate) => {
     const hours = []
@@ -254,7 +272,7 @@ function HourlyView({ projectId }) {
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', marginBottom: '24px' }}>
         <button
-          onClick={() => navigate(`/dashboard/project/${projectId}/summary`)}
+          onClick={handleBackToSummary}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -295,6 +313,33 @@ function HourlyView({ projectId }) {
             <span>Project: {project.name}</span>
           </div>
         )}
+        
+        {/* Date Range Display */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          color: '#1e40af',
+          fontSize: '16px',
+          fontWeight: '600',
+          marginTop: '8px',
+          padding: '8px 16px',
+          background: '#eff6ff',
+          borderRadius: '6px',
+          border: '1px solid #bfdbfe'
+        }}>
+          {actualStartDate && actualEndDate ? (
+            <>
+              <span>Date Range:</span>
+              <span>{actualStartDate} - {actualEndDate}</span>
+            </>
+          ) : (
+            <>
+              <span>Date:</span>
+              <span>{date}</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="content">

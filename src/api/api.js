@@ -96,12 +96,14 @@ export const projectsAPI = {
 };
 
 export const analyticsAPI = {
-  getSummary: (projectId, days = 30) => 
+  getSummary: (projectId, days) => 
     api.get(`/analytics/${projectId}/summary?days=${days}`),
-  getSummaryView: (projectId, days = 30) => 
+  getSummaryView: (projectId, days) => 
     api.get(`/analytics/${projectId}/summary-view?days=${days}`),
   getHourlyData: (projectId, date) => 
     api.get(`/analytics/${projectId}/hourly/${encodeURIComponent(date)}`),
+  getHourlyDataRange: (projectId, startDate, endDate) => 
+    api.get(`/analytics/${projectId}/hourly-range?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`),
   trackVisit: (projectId, data) => 
     api.post(`/analytics/${projectId}/track`, data)
 };
