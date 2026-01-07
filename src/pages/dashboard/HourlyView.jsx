@@ -46,19 +46,36 @@ function HourlyView({ projectId }) {
       // Use actual date range if available (for weekly/monthly summaries)
       if (actualStartDate && actualEndDate) {
         // For weekly/monthly data, use the new date range API endpoint
+        console.log('Loading hourly data for date range:', actualStartDate, 'to', actualEndDate)
         response = await analyticsAPI.getHourlyDataRange(projectId, actualStartDate, actualEndDate)
       } else {
         // For single day data
+        console.log('Loading hourly data for single date:', date)
         response = await analyticsAPI.getHourlyData(projectId, date)
       }
 
-      // Use the data as provided by the backend, which is already in IST
+      // Use data as provided by backend, which is already in IST
       const processedData = {
         ...response.data,
         hourly_stats: response.data.hourly_stats
-          .map(stat => {
-            const hour = stat.hour ? stat.hour.split(':')[0] : '00';
-            const hourNumber = parseInt(hour, 10);
+          .map((stat, index) => {
+            // Handle different hour formats from backend
+            let hour = '00';
+            let hourNumber = 0;
+            
+            if (stat.hour) {
+              // If hour is like "14:00"
+              if (stat.hour.includes(':')) {
+                hour = stat.hour.split(':')[0];
+              } else {
+                hour = stat.hour;
+              }
+              hourNumber = parseInt(hour, 10);
+            } else {
+              // Fallback: use index as hour (0-23)
+              hourNumber = index;
+              hour = hourNumber.toString().padStart(2, '0');
+            }
 
             return {
               ...stat,
@@ -70,6 +87,14 @@ function HourlyView({ projectId }) {
           .sort((a, b) => a._hour - b._hour)
           .map(({ _hour, ...rest }) => rest)
       };
+
+      console.log('Hourly data loaded:', {
+        date,
+        actualStartDate,
+        actualEndDate,
+        totalHours: processedData.hourly_stats.length,
+        sampleData: processedData.hourly_stats.slice(0, 3)
+      })
 
       setData(processedData)
     } catch (error) {
@@ -86,9 +111,14 @@ function HourlyView({ projectId }) {
 
   // Handle back navigation with filter state
   const handleBackToSummary = () => {
+    console.log('Back button clicked, navigation state:', navigationState)
+    
     // Preserve filter state when going back - use original currentPage from navigation state
     const originalCurrentPage = navigationState.currentPage || 0
     const state = period && dateRange ? { period, dateRange, currentPage: originalCurrentPage } : { currentPage: originalCurrentPage }
+    
+    console.log('Navigating back to summary with state:', state)
+    
     navigate(`/dashboard/project/${projectId}/summary`, { state })
   }
 

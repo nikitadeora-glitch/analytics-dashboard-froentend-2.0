@@ -15,7 +15,7 @@ function Summary({ projectId }) {
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('daily')
-  const [dateRange, setDateRange] = useState(7)
+  const [dateRange, setDateRange] = useState(30)
   const [currentPage, setCurrentPage] = useState(0)
   const [showPageViews, setShowPageViews] = useState(true)
   const [showUniqueVisits, setShowUniqueVisits] = useState(true)
@@ -23,6 +23,10 @@ function Summary({ projectId }) {
 
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
   const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
+  const [expandedWeek, setExpandedWeek] = useState(null) // Track expanded week
+  const [weeklyData, setWeeklyData] = useState({}) // Store weekly hourly data
+  const [expandedMonth, setExpandedMonth] = useState(null) // Track expanded month
+  const [monthlyData, setMonthlyData] = useState({}) // Store monthly hourly data
 
   useEffect(() => {
     if (location.state) {
@@ -100,11 +104,13 @@ function Summary({ projectId }) {
 
     for (let i = 0; i < stats.length; i += 7) {
       const weekData = stats.slice(i, i + 7)
+      const weekNumber = Math.floor(i / 7) + 1
       const startDate = stats[i].date
       const endDate = stats[Math.min(i + 6, stats.length - 1)].date
 
       weeks.push({
-        date: `${startDate} → ${endDate}`,
+        date: `Week ${weekNumber}`,
+        dateRange: `${startDate} → ${endDate}`, // Keep date range for reference
         page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
         unique_visits: Math.max(...weekData.map(d => d.unique_visits || 0)),
         first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
@@ -117,11 +123,15 @@ function Summary({ projectId }) {
     const months = {}
 
     ;(data.daily_stats || []).forEach(day => {
-      const monthKey = day.date.split(' ').slice(0, 2).join(' ')
+      const dateParts = day.date.split(' ')
+      // Format is "Mon, 06 Jan 2025" -> ["Mon,", "06", "Jan", "2025"]
+      const monthName = dateParts[2] // Get month name (e.g., "Jan", "Feb")
+      const year = dateParts[3] // Get year
+      const monthKey = `${monthName} ${year}`
 
       if (!months[monthKey]) {
         months[monthKey] = {
-          date: day.date,
+          date: monthKey, // Use month name as primary label
           page_views: 0,
           unique_visits: 0,
           first_time_visits: 0,
@@ -143,7 +153,7 @@ function Summary({ projectId }) {
 
   // ===================== PAGINATION =====================
 
-  const itemsPerPage = period === 'monthly' ? 12 : 7
+  const itemsPerPage = period === 'monthly' ? 12 : 30
   const start = currentPage * itemsPerPage
   const end = start + itemsPerPage
 
@@ -152,6 +162,46 @@ function Summary({ projectId }) {
 
   const isFirstPage = currentPage === 0
   const isLastPage = currentPage >= totalPages - 1
+
+  // ===================== AVERAGES CALCULATION =====================
+
+  // Calculate averages based on filtered data
+  const calculateAverages = () => {
+    if (!filteredData.length) {
+      return {
+        page_views: 0,
+        unique_visits: 0,
+        first_time_visits: 0,
+        returning_visits: 0
+      }
+    }
+
+    const totalPageViews = filteredData.reduce((sum, d) => sum + (d.page_views || 0), 0)
+    const totalUniqueVisits = filteredData.reduce((sum, d) => sum + (d.unique_visits || 0), 0)
+    const totalFirstTimeVisits = filteredData.reduce((sum, d) => sum + (d.first_time_visits || 0), 0)
+    const totalReturningVisits = filteredData.reduce((sum, d) => sum + (d.returning_visits || 0), 0)
+
+    let divisor = filteredData.length
+
+    // For weekly period, calculate daily averages by dividing by 7 (days in a week)
+    if (period === 'weekly') {
+      divisor = filteredData.length * 7
+    }
+    // For monthly period, use the actual number of days in each month
+    else if (period === 'monthly') {
+      // This is a simplified approach - ideally we'd use actual days in each month
+      divisor = filteredData.length * 30 // Approximate days per month
+    }
+
+    return {
+      page_views: divisor > 0 ? (totalPageViews / divisor).toFixed(1) : '0',
+      unique_visits: divisor > 0 ? (totalUniqueVisits / divisor).toFixed(1) : '0',
+      first_time_visits: divisor > 0 ? (totalFirstTimeVisits / divisor).toFixed(1) : '0',
+      returning_visits: divisor > 0 ? (totalReturningVisits / divisor).toFixed(1) : '0'
+    }
+  }
+
+  const periodAverages = calculateAverages()
 
   // ===================== CHART SCALE =====================
 
@@ -168,6 +218,181 @@ function Summary({ projectId }) {
   const chartMax = getChartMax()
   const chartStep = Math.ceil(chartMax / 5)
 
+  // ===================== WEEKLY EXPANSION =====================
+
+  const loadWeeklyData = async (weekData, idx) => {
+    try {
+      const [startDate, endDate] = weekData.dateRange.split(' → ')
+      const response = await analyticsAPI.getHourlyDataRange(projectId, startDate, endDate)
+      
+      // Also get daily data for the week
+      const stats = data.daily_stats || []
+      const weekStartIndex = idx * 7
+      const weekEndIndex = Math.min(weekStartIndex + 6, stats.length - 1)
+      const weekDailyData = stats.slice(weekStartIndex, weekEndIndex + 1)
+      
+      console.log('Loading weekly data:', {
+        idx,
+        weekStartIndex,
+        weekEndIndex,
+        weekDailyData: weekDailyData.length,
+        totalStats: stats.length
+      })
+      
+      // Process hourly data for the week
+      const processedData = {
+        ...response.data,
+        hourly_stats: response.data.hourly_stats
+          .map((stat, index) => {
+            let hour = '00';
+            let hourNumber = 0;
+            
+            if (stat.hour) {
+              if (stat.hour.includes(':')) {
+                hour = stat.hour.split(':')[0];
+              } else {
+                hour = stat.hour;
+              }
+              hourNumber = parseInt(hour, 10);
+            } else {
+              hourNumber = index;
+              hour = hourNumber.toString().padStart(2, '0');
+            }
+
+            return {
+              ...stat,
+              date: stat.hour || `${hour}:00`,
+              timeRange: `${hour.padStart(2, '0')}:00-${hour.padStart(2, '0')}:59`,
+              _hour: hourNumber
+            };
+          })
+          .sort((a, b) => a._hour - b._hour)
+          .map(({ _hour, ...rest }) => rest),
+        daily_data: weekDailyData // Add daily data for the week
+      };
+
+      setWeeklyData(prev => ({
+        ...prev,
+        [idx]: processedData
+      }))
+    } catch (error) {
+      console.error('Error loading weekly data:', error)
+    }
+  }
+
+  const handleWeekClick = (weekData, idx) => {
+    console.log('Week clicked:', { weekData, idx, expandedWeek })
+    
+    if (expandedWeek === idx) {
+      console.log('Collapsing week:', idx)
+      setExpandedWeek(null) // Collapse if already expanded
+    } else {
+      console.log('Expanding week:', idx)
+      setExpandedWeek(idx) // Expand new week
+      if (!weeklyData[idx]) {
+        console.log('Loading data for week:', idx)
+        loadWeeklyData(weekData, idx) // Load data if not already loaded
+      } else {
+        console.log('Data already loaded for week:', idx)
+      }
+    }
+  }
+
+  // ===================== MONTHLY EXPANSION =====================
+
+  const loadMonthlyData = async (monthData, idx) => {
+    try {
+      // Get the month name and year from the monthData.date
+      const monthKey = monthData.date // e.g., "Jan 2025"
+      
+      // Find all daily stats that belong to this month
+      const stats = data.daily_stats || []
+      const monthDailyData = stats.filter(day => {
+        const dateParts = day.date.split(' ')
+        // Format is "Mon, 06 Jan 2025" -> ["Mon,", "06", "Jan", "2025"]
+        const dayMonth = `${dateParts[2]} ${dateParts[3]}` // "Jan 2025"
+        return dayMonth === monthKey
+      })
+      
+      // Get date range for the month
+      const startDate = monthDailyData[0]?.date
+      const endDate = monthDailyData[monthDailyData.length - 1]?.date
+      
+      if (!startDate || !endDate) {
+        console.error('Could not determine date range for month:', monthKey)
+        return
+      }
+      
+      const response = await analyticsAPI.getHourlyDataRange(projectId, startDate, endDate)
+      
+      console.log('Loading monthly data:', {
+        idx,
+        monthKey,
+        startDate,
+        endDate,
+        monthDailyData: monthDailyData.length,
+        totalStats: stats.length
+      })
+      
+      // Process hourly data for the month
+      const processedData = {
+        ...response.data,
+        hourly_stats: response.data.hourly_stats
+          .map((stat, index) => {
+            let hour = '00';
+            let hourNumber = 0;
+            
+            if (stat.hour) {
+              if (stat.hour.includes(':')) {
+                hour = stat.hour.split(':')[0];
+              } else {
+                hour = stat.hour;
+              }
+              hourNumber = parseInt(hour, 10);
+            } else {
+              hourNumber = index;
+              hour = hourNumber.toString().padStart(2, '0');
+            }
+
+            return {
+              ...stat,
+              date: stat.hour || `${hour}:00`,
+              timeRange: `${hour.padStart(2, '0')}:00-${hour.padStart(2, '0')}:59`,
+              _hour: hourNumber
+            };
+          })
+          .sort((a, b) => a._hour - b._hour)
+          .map(({ _hour, ...rest }) => rest),
+        daily_data: monthDailyData // Add daily data for the month
+      };
+
+      setMonthlyData(prev => ({
+        ...prev,
+        [idx]: processedData
+      }))
+    } catch (error) {
+      console.error('Error loading monthly data:', error)
+    }
+  }
+
+  const handleMonthClick = (monthData, idx) => {
+    console.log('Month clicked:', { monthData, idx, expandedMonth })
+    
+    if (expandedMonth === idx) {
+      console.log('Collapsing month:', idx)
+      setExpandedMonth(null) // Collapse if already expanded
+    } else {
+      console.log('Expanding month:', idx)
+      setExpandedMonth(idx) // Expand new month
+      if (!monthlyData[idx]) {
+        console.log('Loading data for month:', idx)
+        loadMonthlyData(monthData, idx) // Load data if not already loaded
+      } else {
+        console.log('Data already loaded for month:', idx)
+      }
+    }
+  }
+
   // ===================== NAVIGATION =====================
 
   const handleDateClick = (day, index) => {
@@ -175,18 +400,13 @@ function Summary({ projectId }) {
     let navigationState = {}
 
     if (period === 'weekly') {
-      // Extract the actual date range from the weekly data
-      const weekDateRange = day.date // This is "Mon, 29 Dec 2025 → Sun, 04 Jan 2026"
-      const [startDate, endDate] = weekDateRange.split(' → ') || weekDateRange.split('→') || [weekDateRange, weekDateRange]
-      
-      if (startDate && endDate) {
-        dateParam = `${startDate} - ${endDate}`
-        navigationState = {
-          period,
-          dateRange,
-          currentPage
-        }
-      }
+      // For weekly view, expand instead of navigate
+      handleWeekClick(day, index)
+      return
+    } else if (period === 'monthly') {
+      // For monthly view, expand instead of navigate
+      handleMonthClick(day, index)
+      return
     } else {
       navigationState = { period, dateRange, currentPage }
     }
@@ -196,8 +416,6 @@ function Summary({ projectId }) {
       { state: navigationState }
     )
   }
-
-
 
   return (
     <>
@@ -458,7 +676,7 @@ function Summary({ projectId }) {
                       zIndex: 1000,
                       overflow: 'hidden'
                     }}>
-                      {[7, 30].map((days) => (
+                      {[30].map((days) => (
                         <div
                           key={days}
                           onClick={() => {
@@ -565,20 +783,20 @@ function Summary({ projectId }) {
 
         <div className="stats-summary-grid">
           <div className="stat-card">
-            <h3>Average Daily Page Views</h3>
-            <div className="value">{data.averages.page_views}</div>
+            <h3>Average {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'} Page Views</h3>
+            <div className="value">{periodAverages.page_views}</div>
           </div>
           <div className="stat-card">
-            <h3>Average Daily Unique Visits</h3>
-            <div className="value">{data.averages.unique_visits}</div>
+            <h3>Average {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'} Unique Visits</h3>
+            <div className="value">{periodAverages.unique_visits}</div>
           </div>
           <div className="stat-card">
-            <h3>Average Daily First Time Visits</h3>
-            <div className="value">{data.averages.first_time_visits}</div>
+            <h3>Average {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'} First Time Visits</h3>
+            <div className="value">{periodAverages.first_time_visits}</div>
           </div>
           <div className="stat-card">
-            <h3>Average Daily Returning Visits</h3>
-            <div className="value">{data.averages.returning_visits}</div>
+            <h3>Average {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'} Returning Visits</h3>
+            <div className="value">{periodAverages.returning_visits}</div>
           </div>
         </div>
 
@@ -595,44 +813,233 @@ function Summary({ projectId }) {
             </thead>
             <tbody>
               {displayData.map((day, idx) => (
-                <tr
-                  key={`${day.date}-${idx}`}
-                  style={{
-                    borderBottom: '1px solid #e2e8f0',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
-                  }}
-                >
-                  <td data-label="Date"
-                    onClick={() => handleDateClick(day, idx)}
+                <React.Fragment key={`${day.date}-${idx}`}>
+                  <tr
                     style={{
-                      padding: '12px',
-                      color: '#1e40af',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      borderBottom: '1px solid #e2e8f0',
+                      transition: 'all 0.2s ease',
+                      background: (period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx) ? '#f8fafc' : 'transparent'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#eff6ff'
-                      e.currentTarget.style.transform = 'scale(1.02)'
+                      if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                        e.currentTarget.style.background = '#f8fafc'
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.transform = 'scale(1)'
+                      if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                        e.currentTarget.style.background = 'transparent'
+                      }
                     }}
                   >
-                    {day.date}
-                  </td>
-                  <td data-label="Page Views" style={{ padding: '12px', textAlign: 'center' }}>{day.page_views}</td>
-                  <td data-label="Unique Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.unique_visits}</td>
-                  <td data-label="First Time Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.first_time_visits}</td>
-                  <td data-label="Returning Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.returning_visits}</td>
-                </tr>
+                    <td data-label="Date"
+                      onClick={(e) => {
+                        console.log('Date clicked:', { day, idx, period })
+                        handleDateClick(day, idx)
+                      }}
+                      style={{
+                        padding: '12px',
+                        color: '#1e40af',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        userSelect: 'none',
+                        pointerEvents: 'auto',
+                        zIndex: 10,
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                          e.currentTarget.style.background = '#eff6ff'
+                          e.currentTarget.style.transform = 'scale(1.02)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.transform = 'scale(1)'
+                        }
+                      }}
+                    >
+                      {(period === 'weekly' || period === 'monthly') && (
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          {(period === 'weekly' ? expandedWeek : expandedMonth) === idx ? '▼' : '▶'}
+                        </span>
+                      )}
+                      {day.date}
+                    </td>
+                    <td data-label="Page Views" style={{ padding: '12px', textAlign: 'center' }}>{day.page_views}</td>
+                    <td data-label="Unique Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.unique_visits}</td>
+                    <td data-label="First Time Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.first_time_visits}</td>
+                    <td data-label="Returning Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.returning_visits}</td>
+                  </tr>
+                  
+                  {/* Weekly Expansion Row */}
+                  {period === 'weekly' && expandedWeek === idx && weeklyData[idx] && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '0', background: '#f8fafc' }}>
+                        <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', margin: '10px', background: 'white' }}>
+                          
+                          
+                          
+                          {/* Daily Data for the Week */}
+                          <div style={{ margin: '0 0 20px 0' }}>
+                            <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
+                             Daily Data for This Week
+                            </h5>
+                            <table style={{ width: '100%', fontSize: '12px', border: '1px solid #f1f5f9', borderRadius: '6px' }}>
+                              <thead>
+                                <tr style={{ background: '#f8fafc' }}>
+                                  <th style={{ padding: '8px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Date</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Page Views</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Unique Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>First Time Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Returning Visits</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {weeklyData[idx].daily_data.map((dailyData, dailyIdx) => (
+                                  <tr key={dailyIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ 
+                                      padding: '8px', 
+                                      color: '#1e40af', 
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        console.log('Individual date clicked:', dailyData.date, dailyIdx)
+                                        
+                                        // Navigate to HourlyView with individual date data
+                                        const navigationState = {
+                                          period: period, // Send current period, not always daily
+                                          dateRange: dateRange,
+                                          currentPage: currentPage,
+                                          selectedDate: dailyData.date,
+                                          selectedDateData: {
+                                            page_views: dailyData.page_views,
+                                            unique_visits: dailyData.unique_visits,
+                                            first_time_visits: dailyData.first_time_visits,
+                                            returning_visits: dailyData.returning_visits
+                                          }
+                                        }
+                                        
+                                        navigate(
+                                          `/dashboard/project/${projectId}/hourly/${encodeURIComponent(dailyData.date)}`,
+                                          { state: navigationState }
+                                        )
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#eff6ff'
+                                        e.currentTarget.style.transform = 'scale(1.02)'
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent'
+                                        e.currentTarget.style.transform = 'scale(1)'
+                                      }}
+                                    >
+                                      {dailyData.date}
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.page_views}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.unique_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.first_time_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.returning_visits}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  
+                  {/* Monthly Expansion Row */}
+                  {period === 'monthly' && expandedMonth === idx && monthlyData[idx] && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '0', background: '#f8fafc' }}>
+                        <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', margin: '10px', background: 'white' }}>
+                          
+                          
+                          
+                          {/* Daily Data for the Month */}
+                          <div style={{ margin: '0 0 20px 0' }}>
+                            <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
+                             Daily Data for This Month
+                            </h5>
+                            <table style={{ width: '100%', fontSize: '12px', border: '1px solid #f1f5f9', borderRadius: '6px' }}>
+                              <thead>
+                                <tr style={{ background: '#f8fafc' }}>
+                                  <th style={{ padding: '8px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Date</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Page Views</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Unique Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>First Time Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Returning Visits</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {monthlyData[idx].daily_data.map((dailyData, dailyIdx) => (
+                                  <tr key={dailyIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ 
+                                      padding: '8px', 
+                                      color: '#1e40af', 
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        console.log('Individual date clicked:', dailyData.date, dailyIdx)
+                                        
+                                        // Navigate to HourlyView with individual date data
+                                        const navigationState = {
+                                          period: period, // Send current period, not always daily
+                                          dateRange: dateRange,
+                                          currentPage: currentPage,
+                                          selectedDate: dailyData.date,
+                                          selectedDateData: {
+                                            page_views: dailyData.page_views,
+                                            unique_visits: dailyData.unique_visits,
+                                            first_time_visits: dailyData.first_time_visits,
+                                            returning_visits: dailyData.returning_visits
+                                          }
+                                        }
+                                        
+                                        navigate(
+                                          `/dashboard/project/${projectId}/hourly/${encodeURIComponent(dailyData.date)}`,
+                                          { state: navigationState }
+                                        )
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#eff6ff'
+                                        e.currentTarget.style.transform = 'scale(1.02)'
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent'
+                                        e.currentTarget.style.transform = 'scale(1)'
+                                      }}
+                                    >
+                                      {dailyData.date}
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.page_views}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.unique_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.first_time_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.returning_visits}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
