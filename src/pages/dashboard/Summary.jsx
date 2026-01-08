@@ -43,9 +43,23 @@ function Summary({ projectId }) {
     loadProjectInfo()
   }, [projectId])
 
+  // Initialize data if not present but we have navigation state
   useEffect(() => {
+    if (location.state && !data) {
+      console.log('Initializing data from navigation state')
+      loadSummary()
+    }
+  }, [location.state, data])
+
+  // Separate useEffect for data loading - only depend on projectId and dateRange, NOT period
+  useEffect(() => {
+    if (location.state) {
+      // Don't reload data when coming back from navigation - just use existing data
+      console.log('Skipping data load - using existing data from navigation state')
+      return
+    }
     loadSummary()
-  }, [projectId, dateRange, period])
+  }, [projectId, dateRange])
 
   const loadProjectInfo = async () => {
     try {
@@ -112,7 +126,7 @@ function Summary({ projectId }) {
         date: `Week ${weekNumber}`,
         dateRange: `${startDate} → ${endDate}`, // Keep date range for reference
         page_views: weekData.reduce((sum, d) => sum + d.page_views, 0),
-        unique_visits: Math.max(...weekData.map(d => d.unique_visits || 0)),
+        unique_visits: weekData.reduce((sum, d) => sum + (d.unique_visits || 0), 0),
         first_time_visits: weekData.reduce((sum, d) => sum + d.first_time_visits, 0),
         returning_visits: weekData.reduce((sum, d) => sum + d.returning_visits, 0)
       })
@@ -140,10 +154,7 @@ function Summary({ projectId }) {
       }
 
       months[monthKey].page_views += day.page_views
-      months[monthKey].unique_visits = Math.max(
-        months[monthKey].unique_visits,
-        day.unique_visits
-      )
+      months[monthKey].unique_visits += day.unique_visits || 0
       months[monthKey].first_time_visits += day.first_time_visits
       months[monthKey].returning_visits += day.returning_visits
     })

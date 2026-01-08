@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Skeleton } from '@mui/material'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { analyticsAPI, projectsAPI } from '../../api/api'
 import BarChart from '../../components/BarChart'
 import { Globe } from 'lucide-react'
@@ -45,7 +45,7 @@ function HourlyView({ projectId }) {
       
       // Use actual date range if available (for weekly/monthly summaries)
       if (actualStartDate && actualEndDate) {
-        // For weekly/monthly data, use the new date range API endpoint
+        // For weekly/monthly data, use new date range API endpoint
         console.log('Loading hourly data for date range:', actualStartDate, 'to', actualEndDate)
         response = await analyticsAPI.getHourlyDataRange(projectId, actualStartDate, actualEndDate)
       } else {
@@ -108,7 +108,6 @@ function HourlyView({ projectId }) {
     }
   }
 
-
   // Handle back navigation with filter state
   const handleBackToSummary = () => {
     console.log('Back button clicked, navigation state:', navigationState)
@@ -120,6 +119,146 @@ function HourlyView({ projectId }) {
     console.log('Navigating back to summary with state:', state)
     
     navigate(`/dashboard/project/${projectId}/summary`, { state })
+  }
+
+  // Date navigation functions
+  const parseDate = (dateString) => {
+    // Handle different date formats
+    const formats = [
+      "%a, %d %b %Y",  // "Mon, 08 Dec 2024"
+      "%Y-%m-%d",      // "2024-12-16"
+      "%d %b %Y",      // "16 Dec 2024"
+      "%d/%m/%Y",      // "16/12/2024"
+      "%B %d, %Y",     // "December 16, 2024"
+      "%b %d, %Y"      // "Dec 16, 2024"
+    ]
+    
+    for (const fmt of formats) {
+      try {
+        // Note: JavaScript Date parsing is different from Python
+        // We'll use a more flexible approach
+        if (dateString.includes(',')) {
+          // Format like "Mon, 08 Dec 2024"
+          const parts = dateString.split(' ')
+          if (parts.length === 4) {
+            const day = parseInt(parts[1].replace(',', ''))
+            const month = parts[2]
+            const year = parseInt(parts[3])
+            const monthMap = {
+              'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+              'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+            }
+            return new Date(year, monthMap[month] || 0, day)
+          }
+        } else if (dateString.includes('-')) {
+          // Format like "2024-12-16"
+          const parts = dateString.split('-')
+          if (parts.length === 3) {
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+          }
+        } else if (dateString.includes('/')) {
+          // Format like "16/12/2024"
+          const parts = dateString.split('/')
+          if (parts.length === 3) {
+            return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+          }
+        }
+      } catch (error) {
+        continue
+      }
+    }
+    
+    // Fallback - try to parse as is
+    return new Date(dateString)
+  }
+
+  const formatDateForURL = (dateObj) => {
+    // Format as "Mon, 08 Dec 2024" to match URL pattern
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    const dayName = days[dateObj.getDay()]
+    const day = dateObj.getDate().toString().padStart(2, '0')
+    const month = months[dateObj.getMonth()]
+    const year = dateObj.getFullYear()
+    
+    return `${dayName}, ${day} ${month} ${year}`
+  }
+
+  const handlePreviousDate = () => {
+    if (actualStartDate && actualEndDate) {
+      // Handle date range navigation (weekly/monthly)
+      const startDate = parseDate(actualStartDate)
+      const endDate = parseDate(actualEndDate)
+      
+      // Calculate duration and shift back
+      const durationMs = endDate - startDate
+      const newStartDate = new Date(startDate.getTime() - durationMs)
+      const newEndDate = new Date(endDate.getTime() - durationMs)
+      
+      const newStartDateStr = formatDateForURL(newStartDate)
+      const newEndDateStr = formatDateForURL(newEndDate)
+      
+      navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(newStartDateStr + ' - ' + newEndDateStr)}`, {
+        state: {
+          ...navigationState,
+          actualStartDate: newStartDateStr,
+          actualEndDate: newEndDateStr
+        }
+      })
+    } else {
+      // Handle single date navigation
+      const currentDate = parseDate(date)
+      const previousDate = new Date(currentDate)
+      previousDate.setDate(previousDate.getDate() - 1)
+      
+      const previousDateStr = formatDateForURL(previousDate)
+      navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(previousDateStr)}`, {
+        state: navigationState
+      })
+    }
+  }
+
+  const handleNextDate = () => {
+    if (actualStartDate && actualEndDate) {
+      // Handle date range navigation (weekly/monthly)
+      const startDate = parseDate(actualStartDate)
+      const endDate = parseDate(actualEndDate)
+      
+      // Calculate duration and shift forward
+      const durationMs = endDate - startDate
+      const newStartDate = new Date(startDate.getTime() + durationMs)
+      const newEndDate = new Date(endDate.getTime() + durationMs)
+      
+      // Don't navigate to future dates
+      const today = new Date()
+      if (newStartDate > today) return
+      
+      const newStartDateStr = formatDateForURL(newStartDate)
+      const newEndDateStr = formatDateForURL(newEndDate)
+      
+      navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(newStartDateStr + ' - ' + newEndDateStr)}`, {
+        state: {
+          ...navigationState,
+          actualStartDate: newStartDateStr,
+          actualEndDate: newEndDateStr
+        }
+      })
+    } else {
+      // Handle single date navigation
+      const currentDate = parseDate(date)
+      const nextDate = new Date(currentDate)
+      nextDate.setDate(nextDate.getDate() + 1)
+      
+      // Don't navigate to future dates
+      const today = new Date()
+      if (nextDate > today) return
+      
+      const nextDateStr = formatDateForURL(nextDate)
+      navigate(`/dashboard/project/${projectId}/hourly/${encodeURIComponent(nextDateStr)}`, {
+        state: navigationState
+      })
+    }
   }
 
   const generateSampleHourlyData = (selectedDate) => {
@@ -135,7 +274,7 @@ function HourlyView({ projectId }) {
       let firstTimeVisits = 0
       let returningVisits = 0
 
-      // Distribute traffic throughout the day
+      // Distribute traffic throughout day
       if (i >= 0 && i < 5) { // Late night (12am-5am)
         pageViews = Math.floor(Math.random() * 5) + 1
       } else if (i >= 5 && i < 9) { // Early morning (5am-9am)
@@ -291,7 +430,6 @@ function HourlyView({ projectId }) {
               fontSize: '14px',
               fontWeight: '500'
             }}>
-
               <span>Project: {project.name}</span>
             </div>
           )}
@@ -341,36 +479,111 @@ function HourlyView({ projectId }) {
             fontWeight: '500',
             marginTop: '8px'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
         
-        {/* Date Range Display */}
+        {/* Date Range Display with Navigation */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          color: '#1e40af',
-          fontSize: '16px',
-          fontWeight: '600',
-          marginTop: '8px',
-          padding: '8px 16px',
-          background: '#eff6ff',
-          borderRadius: '6px',
-          border: '1px solid #bfdbfe'
+          gap: '12px',
+          marginTop: '8px'
         }}>
-          {actualStartDate && actualEndDate ? (
-            <>
-              <span>Date Range:</span>
-              <span>{actualStartDate} - {actualEndDate}</span>
-            </>
-          ) : (
-            <>
-              <span>Date:</span>
-              <span>{date}</span>
-            </>
-          )}
+          {/* Previous Date Button */}
+          <button
+            onClick={handlePreviousDate}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 12px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              minWidth: '40px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#e2e8f0'
+              e.currentTarget.style.borderColor = '#94a3b8'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#f1f5f9'
+              e.currentTarget.style.borderColor = '#cbd5e1'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+            title="Previous Date"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* Date Display */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#1e40af',
+            fontSize: '16px',
+            fontWeight: '600',
+            padding: '8px 16px',
+            background: '#eff6ff',
+            borderRadius: '6px',
+            border: '1px solid #bfdbfe',
+            flex: 1,
+            justifyContent: 'center',
+            minWidth: '200px'
+          }}>
+            {actualStartDate && actualEndDate ? (
+              <>
+                <span>Date Range:</span>
+                <span>{actualStartDate} - {actualEndDate}</span>
+              </>
+            ) : (
+              <>
+                <span>Date:</span>
+                <span>{date}</span>
+              </>
+            )}
+          </div>
+
+          {/* Next Date Button */}
+          <button
+            onClick={handleNextDate}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 12px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              minWidth: '40px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#e2e8f0'
+              e.currentTarget.style.borderColor = '#94a3b8'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#f1f5f9'
+              e.currentTarget.style.borderColor = '#cbd5e1'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+            title="Next Date"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
 
@@ -452,7 +665,6 @@ function HourlyView({ projectId }) {
           </div>
         </div>
 
-
         {/* Hourly Data Table */}
         <div className="chart-container">
           <div style={{
@@ -460,7 +672,6 @@ function HourlyView({ projectId }) {
             borderBottom: '1px solid #e2e8f0',
             marginBottom: '0'
           }}>
-
           </div>
           <table style={{ width: '100%' }}>
             <thead>
@@ -547,7 +758,7 @@ function HourlyView({ projectId }) {
               background: transparent !important;
               box-shadow: none !important;
             }
-            table, thead, tbody, th, td, tr {
+            table,thead, tbody, th, td, tr {
                 display: block !important;
                 width: 100% !important;
             }
