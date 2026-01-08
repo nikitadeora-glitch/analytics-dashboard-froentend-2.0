@@ -335,7 +335,12 @@ function Projects() {
 
   return (
     <>
-      <div className="main-content">
+      <div className="main-content" style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'auto'
+      }}>
         <div className="header" style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -764,7 +769,7 @@ function Projects() {
             borderRadius: '12px',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
           }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                   <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#475569', minWidth: '200px' }}>Project</th>
@@ -781,8 +786,7 @@ function Projects() {
                   <tr
                     key={project.id}
                     style={{
-                      borderBottom: '1px solid #e2e8f0',
-                      transition: 'background 0.2s'
+                      borderBottom: '1px solid #e2e8f0'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -795,12 +799,9 @@ function Projects() {
                             fontWeight: '600',
                             color: '#1e40af',
                             marginBottom: '4px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
+                            cursor: 'pointer'
                           }}
                           onMouseEnter={(e) => {
-
-                            e.currentTarget.style.padding = '4px 8px'
                             e.currentTarget.style.borderRadius = '4px'
                           }}
                           onMouseLeave={(e) => {

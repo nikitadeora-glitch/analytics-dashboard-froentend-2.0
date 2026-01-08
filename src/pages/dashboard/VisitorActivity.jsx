@@ -246,8 +246,8 @@ function VisitorActivity({ projectId }) {
                 <div
                   key={idx}
                   style={{
-                    padding: '12px 20px',
-                    borderBottom: idx < visitors.length - 1 ? '1px solid #e2e8f0' : 'none',
+                    padding: '5px 20px',
+                    borderBottom: idx < visitors.length - 1 ? '2px solid #1e293b' : 'none',
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}

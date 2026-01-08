@@ -745,7 +745,30 @@ function Summary({ projectId }) {
               marginBottom: '8px'
             }}>
               <BarChart
-                displayData={displayData}
+                displayData={period === 'daily' ? displayData.map(day => {
+                  // Convert "Wed, 10 Dec 2025" to "10-12-2025" for chart only
+                  const dateParts = day.date.split(' ')
+                  // Format is "Wed, 06 Jan 2025" -> ["Wed,", "06", "Jan", "2025"]
+                  const dayNum = dateParts[1].replace(',', '') // Get day number
+                  const monthName = dateParts[2] // Get month name
+                  const year = dateParts[3] // Get year
+                  
+                  // Convert month name to number
+                  const monthMap = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                  }
+                  const monthNum = monthMap[monthName] || '01'
+                  
+                  // Format as DD-MM-YYYY
+                  const formattedDate = `${dayNum}-${monthNum}-${year}`
+                  
+                  return {
+                    ...day,
+                    date: formattedDate
+                  }
+                }) : period === 'weekly' ? displayData : displayData}
                 showPageViews={showPageViews}
                 showUniqueVisits={showUniqueVisits}
                 showReturningVisits={showReturningVisits}
@@ -812,7 +835,7 @@ function Summary({ projectId }) {
               </tr>
             </thead>
             <tbody>
-              {displayData.map((day, idx) => (
+              {period === 'daily' ? [...displayData].reverse().map((day, idx) => (
                 <React.Fragment key={`${day.date}-${idx}`}>
                   <tr
                     style={{
@@ -834,7 +857,7 @@ function Summary({ projectId }) {
                     <td data-label="Date"
                       onClick={(e) => {
                         console.log('Date clicked:', { day, idx, period })
-                        handleDateClick(day, idx)
+                        handleDateClick(day, displayData.length - 1 - idx) // Adjust index for reversed data
                       }}
                       style={{
                         padding: '12px',
@@ -852,8 +875,7 @@ function Summary({ projectId }) {
                       }}
                       onMouseEnter={(e) => {
                         if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
-                          e.currentTarget.style.background = '#eff6ff'
-                          e.currentTarget.style.transform = 'scale(1.02)'
+                          
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -885,7 +907,7 @@ function Summary({ projectId }) {
                           
                           
                           {/* Daily Data for the Week */}
-                          <div style={{ margin: '0 0 20px 0' }}>
+                          <div style={{ margin: '0 0 0 0' }}>
                             <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
                              Daily Data for This Week
                             </h5>
@@ -934,8 +956,8 @@ function Summary({ projectId }) {
                                         )
                                       }}
                                       onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#eff6ff'
-                                        e.currentTarget.style.transform = 'scale(1.02)'
+                                       
+                                        
                                       }}
                                       onMouseLeave={(e) => {
                                         e.currentTarget.style.background = 'transparent'
@@ -967,7 +989,7 @@ function Summary({ projectId }) {
                           
                           
                           {/* Daily Data for the Month */}
-                          <div style={{ margin: '0 0 20px 0' }}>
+                          <div style={{ margin: '0 0 0 0' }}>
                             <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
                              Daily Data for This Month
                             </h5>
@@ -1016,8 +1038,235 @@ function Summary({ projectId }) {
                                         )
                                       }}
                                       onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#eff6ff'
-                                        e.currentTarget.style.transform = 'scale(1.02)'
+                                       
+                                        
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent'
+                                        e.currentTarget.style.transform = 'scale(1)'
+                                      }}
+                                    >
+                                      {dailyData.date}
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.page_views}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.unique_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.first_time_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.returning_visits}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              )) : displayData.map((day, idx) => (
+                <React.Fragment key={`${day.date}-${idx}`}>
+                  <tr
+                    style={{
+                      borderBottom: '1px solid #e2e8f0',
+                      transition: 'all 0.2s ease',
+                      background: (period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx) ? '#f8fafc' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                        e.currentTarget.style.background = '#f8fafc'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                        e.currentTarget.style.background = 'transparent'
+                      }
+                    }}
+                  >
+                    <td data-label="Date"
+                      onClick={(e) => {
+                        console.log('Date clicked:', { day, idx, period })
+                        handleDateClick(day, idx)
+                      }}
+                      style={{
+                        padding: '12px',
+                        color: '#1e40af',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        userSelect: 'none',
+                        pointerEvents: 'auto',
+                        zIndex: 10,
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                          
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!((period === 'weekly' && expandedWeek === idx) || (period === 'monthly' && expandedMonth === idx))) {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.transform = 'scale(1)'
+                        }
+                      }}
+                    >
+                      {(period === 'weekly' || period === 'monthly') && (
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          {(period === 'weekly' ? expandedWeek : expandedMonth) === idx ? '▼' : '▶'}
+                        </span>
+                      )}
+                      {day.date}
+                    </td>
+                    <td data-label="Page Views" style={{ padding: '12px', textAlign: 'center' }}>{day.page_views}</td>
+                    <td data-label="Unique Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.unique_visits}</td>
+                    <td data-label="First Time Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.first_time_visits}</td>
+                    <td data-label="Returning Visits" style={{ padding: '12px', textAlign: 'center' }}>{day.returning_visits}</td>
+                  </tr>
+                  
+                  {/* Weekly Expansion Row */}
+                  {period === 'weekly' && expandedWeek === idx && weeklyData[idx] && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '0', background: '#f8fafc' }}>
+                        <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', margin: '10px', background: 'white' }}>
+                          
+                          
+                          
+                          {/* Daily Data for the Week */}
+                          <div style={{ margin: '0 0 0 0' }}>
+                            <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
+                             Daily Data for This Week
+                            </h5>
+                            <table style={{ width: '100%', fontSize: '12px', border: '1px solid #f1f5f9', borderRadius: '6px' }}>
+                              <thead>
+                                <tr style={{ background: '#f8fafc' }}>
+                                  <th style={{ padding: '8px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Date</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Page Views</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Unique Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>First Time Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Returning Visits</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {weeklyData[idx].daily_data.map((dailyData, dailyIdx) => (
+                                  <tr key={dailyIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ 
+                                      padding: '8px', 
+                                      color: '#1e40af', 
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        console.log('Individual date clicked:', dailyData.date, dailyIdx)
+                                        
+                                        // Navigate to HourlyView with individual date data
+                                        const navigationState = {
+                                          period: period, // Send current period, not always daily
+                                          dateRange: dateRange,
+                                          currentPage: currentPage,
+                                          selectedDate: dailyData.date,
+                                          selectedDateData: {
+                                            page_views: dailyData.page_views,
+                                            unique_visits: dailyData.unique_visits,
+                                            first_time_visits: dailyData.first_time_visits,
+                                            returning_visits: dailyData.returning_visits
+                                          }
+                                        }
+                                        
+                                        navigate(
+                                          `/dashboard/project/${projectId}/hourly/${encodeURIComponent(dailyData.date)}`,
+                                          { state: navigationState }
+                                        )
+                                      }}
+                                      onMouseEnter={(e) => {
+                                       
+                                        
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent'
+                                        e.currentTarget.style.transform = 'scale(1)'
+                                      }}
+                                    >
+                                      {dailyData.date}
+                                    </td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.page_views}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.unique_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.first_time_visits}</td>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>{dailyData.returning_visits}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  
+                  {/* Monthly Expansion Row */}
+                  {period === 'monthly' && expandedMonth === idx && monthlyData[idx] && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '0', background: '#f8fafc' }}>
+                        <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', margin: '10px', background: 'white' }}>
+                          
+                          
+                          
+                          {/* Daily Data for the Month */}
+                          <div style={{ margin: '0 0 0 0' }}>
+                            <h5 style={{ margin: '0 0 10px 0', color: '#374151', fontSize: '13px', fontWeight: '600' }}>
+                             Daily Data for This Month
+                            </h5>
+                            <table style={{ width: '100%', fontSize: '12px', border: '1px solid #f1f5f9', borderRadius: '6px' }}>
+                              <thead>
+                                <tr style={{ background: '#f8fafc' }}>
+                                  <th style={{ padding: '8px', textAlign: 'left', color: '#475569', fontWeight: '600' }}>Date</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Page Views</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Unique Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>First Time Visits</th>
+                                  <th style={{ padding: '8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>Returning Visits</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {monthlyData[idx].daily_data.map((dailyData, dailyIdx) => (
+                                  <tr key={dailyIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ 
+                                      padding: '8px', 
+                                      color: '#1e40af', 
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        console.log('Individual date clicked:', dailyData.date, dailyIdx)
+                                        
+                                        // Navigate to HourlyView with individual date data
+                                        const navigationState = {
+                                          period: period, // Send current period, not always daily
+                                          dateRange: dateRange,
+                                          currentPage: currentPage,
+                                          selectedDate: dailyData.date,
+                                          selectedDateData: {
+                                            page_views: dailyData.page_views,
+                                            unique_visits: dailyData.unique_visits,
+                                            first_time_visits: dailyData.first_time_visits,
+                                            returning_visits: dailyData.returning_visits
+                                          }
+                                        }
+                                        
+                                        navigate(
+                                          `/dashboard/project/${projectId}/hourly/${encodeURIComponent(dailyData.date)}`,
+                                          { state: navigationState }
+                                        )
+                                      }}
+                                      onMouseEnter={(e) => {
+                                       
+                                        
                                       }}
                                       onMouseLeave={(e) => {
                                         e.currentTarget.style.background = 'transparent'

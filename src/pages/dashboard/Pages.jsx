@@ -27,6 +27,48 @@ function Pages({ projectId }) {
     exit: { limit: 10, hasMore: true, loadCount: 0 }
   })
 
+  // Function to sanitize and clean text data - preserves foreign languages but removes problematic characters
+  const sanitizeText = (text) => {
+    if (!text) return text;
+    // Remove only truly problematic characters that cause display issues, but keep foreign language characters
+    return text.toString()
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/[\uFFF0-\uFFFF]/g, '') // Remove special Unicode characters that cause issues
+      .trim();
+  };
+  
+  // Convert URL/slug to readable English title
+const slugToEnglishTitle = (value) => {
+  if (!value) return 'Untitled Page'
+
+  try {
+    const lastPart = value.split('/').filter(Boolean).pop() || ''
+    return lastPart
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase())
+      .trim()
+  } catch {
+    return 'Untitled Page'
+  }
+}
+
+// ✅ FINAL: Always return English title
+const getFinalEnglishTitle = (title, page) => {
+  const cleanTitle = sanitizeText(title)
+
+  // 1️⃣ If English exists in title → use it
+  const englishMatch = cleanTitle?.match(/[A-Za-z0-9][A-Za-z0-9\s\-:,.'&()]{2,}/g)
+  if (englishMatch && englishMatch.length > 0) {
+    return englishMatch.join(' ').trim()
+  }
+
+  // 2️⃣ Else → generate English from URL/page
+  return slugToEnglishTitle(page)
+}
+
+
+
+
   useEffect(() => {
     loadInitialData()
     loadProjectInfo()
@@ -595,10 +637,11 @@ function Pages({ projectId }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', wordBreak: 'break-word' }}>
-                            {page.title || page.page || 'Untitled'}
+                            {getFinalEnglishTitle(page.title, page.page)}
                           </div>
+
                           <a
-                            href={page.url || page.page || '/'}
+                            href={sanitizeText(page.url || page.page) || '/'}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -612,7 +655,7 @@ function Pages({ projectId }) {
                             onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                             onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                           >
-                            {page.url || page.page || '/'}
+                            {sanitizeText(page.url || page.page) || '/'}
                           </a>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
