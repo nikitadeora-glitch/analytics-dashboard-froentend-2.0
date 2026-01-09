@@ -640,17 +640,65 @@ function HourlyView({ projectId }) {
             </div>
           </div>
 
-          <div style={{ position: 'relative', padding: '20px 0' }}>
-            <BarChart
-              displayData={data.hourly_stats}
-              showPageViews={showPageViews}
-              showUniqueVisits={showUniqueVisits}
-              showReturningVisits={showReturningVisits}
-              period="hourly"
-              stepSize={5}
-              maxValue={100}
-            />
-          </div>
+          {/* Calculate dynamic chart settings based on data */}
+          {(() => {
+            if (!data?.hourly_stats || data.hourly_stats.length === 0) {
+              const maxValue = 100;
+              const stepSize = 5;
+              return (
+                <div style={{ position: 'relative', padding: '20px 0' }}>
+                  <BarChart
+                    displayData={data.hourly_stats}
+                    showPageViews={showPageViews}
+                    showUniqueVisits={showUniqueVisits}
+                    showReturningVisits={showReturningVisits}
+                    period="hourly"
+                    stepSize={stepSize}
+                    maxValue={maxValue}
+                  />
+                </div>
+              );
+            }
+
+            // Find the maximum value across all metrics
+            const maxPageViews = Math.max(...data.hourly_stats.map(h => h.page_views || 0));
+            const maxUniqueVisits = Math.max(...data.hourly_stats.map(h => h.unique_visits || 0));
+            const maxReturningVisits = Math.max(...data.hourly_stats.map(h => h.returning_visits || 0));
+            const maxValue = Math.max(maxPageViews, maxUniqueVisits, maxReturningVisits);
+
+            // Calculate step size based on max value
+            let stepSize;
+            if (maxValue <= 10) {
+              stepSize = 1;
+            } else if (maxValue <= 50) {
+              stepSize = 5;
+            } else if (maxValue <= 100) {
+              stepSize = 10;
+            } else if (maxValue <= 500) {
+              stepSize = 50;
+            } else if (maxValue <= 1000) {
+              stepSize = 100;
+            } else {
+              stepSize = 200;
+            }
+
+            // Round up max value to nearest step size multiple
+            const roundedMaxValue = Math.ceil((maxValue + stepSize * 0.5) / stepSize) * stepSize;
+
+            return (
+              <div style={{ position: 'relative', padding: '20px 0' }}>
+                <BarChart
+                  displayData={data.hourly_stats}
+                  showPageViews={showPageViews}
+                  showUniqueVisits={showUniqueVisits}
+                  showReturningVisits={showReturningVisits}
+                  period="hourly"
+                  stepSize={stepSize}
+                  maxValue={roundedMaxValue}
+                />
+              </div>
+            );
+          })()}
         </div>
 
         {/* Hourly Data Table */}
