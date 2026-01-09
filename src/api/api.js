@@ -95,6 +95,7 @@ export const projectsAPI = {
   delete: (id) => api.delete(`/projects/${id}`)
 };
 
+
 export const analyticsAPI = {
   getSummary: (projectId, days) => 
     api.get(`/analytics/${projectId}/summary?days=${days}`),

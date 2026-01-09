@@ -26,7 +26,7 @@ function HourlyView({ projectId }) {
     if (projectId) {
       loadProjectInfo()
     }
-  }, [projectId, date])
+  }, [projectId, date, actualStartDate, actualEndDate])
 
   const loadProjectInfo = async () => {
     try {
@@ -54,49 +54,37 @@ function HourlyView({ projectId }) {
         response = await analyticsAPI.getHourlyData(projectId, date)
       }
 
-      // Use data as provided by backend, which is already in IST
-      const processedData = {
-        ...response.data,
-        hourly_stats: response.data.hourly_stats
-          .map((stat, index) => {
-            // Handle different hour formats from backend
-            let hour = '00';
-            let hourNumber = 0;
-            
-            if (stat.hour) {
-              // If hour is like "14:00"
-              if (stat.hour.includes(':')) {
-                hour = stat.hour.split(':')[0];
-              } else {
-                hour = stat.hour;
-              }
-              hourNumber = parseInt(hour, 10);
-            } else {
-              // Fallback: use index as hour (0-23)
-              hourNumber = index;
-              hour = hourNumber.toString().padStart(2, '0');
-            }
-
-            return {
-              ...stat,
-              date: stat.hour || `${hour}:00`, // Add 'date' field for BarChart
-              timeRange: `${hour.padStart(2, '0')}:00-${hour.padStart(2, '0')}:59`,
-              _hour: hourNumber
-            };
-          })
-          .sort((a, b) => a._hour - b._hour)
-          .map(({ _hour, ...rest }) => rest)
-      };
-
-      console.log('Hourly data loaded:', {
-        date,
-        actualStartDate,
-        actualEndDate,
-        totalHours: processedData.hourly_stats.length,
-        sampleData: processedData.hourly_stats.slice(0, 3)
-      })
+      // Add caching key for consistency
+      const cacheKey = `${projectId}-${date}-${actualStartDate || ''}-${actualEndDate || ''}`
+      
+      // Always fetch fresh data (remove caching to fix inconsistency)
+      sessionStorage.removeItem(`hourly_${cacheKey}`)
+      
+      console.log('=== API CALL DEBUG ===')
+      console.log('Date:', date)
+      console.log('Response:', response.data)
+      console.log('======================')
+      
+      // Use API response directly - no processing
+      const processedData = response.data
 
       setData(processedData)
+
+      // Debugging: Verify totals match hourly stats
+      if (processedData && processedData.hourly_stats && processedData.totals) {
+        const sumPageViews = processedData.hourly_stats.reduce((sum, hour) => sum + hour.page_views, 0);
+        const sumUniqueVisits = processedData.hourly_stats.reduce((sum, hour) => sum + hour.unique_visits, 0);
+        const sumFirstTimeVisits = processedData.hourly_stats.reduce((sum, hour) => sum + hour.first_time_visits, 0);
+        const sumReturningVisits = processedData.hourly_stats.reduce((sum, hour) => sum + hour.returning_visits, 0);
+
+        console.log("--- Hourly Data Verification ---");
+        console.log("API Totals:", processedData.totals);
+        console.log("Sum of hourly_stats Page Views:", sumPageViews);
+        console.log("Sum of hourly_stats Unique Visits:", sumUniqueVisits);
+        console.log("Sum of hourly_stats First Time Visits:", sumFirstTimeVisits);
+        console.log("Sum of hourly_stats Returning Visits:", sumReturningVisits);
+        console.log("--------------------------------");
+      }
     } catch (error) {
       console.error('Error loading hourly data:', error)
 
@@ -306,13 +294,12 @@ function HourlyView({ projectId }) {
       })
     }
 
-    // Use backend totals to avoid double counting
-    const totals = {
-      page_views: hours.reduce((acc, hour) => acc + hour.page_views, 0),
-      unique_visits: response.data.totals.unique_visits,
-      first_time_visits: response.data.totals.first_time_visits,
-      returning_visits: response.data.totals.returning_visits
-    }
+    const totals = hours.reduce((acc, hour) => ({
+      page_views: acc.page_views + hour.page_views,
+      unique_visits: acc.unique_visits + hour.unique_visits,
+      first_time_visits: acc.first_time_visits + hour.first_time_visits,
+      returning_visits: acc.returning_visits + hour.returning_visits
+    }), { page_views: 0, unique_visits: 0, first_time_visits: 0, returning_visits: 0 })
 
     return {
       date: selectedDate,
@@ -589,23 +576,23 @@ function HourlyView({ projectId }) {
       </div>
 
       <div className="content">
-        {/* Summary Cards */}
+        {/* Summary Cards - Hourly Data Only */}
         <div className="stats-summary-grid">
           <div className="stat-card">
-            <h3>Total Page Loads</h3>
-            <div className="value">{data.totals.page_views}</div>
+            <h3>Total Page Loads (Hourly)</h3>
+            <div className="value">{data?.hourly_stats?.reduce((sum, hour) => sum + hour.page_views, 0) || 0}</div>
           </div>
           <div className="stat-card">
-            <h3>Unique Visits</h3>
-            <div className="value">{data.totals.unique_visits}</div>
+            <h3>Unique Visits (Hourly)</h3>
+            <div className="value">{data?.hourly_stats?.reduce((sum, hour) => sum + hour.unique_visits, 0) || 0}</div>
           </div>
           <div className="stat-card">
-            <h3>First Time Visits</h3>
-            <div className="value">{data.totals.first_time_visits}</div>
+            <h3>First Time Visits (Hourly)</h3>
+            <div className="value">{data?.hourly_stats?.reduce((sum, hour) => sum + hour.first_time_visits, 0) || 0}</div>
           </div>
           <div className="stat-card">
-            <h3>Returning Visits</h3>
-            <div className="value">{data.totals.returning_visits}</div>
+            <h3>Returning Visits (Hourly)</h3>
+            <div className="value">{data?.hourly_stats?.reduce((sum, hour) => sum + hour.returning_visits, 0) || 0}</div>
           </div>
         </div>
 
