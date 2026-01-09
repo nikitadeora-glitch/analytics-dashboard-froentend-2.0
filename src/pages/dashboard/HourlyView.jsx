@@ -306,12 +306,13 @@ function HourlyView({ projectId }) {
       })
     }
 
-    const totals = hours.reduce((acc, hour) => ({
-      page_views: acc.page_views + hour.page_views,
-      unique_visits: acc.unique_visits + hour.unique_visits,
-      first_time_visits: acc.first_time_visits + hour.first_time_visits,
-      returning_visits: acc.returning_visits + hour.returning_visits
-    }), { page_views: 0, unique_visits: 0, first_time_visits: 0, returning_visits: 0 })
+    // Use backend totals to avoid double counting
+    const totals = {
+      page_views: hours.reduce((acc, hour) => acc + hour.page_views, 0),
+      unique_visits: response.data.totals.unique_visits,
+      first_time_visits: response.data.totals.first_time_visits,
+      returning_visits: response.data.totals.returning_visits
+    }
 
     return {
       date: selectedDate,
