@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { reportsAPI, analyticsAPI, visitorsAPI, pagesAPI, trafficAPI, projectsAPI } from '../../api/api'
 import { Download, TrendingUp, Users, Globe, BarChart3, Eye, RefreshCw, AlertCircle, CheckCircle, ArrowLeft, ExternalLink, Clock, MapPin } from 'lucide-react'
 import { Skeleton, Box, Grid, Card, CardContent } from '@mui/material'
+import { useSearchParams } from 'react-router-dom'
 
 function Reports({ projectId }) {
   const [loading, setLoading] = useState(false)
@@ -9,9 +10,64 @@ function Reports({ projectId }) {
   const [reportData, setReportData] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingData, setLoadingData] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [error, setError] = useState(null)
   const [exportStatus, setExportStatus] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // URL me category store karne ke liye
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState(() => {
+    return searchParams.get('category') || null
+  })
   const [selectedCategory, setSelectedCategory] = useState(null)
+
+  const reportCategories = useMemo(() => [
+    {
+      icon: <Users size={24} />,
+      title: 'Visitor Analytics',
+      description: 'Complete visitor data including IP, location, device, and session info',
+      color: '#3b82f6',
+      bgColor: '#eff6ff',
+      value: summaryData?.unique_visitors || 0,
+      label: 'Unique Visitors'
+    },
+    {
+      icon: <Eye size={24} />,
+      title: 'Page Performance',
+      description: 'Page views, time spent, bounce rates, and engagement metrics',
+      color: '#8b5cf6',
+      bgColor: '#f5f3ff',
+      value: summaryData?.total_visits || 0,
+      label: 'Total Views'
+    },
+    {
+      icon: <TrendingUp size={24} />,
+      title: 'Traffic Sources',
+      description: 'Referrers, search keywords, and campaign performance',
+      color: '#10b981',
+      bgColor: '#ecfdf5',
+      value: reportData?.traffic?.length || 0,
+      label: 'Traffic Sources'
+    },
+    {
+      icon: <Globe size={24} />,
+      title: 'Geographic Data',
+      description: 'Country, city, and regional visitor distribution',
+      color: '#f59e0b',
+      bgColor: '#fffbeb',
+      value: reportData?.summary?.countries?.length || 0,
+      label: 'Countries'
+    },
+    {
+      icon: <BarChart3 size={24} />,
+      title: 'Top Pages',
+      description: 'Most visited pages and content performance analysis',
+      color: '#ec4899',
+      bgColor: '#fdf2f8',
+      value: reportData?.pages?.length || 0,
+      label: 'Tracked Pages'
+    }
+  ], [summaryData, reportData])
+
   const [project, setProject] = useState(null)
   const [detailData, setDetailData] = useState(null)
   const [visitorDisplayLimit, setVisitorDisplayLimit] = useState(50)
@@ -38,6 +94,21 @@ function Reports({ projectId }) {
       loadProjectInfo()
     }
   }, [projectId, selectedPeriod])
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category')
+    if (categoryFromUrl && reportCategories.length > 0) {
+      const category = reportCategories.find(cat => cat.title === categoryFromUrl)
+      if (category) {
+        setSelectedCategory(category)
+        setSelectedCategoryKey(categoryFromUrl)
+        // Also set the detail data if reportData is available
+        if (reportData) {
+          handleCategoryClick(category)
+        }
+      }
+    }
+  }, [searchParams, reportData])
 
   const loadProjectInfo = async () => {
     try {
@@ -98,6 +169,7 @@ function Reports({ projectId }) {
       setError('Failed to load report data. Please try again.')
     } finally {
       setLoadingData(false)
+      setInitialLoad(false)
     }
   }
 
@@ -190,6 +262,12 @@ function Reports({ projectId }) {
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category)
+    setSelectedCategoryKey(category.title)
+    
+    // Update URL with selected category
+    const newSearchParams = new URLSearchParams(searchParams)
+    newSearchParams.set('category', category.title)
+    setSearchParams(newSearchParams)
 
     // Set detail data based on category with enhanced period filtering
     switch (category.title) {
@@ -250,7 +328,14 @@ function Reports({ projectId }) {
 
   const handleBackToCategories = () => {
     setSelectedCategory(null)
+    setSelectedCategoryKey(null)
     setDetailData(null)
+    
+    // Remove category from URL
+    const newSearchParams = new URLSearchParams(searchParams)
+    newSearchParams.delete('category')
+    setSearchParams(newSearchParams)
+    
     setVisitorDisplayLimit(50) // Reset display limit
     setVisitorSearchTerm('') // Reset search
     setVisitorSortBy('visited_at') // Reset sort
@@ -264,10 +349,6 @@ function Reports({ projectId }) {
     setGeoSearchTerm('') // Reset geo search
     setGeoSortBy('count') // Reset geo sort
     setGeoViewMode('grid') // Reset geo view mode
-    setTopPagesDisplayLimit(20) // Reset top pages display limit
-    setTopPagesSearchTerm('') // Reset top pages search
-    setTopPagesSortBy('total_views') // Reset top pages sort
-    setTopPagesViewMode('detailed') // Reset top pages view mode
     setTopPagesDisplayLimit(20) // Reset top pages display limit
     setTopPagesSearchTerm('') // Reset top pages search
     setTopPagesSortBy('total_views') // Reset top pages sort
@@ -1726,53 +1807,55 @@ function Reports({ projectId }) {
     )
   }
 
-  const reportCategories = [
-    {
-      icon: <Users size={24} />,
-      title: 'Visitor Analytics',
-      description: 'Complete visitor data including IP, location, device, and session info',
-      color: '#3b82f6',
-      bgColor: '#eff6ff',
-      value: summaryData?.unique_visitors || 0,
-      label: 'Unique Visitors'
-    },
-    {
-      icon: <Eye size={24} />,
-      title: 'Page Performance',
-      description: 'Page views, time spent, bounce rates, and engagement metrics',
-      color: '#8b5cf6',
-      bgColor: '#f5f3ff',
-      value: summaryData?.total_visits || 0,
-      label: 'Total Views'
-    },
-    {
-      icon: <TrendingUp size={24} />,
-      title: 'Traffic Sources',
-      description: 'Referrers, search keywords, and campaign performance',
-      color: '#10b981',
-      bgColor: '#ecfdf5',
-      value: reportData?.traffic?.length || 0,
-      label: 'Traffic Sources'
-    },
-    {
-      icon: <Globe size={24} />,
-      title: 'Geographic Data',
-      description: 'Country, city, and regional visitor distribution',
-      color: '#f59e0b',
-      bgColor: '#fffbeb',
-      value: reportData?.summary?.countries?.length || 0,
-      label: 'Countries'
-    },
-    {
-      icon: <BarChart3 size={24} />,
-      title: 'Top Pages',
-      description: 'Most visited pages and content performance analysis',
-      color: '#ec4899',
-      bgColor: '#fdf2f8',
-      value: reportData?.pages?.length || 0,
-      label: 'Tracked Pages'
-    }
-  ]
+  const renderReportCategories = () => {
+    return (
+      <div style={{ display: 'grid', gap: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+        {reportCategories.map((category, index) => (
+          <div key={index} style={{
+            padding: '16px',
+            background: category.bgColor,
+            borderRadius: '8px',
+            border: `2px solid ${category.color}20`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+            onClick={() => handleCategoryClick(category)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {category.icon}
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: category.color, marginBottom: '4px' }}>
+                  {category.value?.toLocaleString() || 0}
+                </div>
+                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                  {category.label}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', marginBottom: '4px' }}>
+                {category.title}
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                {category.description}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   // Don't render if no project is selected
   if (!projectId) {
@@ -1792,7 +1875,8 @@ function Reports({ projectId }) {
     )
   }
 
-  if (loadingData) {
+  // Show skeleton during initial load or when data is loading
+  if (loadingData || initialLoad) {
     return (
       <>
         <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
@@ -2037,11 +2121,11 @@ function Reports({ projectId }) {
                     // Show loading briefly when period changes
                     setLoadingData(true)
                     // If a category is selected, update its data immediately
-                    if (selectedCategory) {
-                      setTimeout(() => {
-                        handleCategoryClick(selectedCategory)
-                      }, 100)
-                    }
+                    if (selectedCategoryKey) {
+                        const cat = reportCategories.find(c => c.title === selectedCategoryKey)
+                        if (cat) handleCategoryClick(cat, { syncUrl: false })
+                      }
+
                   }}
                 >
                   <option value="1">Last 1 Day</option>
@@ -2090,111 +2174,152 @@ function Reports({ projectId }) {
         {/* Detailed Data View */}
         {selectedCategory && renderDetailedData()}
 
-        {/* Report Categories Grid */}
-        {!selectedCategory && (
-          <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
-              Available Report Categories
-            </h3>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '20px'
-            }}>
-              {reportCategories.map((category, index) => (
-                <div
-                  key={index}
-                  className="report-category-card"
-                  style={{
-                    background: 'white',
-                    padding: '24px',
-                    borderRadius: '12px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    border: '2px solid transparent',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                  onClick={() => handleCategoryClick(category)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)'
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
-                    e.currentTarget.style.borderColor = category.color
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
-                    e.currentTarget.style.borderColor = 'transparent'
-                  }}
-                >
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: category.bgColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: category.color,
-                    marginBottom: '16px'
-                  }}>
-                    {category.icon}
-                  </div>
-                  <h4 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    marginBottom: '8px'
-                  }}>
-                    {category.title}
-                  </h4>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#64748b',
-                    lineHeight: '1.6',
-                    marginBottom: '12px'
-                  }}>
-                    {category.description}
-                  </p>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '8px',
-                    marginTop: 'auto',
-                    marginBottom: '12px'
-                  }}>
-                    <span style={{
-                      fontSize: '24px',
-                      fontWeight: '700',
-                      color: category.color
-                    }}>
-                      {category.value.toLocaleString()}
-                    </span>
-                    <span style={{
-                      fontSize: '13px',
-                      color: '#94a3b8'
-                    }}>
-                      {category.label}
-                    </span>
-                  </div>
-                  <div style={{
-                    padding: '8px 12px',
-                    background: category.bgColor,
-                    color: category.color,
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    textAlign: 'center',
-                    border: `1px solid ${category.color}20`
-                  }}>
-                    👆 Click to view details
-                  </div>
+        {/* Report Categories Grid - Show skeleton during loading */}
+        <div style={{ marginBottom: '30px' }}>
+          {!selectedCategory && (
+            loadingData || initialLoad ? (
+              <div>
+                <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
+                  Available Report Categories
+                </h3>
+                <Grid container spacing={3}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Grid item xs={12} md={6} lg={4} key={i}>
+                      <Card sx={{
+                        padding: 3,
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                      }}>
+                        <CardContent sx={{ padding: 0, '&:last-child': { paddingBottom: 0 } }}>
+                          {/* Category Header */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
+                            <Skeleton variant="rectangular" width={24} height={24} animation="wave" />
+                            <Skeleton variant="text" width={150} height={20} animation="wave" />
+                          </Box>
+
+                          {/* Category Description */}
+                          <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: 2.5 }} />
+
+                          {/* Stats */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <Box>
+                              <Skeleton variant="text" width={60} height={24} animation="wave" sx={{ marginBottom: 0.5 }} />
+                              <Skeleton variant="text" width={40} height={12} animation="wave" />
+                            </Box>
+                            <Skeleton variant="rounded" width={80} height={36} animation="wave" />
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
+                  Available Report Categories
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '20px'
+                }}>
+                  {reportCategories.map((category, index) => (
+                    <div
+                      key={index}
+                      className="report-category-card"
+                      style={{
+                        background: 'white',
+                        padding: '24px',
+                        borderRadius: '12px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        border: '2px solid transparent',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      onClick={() => handleCategoryClick(category)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
+                        e.currentTarget.style.borderColor = category.color
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+                        e.currentTarget.style.borderColor = 'transparent'
+                      }}
+                    >
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: category.bgColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: category.color,
+                        marginBottom: '16px'
+                      }}>
+                        {category.icon}
+                      </div>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#1e293b',
+                        marginBottom: '8px'
+                      }}>
+                        {category.title}
+                      </h4>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#64748b',
+                        lineHeight: '1.6',
+                        marginBottom: '12px'
+                      }}>
+                        {category.description}
+                      </p>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        gap: '8px',
+                        marginTop: 'auto',
+                        marginBottom: '12px'
+                      }}>
+                        <span style={{
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: category.color
+                        }}>
+                          {category.value.toLocaleString()}
+                        </span>
+                        <span style={{
+                          fontSize: '13px',
+                          color: '#94a3b8'
+                        }}>
+                          {category.label}
+                        </span>
+                      </div>
+                      <div style={{
+                        padding: '8px 12px',
+                        background: category.bgColor,
+                        color: category.color,
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        textAlign: 'center',
+                        border: `1px solid ${category.color}20`
+                      }}>
+                        👆 Click to view details
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </>
+            )
+          )}
+        </div>
       </div>
     </>
   )
