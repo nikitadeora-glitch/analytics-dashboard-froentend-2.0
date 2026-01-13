@@ -1877,10 +1877,35 @@ function Reports({ projectId }) {
 
   // Show skeleton during initial load or when data is loading
   if (loadingData || initialLoad) {
+    // Check if we have a category in URL to show appropriate skeleton
+    const categoryFromUrl = searchParams.get('category')
+    const isCategoryView = categoryFromUrl && selectedCategoryKey
+    
     return (
       <>
         <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-          <h1 style={{ margin: 0 }}>Reports & Analytics</h1>
+          <h1 style={{ margin: 0 }}>
+            {isCategoryView ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <ArrowLeft size={20} style={{ color: '#64748b' }} />
+                </button>
+                {categoryFromUrl || 'Reports & Analytics'}
+              </span>
+            ) : (
+              'Reports & Analytics'
+            )}
+          </h1>
           {project && (
             <div style={{
               display: 'flex',
@@ -1890,61 +1915,136 @@ function Reports({ projectId }) {
               fontSize: '14px',
               fontWeight: '500'
             }}>
-
               <span>Project: {project.name}</span>
             </div>
           )}
         </div>
 
         <div className="content">
-          {/* Period Selector Skeleton */}
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            marginBottom: 4,
-            padding: 2.5,
-            background: '#f8fafc',
-            borderRadius: 3,
-            border: '1px solid #e2e8f0'
-          }}>
-            <Skeleton variant="text" width={120} height={16} animation="wave" />
-            <Skeleton variant="rounded" width={150} height={40} animation="wave" />
-            <Skeleton variant="rounded" width={100} height={40} animation="wave" />
-          </Box>
+          {isCategoryView ? (
+            // Category-specific skeleton
+            <div className="chart-container" style={{ marginBottom: '30px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <Skeleton variant="rectangular" width={100} height={36} animation="wave" />
+                <Skeleton variant="text" width={300} height={24} animation="wave" />
+                <Skeleton variant="rectangular" width={120} height={28} animation="wave" />
+                <Skeleton variant="rectangular" width={150} height={28} animation="wave" />
+              </div>
 
-          {/* Report Categories Grid */}
-          <Grid container spacing={3}>
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <Grid item xs={12} md={6} lg={4} key={i}>
-                <Card sx={{
-                  padding: 3,
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+              {/* Summary Stats Skeleton */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+                marginBottom: '20px'
+              }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{
+                    padding: '16px',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    textAlign: 'center'
+                  }}>
+                    <Skeleton variant="text" width={60} height={32} animation="wave" sx={{ margin: '0 auto 4px' }} />
+                    <Skeleton variant="text" width={80} height={16} animation="wave" sx={{ margin: '0 auto' }} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Data Table Skeleton */}
+              <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <Skeleton variant="text" width={200} height={20} animation="wave" />
+                  <Skeleton variant="rectangular" width={150} height={24} animation="wave" />
+                </div>
+
+                {/* Search and Sort Controls Skeleton */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: '12px',
+                  marginBottom: '16px'
                 }}>
-                  <CardContent sx={{ padding: 0, '&:last-child': { paddingBottom: 0 } }}>
-                    {/* Category Header */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
-                      <Skeleton variant="rectangular" width={24} height={24} animation="wave" />
-                      <Skeleton variant="text" width={150} height={20} animation="wave" />
-                    </Box>
+                  <Skeleton variant="rectangular" width="100%" height={40} animation="wave" />
+                  <Skeleton variant="rectangular" width={150} height={40} animation="wave" />
+                </div>
 
-                    {/* Category Description */}
-                    <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: 2.5 }} />
+                {/* Data Rows Skeleton */}
+                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} style={{
+                      padding: '12px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                      gap: '12px',
+                      alignItems: 'center'
+                    }}>
+                      <Skeleton variant="text" width={120} height={16} animation="wave" />
+                      <Skeleton variant="text" width={100} height={14} animation="wave" />
+                      <Skeleton variant="text" width={60} height={16} animation="wave" />
+                      <Skeleton variant="text" width={80} height={14} animation="wave" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Main Reports page skeleton
+            <>
+              {/* Period Selector Skeleton */}
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                marginBottom: 4,
+                padding: 2.5,
+                background: '#f8fafc',
+                borderRadius: 3,
+                border: '1px solid #e2e8f0'
+              }}>
+                <Skeleton variant="text" width={120} height={16} animation="wave" />
+                <Skeleton variant="rounded" width={150} height={40} animation="wave" />
+                <Skeleton variant="rounded" width={100} height={40} animation="wave" />
+              </Box>
 
-                    {/* Stats */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <Box>
-                        <Skeleton variant="text" width={60} height={24} animation="wave" sx={{ marginBottom: 0.5 }} />
-                        <Skeleton variant="text" width={40} height={12} animation="wave" />
-                      </Box>
-                      <Skeleton variant="rounded" width={80} height={36} animation="wave" />
-                    </Box>
-                  </CardContent>
-                </Card>
+              {/* Report Categories Grid */}
+              <Grid container spacing={3}>
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <Grid item xs={12} md={6} lg={4} key={i}>
+                    <Card sx={{
+                      padding: 3,
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <CardContent sx={{ padding: 0, '&:last-child': { paddingBottom: 0 } }}>
+                        {/* Category Header */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
+                          <Skeleton variant="rectangular" width={24} height={24} animation="wave" />
+                          <Skeleton variant="text" width={150} height={20} animation="wave" />
+                        </Box>
+
+                        {/* Category Description */}
+                        <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: 2.5 }} />
+
+                        {/* Stats */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <Box>
+                            <Skeleton variant="text" width={60} height={24} animation="wave" sx={{ marginBottom: 0.5 }} />
+                            <Skeleton variant="text" width={40} height={12} animation="wave" />
+                          </Box>
+                          <Skeleton variant="rounded" width={80} height={36} animation="wave" />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
+            </>
+          )}
         </div>
       </>
     )
@@ -2122,10 +2222,9 @@ function Reports({ projectId }) {
                     setLoadingData(true)
                     // If a category is selected, update its data immediately
                     if (selectedCategoryKey) {
-                        const cat = reportCategories.find(c => c.title === selectedCategoryKey)
-                        if (cat) handleCategoryClick(cat, { syncUrl: false })
-                      }
-
+                      const cat = reportCategories.find(c => c.title === selectedCategoryKey)
+                      if (cat) handleCategoryClick(cat, { syncUrl: false })
+                    }
                   }}
                 >
                   <option value="1">Last 1 Day</option>
@@ -2146,12 +2245,10 @@ function Reports({ projectId }) {
               <div className="stat-card">
                 <h3>Unique Visitors</h3>
                 <div className="value">{summaryData?.unique_visitors?.toLocaleString() || 0}</div>
-
               </div>
               <div className="stat-card live">
                 <h3>Live Visitors</h3>
                 <div className="value">{summaryData?.live_visitors || 0}</div>
-
               </div>
               <div className="stat-card">
                 <h3>Avg. Session</h3>
@@ -2160,169 +2257,124 @@ function Reports({ projectId }) {
                     ? Math.round((summaryData.total_visits / summaryData.unique_visitors) * 10) / 10
                     : 0}
                 </div>
-
               </div>
             </div>
-
-
-
           </>
         )}
-
-
 
         {/* Detailed Data View */}
         {selectedCategory && renderDetailedData()}
 
-        {/* Report Categories Grid - Show skeleton during loading */}
+        {/* Report Categories Grid - Show only when no category is selected */}
         <div style={{ marginBottom: '30px' }}>
-          {!selectedCategory && (
-            loadingData || initialLoad ? (
-              <div>
-                <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
-                  Available Report Categories
-                </h3>
-                <Grid container spacing={3}>
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <Grid item xs={12} md={6} lg={4} key={i}>
-                      <Card sx={{
-                        padding: 3,
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                      }}>
-                        <CardContent sx={{ padding: 0, '&:last-child': { paddingBottom: 0 } }}>
-                          {/* Category Header */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
-                            <Skeleton variant="rectangular" width={24} height={24} animation="wave" />
-                            <Skeleton variant="text" width={150} height={20} animation="wave" />
-                          </Box>
-
-                          {/* Category Description */}
-                          <Skeleton variant="text" width="90%" height={14} animation="wave" sx={{ marginBottom: 2.5 }} />
-
-                          {/* Stats */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                            <Box>
-                              <Skeleton variant="text" width={60} height={24} animation="wave" sx={{ marginBottom: 0.5 }} />
-                              <Skeleton variant="text" width={40} height={12} animation="wave" />
-                            </Box>
-                            <Skeleton variant="rounded" width={80} height={36} animation="wave" />
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </div>
-            ) : (
-              <>
-                <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
-                  Available Report Categories
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                  gap: '20px'
-                }}>
-                  {reportCategories.map((category, index) => (
-                    <div
-                      key={index}
-                      className="report-category-card"
-                      style={{
-                        background: 'white',
-                        padding: '24px',
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        border: '2px solid transparent',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                      onClick={() => handleCategoryClick(category)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)'
-                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
-                        e.currentTarget.style.borderColor = category.color
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
-                        e.currentTarget.style.borderColor = 'transparent'
-                      }}
-                    >
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: category.bgColor,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: category.color,
-                        marginBottom: '16px'
-                      }}>
-                        {category.icon}
-                      </div>
-                      <h4 style={{
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: '#1e293b',
-                        marginBottom: '8px'
-                      }}>
-                        {category.title}
-                      </h4>
-                      <p style={{
-                        fontSize: '14px',
-                        color: '#64748b',
-                        lineHeight: '1.6',
-                        marginBottom: '12px'
-                      }}>
-                        {category.description}
-                      </p>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: '8px',
-                        marginTop: 'auto',
-                        marginBottom: '12px'
-                      }}>
-                        <span style={{
-                          fontSize: '24px',
-                          fontWeight: '700',
-                          color: category.color
-                        }}>
-                          {category.value.toLocaleString()}
-                        </span>
-                        <span style={{
-                          fontSize: '13px',
-                          color: '#94a3b8'
-                        }}>
-                          {category.label}
-                        </span>
-                      </div>
-                      <div style={{
-                        padding: '8px 12px',
-                        background: category.bgColor,
-                        color: category.color,
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        textAlign: 'center',
-                        border: `1px solid ${category.color}20`
-                      }}>
-                        👆 Click to view details
-                      </div>
+          {!selectedCategory && !loadingData && (
+            <>
+              <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b' }}>
+                Available Report Categories
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px'
+              }}>
+                {reportCategories.map((category, index) => (
+                  <div
+                    key={index}
+                    className="report-category-card"
+                    style={{
+                      background: 'white',
+                      padding: '24px',
+                      borderRadius: '12px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      border: '2px solid transparent',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                    onClick={() => handleCategoryClick(category)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)'
+                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)'
+                      e.currentTarget.style.borderColor = category.color
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+                      e.currentTarget.style.borderColor = 'transparent'
+                    }}
+                  >
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: category.bgColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: category.color,
+                      marginBottom: '16px'
+                    }}>
+                      {category.icon}
                     </div>
-                  ))}
-                </div>
-              </>
-            )
+                    <h4 style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1e293b',
+                      marginBottom: '8px'
+                    }}>
+                      {category.title}
+                    </h4>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#64748b',
+                      lineHeight: '1.6',
+                      marginBottom: '12px'
+                    }}>
+                      {category.description}
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '8px',
+                      marginTop: 'auto',
+                      marginBottom: '12px'
+                    }}>
+                      <span style={{
+                        fontSize: '24px',
+                        fontWeight: '700',
+                        color: category.color
+                      }}>
+                        {category.value.toLocaleString()}
+                      </span>
+                      <span style={{
+                        fontSize: '13px',
+                        color: '#94a3b8'
+                      }}>
+                        {category.label}
+                      </span>
+                    </div>
+                    <div style={{
+                      padding: '8px 12px',
+                      background: category.bgColor,
+                      color: category.color,
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      textAlign: 'center',
+                      border: `1px solid ${category.color}20`
+                    }}>
+                      Click to view details
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
     </>
   )
-}
+}    
 
 export default Reports
