@@ -822,17 +822,34 @@ function Projects() {
                       <div style={{ width: '160px', height: '35px', margin: '0 auto' }}>
                         <LineChart
                           displayData={(() => {
-                            // Generate more realistic trend data based on actual project stats
+                            // Generate deterministic trend data based on project ID and stats
                             const baseValue = Math.max(project.today, project.yesterday, 1)
                             const variation = Math.max(baseValue * 0.3, 5) // 30% variation or minimum 5
+                            
+                            // Create a simple hash from project ID for consistent randomness
+                            const createSeed = (id) => {
+                              let hash = 0
+                              for (let i = 0; i < id.length; i++) {
+                                const char = id.charCodeAt(i)
+                                hash = ((hash << 5) - hash) + char
+                                hash = hash & hash // Convert to 32-bit integer
+                              }
+                              return Math.abs(hash)
+                            }
+                            
+                            const seed = createSeed(project.id.toString())
+                            const seededRandom = (index) => {
+                              const x = Math.sin(seed + index) * 10000
+                              return x - Math.floor(x)
+                            }
 
                             return [
-                              { date: '5d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
-                              { date: '4d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.5) * variation)) },
-                              { date: '3d', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.3) * variation)) },
+                              { date: '5d', page_views: Math.max(1, Math.round(baseValue + (seededRandom(1) - 0.5) * variation)) },
+                              { date: '4d', page_views: Math.max(1, Math.round(baseValue + (seededRandom(2) - 0.5) * variation)) },
+                              { date: '3d', page_views: Math.max(1, Math.round(baseValue + (seededRandom(3) - 0.3) * variation)) },
                               { date: '2d', page_views: project.yesterday || Math.max(1, Math.round(baseValue * 0.8)) },
                               { date: '1d', page_views: project.today || Math.max(1, Math.round(baseValue)) },
-                              { date: 'now', page_views: Math.max(1, Math.round(baseValue + (Math.random() - 0.2) * variation * 0.5)) }
+                              { date: 'now', page_views: Math.max(1, Math.round(baseValue + (seededRandom(4) - 0.2) * variation * 0.5)) }
                             ]
                           })()}
                           showPageViews={true}
