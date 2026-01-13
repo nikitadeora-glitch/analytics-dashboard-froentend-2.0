@@ -1024,7 +1024,7 @@ function Reports({ projectId }) {
                     })()}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto', overflowX: 'hidden' }}>
                   {getFilteredPages().slice(0, pageDisplayLimit).map((page, index) => (
                     <div key={index} style={{
                       padding: '12px',
@@ -1033,7 +1033,8 @@ function Reports({ projectId }) {
                       border: '1px solid #e2e8f0',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      minWidth: '0'
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
@@ -1635,7 +1636,7 @@ function Reports({ projectId }) {
 
                 {/* Detailed View */}
                 {topPagesViewMode === 'detailed' && (
-                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto', overflowX: 'hidden' }}>
                     {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
                       <div key={index} style={{
                         padding: '16px',
@@ -1712,7 +1713,7 @@ function Reports({ projectId }) {
 
                 {/* Compact View */}
                 {topPagesViewMode === 'compact' && (
-                  <div style={{ display: 'grid', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gap: '8px', maxHeight: '600px', overflowY: 'auto', overflowX: 'hidden' }}>
                     {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
                       <div key={index} style={{
                         padding: '12px 16px',
@@ -1767,7 +1768,7 @@ function Reports({ projectId }) {
 
                 {/* Analytics View */}
                 {topPagesViewMode === 'analytics' && (
-                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gap: '12px', maxHeight: '600px', overflowY: 'auto', overflowX: 'hidden' }}>
                     {getFilteredTopPages().slice(0, topPagesDisplayLimit).map((page, index) => (
                       <div key={index} style={{
                         padding: '16px',

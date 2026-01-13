@@ -14,7 +14,11 @@ function Summary({ projectId }) {
   const [data, setData] = useState(null)
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState('daily')
+  const [period, setPeriod] = useState(() => {
+    // Try to get saved period from localStorage, fallback to 'daily'
+    const savedPeriod = localStorage.getItem(`summary-period-${projectId}`)
+    return savedPeriod || 'daily'
+  })
   const [dateRange, setDateRange] = useState(30)
   const [currentPage, setCurrentPage] = useState(0)
   const [showPageViews, setShowPageViews] = useState(true)
@@ -30,14 +34,39 @@ function Summary({ projectId }) {
 
   useEffect(() => {
     if (location.state) {
-      const { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage } = location.state
-      if (savedPeriod) setPeriod(savedPeriod)
+      const { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage, showPeriodDropdown: savedShowPeriodDropdown } = location.state
+      // Prioritize localStorage over navigation state for period
+      const localStoragePeriod = localStorage.getItem(`summary-period-${projectId}`)
+      if (localStoragePeriod) {
+        setPeriod(localStoragePeriod)
+      } else if (savedPeriod) {
+        setPeriod(savedPeriod)
+      }
       if (savedDateRange) setDateRange(savedDateRange)
       if (savedCurrentPage !== undefined) setCurrentPage(savedCurrentPage)
+      if (savedShowPeriodDropdown !== undefined) setShowPeriodDropdown(savedShowPeriodDropdown)
       // Debug logging
-      console.log('Summary - Restored state:', { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage })
+      console.log('Summary - Restored state:', { period: localStoragePeriod || savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage, showPeriodDropdown: savedShowPeriodDropdown })
     }
-  }, [location.state])
+  }, [location.state, projectId])
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const selectElement = document.querySelector('select')
+      if (selectElement && !selectElement.contains(event.target)) {
+        setShowPeriodDropdown(false)
+      }
+    }
+
+    if (showPeriodDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showPeriodDropdown])
 
   useEffect(() => {
     loadProjectInfo()
@@ -419,7 +448,7 @@ function Summary({ projectId }) {
       handleMonthClick(day, index)
       return
     } else {
-      navigationState = { period, dateRange, currentPage }
+      navigationState = { period, dateRange, currentPage, showPeriodDropdown }
     }
 
     navigate(
@@ -457,10 +486,13 @@ function Summary({ projectId }) {
                 value={period}
                 onChange={(e) => {
                   console.log(' Period changing to:', e.target.value)
-                  setPeriod(e.target.value)
-                  setShowPeriodDropdown(false)
+                  const newPeriod = e.target.value
+                  setPeriod(newPeriod)
+                  // Save to localStorage for persistence
+                  localStorage.setItem(`summary-period-${projectId}`, newPeriod)
                   setCurrentPage(0)
                 }}
+                onClick={() => setShowPeriodDropdown(true)}
                 style={{
                   padding: '8px 40px 8px 16px',
                   borderRadius: '6px',
@@ -952,6 +984,7 @@ function Summary({ projectId }) {
                                           period: period, // Send current period, not always daily
                                           dateRange: dateRange,
                                           currentPage: currentPage,
+                                          showPeriodDropdown: showPeriodDropdown,
                                           selectedDate: dailyData.date,
                                           selectedDateData: {
                                             page_views: dailyData.page_views,
@@ -1034,6 +1067,7 @@ function Summary({ projectId }) {
                                           period: period, // Send current period, not always daily
                                           dateRange: dateRange,
                                           currentPage: currentPage,
+                                          showPeriodDropdown: showPeriodDropdown,
                                           selectedDate: dailyData.date,
                                           selectedDateData: {
                                             page_views: dailyData.page_views,
@@ -1179,6 +1213,7 @@ function Summary({ projectId }) {
                                           period: period, // Send current period, not always daily
                                           dateRange: dateRange,
                                           currentPage: currentPage,
+                                          showPeriodDropdown: showPeriodDropdown,
                                           selectedDate: dailyData.date,
                                           selectedDateData: {
                                             page_views: dailyData.page_views,
@@ -1261,6 +1296,7 @@ function Summary({ projectId }) {
                                           period: period, // Send current period, not always daily
                                           dateRange: dateRange,
                                           currentPage: currentPage,
+                                          showPeriodDropdown: showPeriodDropdown,
                                           selectedDate: dailyData.date,
                                           selectedDateData: {
                                             page_views: dailyData.page_views,
