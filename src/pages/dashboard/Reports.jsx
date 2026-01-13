@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 
 function Reports({ projectId }) {
   const [loading, setLoading] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState('30')
+  const [selectedPeriod, setSelectedPeriod] = useState('1')
   const [reportData, setReportData] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingData, setLoadingData] = useState(true)
@@ -122,7 +122,8 @@ function Reports({ projectId }) {
   // Update detailed data when period changes
   useEffect(() => {
     if (selectedCategory && reportData) {
-      handleCategoryClick(selectedCategory)
+      // Re-click the category to refresh its data with new period
+      handleCategoryClick(selectedCategory, { syncUrl: false })
     }
   }, [selectedPeriod, reportData])
 
@@ -133,37 +134,43 @@ function Reports({ projectId }) {
       const endDate = new Date().toISOString()
       const startDate = new Date(Date.now() - parseInt(selectedPeriod) * 24 * 60 * 60 * 1000).toISOString()
 
-      // Pass the selectedPeriod to analytics API to get data for the correct time range
-      // Increase limits to get more data for filtering based on period
-      const visitorLimit = Math.max(1000, parseInt(selectedPeriod) * 50) // More visitors for longer periods
-      const pageLimit = Math.max(200, parseInt(selectedPeriod) * 10) // More pages for longer periods
-
-      const [summary, analytics, visitors, pages, traffic] = await Promise.all([
+      const [summaryResponse, analyticsResponse, visitorsResponse, pagesResponse, trafficResponse] = await Promise.all([
         reportsAPI.getSummaryReport(projectId, startDate, endDate),
-        analyticsAPI.getSummary(projectId, selectedPeriod), // Pass selectedPeriod here
-        visitorsAPI.getActivity(projectId, visitorLimit), // Dynamic limit based on period
-        pagesAPI.getMostVisited(projectId, pageLimit), // Dynamic limit based on period
-        trafficAPI.getSources(projectId)
+        analyticsAPI.getSummary(projectId, selectedPeriod),
+        visitorsAPI.getActivityView(projectId, 1000, startDate, endDate), // Now properly passes dates to backend
+        pagesAPI.getMostVisited(projectId, 200, startDate, endDate), // Now properly passes dates to backend
+        trafficAPI.getSources(projectId, startDate, endDate) // Now properly passes dates to backend
       ])
 
-      // Filter visitors data by the selected period on client side
-      const cutoffDate = new Date(Date.now() - parseInt(selectedPeriod) * 24 * 60 * 60 * 1000)
-      const filteredVisitors = visitors.data.filter(visitor => {
-        const visitDate = new Date(visitor.visited_at)
-        return visitDate >= cutoffDate
+      // Backend now handles period filtering, so we can use the data directly
+      const visitorsData = visitorsResponse.data || []
+      const pagesData = pagesResponse.data || []
+      const trafficData = trafficResponse.data || []
+
+      console.log('🎯 BACKEND FILTERED RESULT:', {
+        period: selectedPeriod,
+        startDate,
+        endDate,
+        counts: {
+          visitors: visitorsData.length,
+          pages: pagesData.length,
+          traffic: trafficData.length
+        }
       })
 
+      // Use backend-filtered data directly - no client-side filtering needed
       setReportData({
-        summary: summary.data,
-        analytics: analytics.data,
-        visitors: filteredVisitors, // Use filtered visitors
-        pages: pages.data,
-        traffic: traffic.data,
-        originalVisitors: visitors.data, // Keep original for reference
+        summary: summaryResponse.data,
+        analytics: analyticsResponse.data,
+        visitors: visitorsData, // Already filtered by backend
+        pages: pagesData, // Already filtered by backend
+        traffic: trafficData, // Already filtered by backend
         periodStartDate: startDate,
         periodEndDate: endDate
       })
-      setSummaryData(analytics.data)
+      
+      // summaryData from analytics (backend period-filtered)
+      setSummaryData(analyticsResponse.data)
     } catch (error) {
       console.error('Error fetching report data:', error)
       setError('Failed to load report data. Please try again.')
@@ -174,6 +181,20 @@ function Reports({ projectId }) {
   }
 
   // Helper to format date to IST (India Standard Time)
+  // Helper function to format period text with proper singular/plural
+  const formatPeriodText = (period, includeSuffix = true) => {
+    const num = parseInt(period)
+    if (includeSuffix) {
+      return num === 1 ? `${num} day` : `${num} days`
+    }
+    return period
+  }
+
+  // Helper function to format page text with proper singular/plural
+  const formatPageText = (count) => {
+    return count === 1 ? '1 page' : `${count} pages`
+  }
+
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
@@ -210,7 +231,7 @@ function Reports({ projectId }) {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `analytics_${projectId}_last_${selectedPeriod}_days_${new Date().toISOString().split('T')[0]}.csv`
+      a.download = `analytics_${projectId}_last_${selectedPeriod}_${formatPeriodText(selectedPeriod)}_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -237,37 +258,45 @@ function Reports({ projectId }) {
     })
   }
 
-  // Enhanced period-aware data filtering
+  // Simplified data getter since backend handles filtering
   const getPeriodFilteredData = (dataType) => {
     if (!reportData) return []
-
+    
+    // Backend already filtered data by period, just return the appropriate data
     switch (dataType) {
       case 'visitors':
-        // Visitors are already filtered in fetchReportData
         return reportData.visitors || []
       case 'pages':
-        // For pages, we can't filter by period as they're aggregated data
-        // But we can show period-specific metrics from analytics
         return reportData.pages || []
       case 'traffic':
-        // Traffic sources are also aggregated, but we can show them
         return reportData.traffic || []
       case 'geographic':
-        // Geographic data comes from summary report which is already period-filtered
         return reportData.summary?.countries || []
       default:
         return []
     }
   }
 
-  const handleCategoryClick = (category) => {
+  const handleCategoryClick = (category, options = {}) => {
+    const { syncUrl = true } = options
     setSelectedCategory(category)
     setSelectedCategoryKey(category.title)
     
     // Update URL with selected category
-    const newSearchParams = new URLSearchParams(searchParams)
-    newSearchParams.set('category', category.title)
-    setSearchParams(newSearchParams)
+    if (syncUrl) {
+      const newSearchParams = new URLSearchParams(searchParams)
+      newSearchParams.set('category', category.title)
+      setSearchParams(newSearchParams)
+    }
+
+    // Get fresh filtered data for the selected period
+    const filteredData = getPeriodFilteredData(
+      category.title === 'Top Pages' ? 'pages' : 
+      category.title === 'Visitor Analytics' ? 'visitors' :
+      category.title === 'Page Performance' ? 'pages' :
+      category.title === 'Traffic Sources' ? 'traffic' :
+      category.title === 'Geographic Data' ? 'geographic' : 'pages'
+    )
 
     // Set detail data based on category with enhanced period filtering
     switch (category.title) {
@@ -275,50 +304,50 @@ function Reports({ projectId }) {
         setDetailData({
           type: 'visitors',
           title: 'Visitor Analytics Details',
-          data: getPeriodFilteredData('visitors'), // Use enhanced filtering
+          data: filteredData,
           summary: summaryData,
           period: selectedPeriod,
-          periodLabel: `Last ${selectedPeriod} Days`
+          periodLabel: `Last ${formatPeriodText(selectedPeriod)}`
         })
         break
       case 'Page Performance':
         setDetailData({
           type: 'pages',
           title: 'Page Performance Details',
-          data: getPeriodFilteredData('pages'), // Use enhanced filtering
+          data: filteredData,
           summary: summaryData,
           period: selectedPeriod,
-          periodLabel: `All-time data (aggregated)`
+          periodLabel: `Last ${formatPeriodText(selectedPeriod)}`
         })
         break
       case 'Traffic Sources':
         setDetailData({
           type: 'traffic',
           title: 'Traffic Sources Details',
-          data: getPeriodFilteredData('traffic'), // Use enhanced filtering
+          data: filteredData,
           summary: summaryData,
           period: selectedPeriod,
-          periodLabel: `All-time data (aggregated)`
+          periodLabel: `Last ${formatPeriodText(selectedPeriod)}`
         })
         break
       case 'Geographic Data':
         setDetailData({
           type: 'geographic',
           title: 'Geographic Distribution Details',
-          data: getPeriodFilteredData('geographic'), // Use enhanced filtering
+          data: filteredData,
           summary: summaryData,
           period: selectedPeriod,
-          periodLabel: `Last ${selectedPeriod} Days`
+          periodLabel: `Last ${formatPeriodText(selectedPeriod)}`
         })
         break
       case 'Top Pages':
         setDetailData({
           type: 'top-pages',
           title: 'Top Pages Details',
-          data: getPeriodFilteredData('pages'), // Use enhanced filtering
+          data: filteredData,
           summary: summaryData,
           period: selectedPeriod,
-          periodLabel: `All-time performance data`
+          periodLabel: `Last ${formatPeriodText(selectedPeriod)}`
         })
         break
       default:
@@ -595,7 +624,7 @@ function Reports({ projectId }) {
             Back to Categories
           </button>
           <h3 style={{ fontSize: '20px', color: '#1e293b', margin: 0 }}>
-            {detailData.title} - Last {selectedPeriod} Days
+            {detailData.title} - Last {formatPeriodText(selectedPeriod)}
           </h3>
           <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
             <div style={{
@@ -606,7 +635,7 @@ function Reports({ projectId }) {
               fontSize: '12px',
               fontWeight: '500'
             }}>
-              📅 Period: {selectedPeriod} days
+              📅 Period: {formatPeriodText(selectedPeriod)}
             </div>
             <div style={{
               padding: '4px 12px',
@@ -682,7 +711,7 @@ function Reports({ projectId }) {
               {selectedPeriod}
             </div>
             <div style={{ fontSize: '13px', color: '#64748b' }}>
-              Days Period
+              {parseInt(selectedPeriod) === 1 ? 'Day Period' : 'Days Period'}
             </div>
           </div>
           <div style={{
@@ -709,7 +738,7 @@ function Reports({ projectId }) {
               Daily Average
             </div>
           </div>
-        </div >
+        </div>
 
         {
           detailData.type === 'visitors' && (
@@ -724,7 +753,7 @@ function Reports({ projectId }) {
                     padding: '4px 8px',
                     borderRadius: '4px'
                   }}>
-                    Showing visitors from last {selectedPeriod} days
+                    Showing visitors from last {formatPeriodText(selectedPeriod)}
                     {detailData.period && (
                       <span style={{
                         marginLeft: '8px',
@@ -734,7 +763,7 @@ function Reports({ projectId }) {
                         borderRadius: '4px',
                         fontSize: '10px'
                       }}>
-                        ✓ Period: {detailData.period} days
+                        ✓ Period: {formatPeriodText(detailData.period)}
                       </span>
                     )}
                   </div>
@@ -862,7 +891,7 @@ function Reports({ projectId }) {
                       </div>
                       <div>
                         <div style={{ fontSize: '13px', color: '#374151' }}>
-                          {visitor.page_views || 0} pages
+                          {formatPageText(visitor.page_views || 0)}
                         </div>
                         <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <Clock size={12} />
@@ -899,7 +928,7 @@ function Reports({ projectId }) {
                     padding: '4px 8px',
                     borderRadius: '4px'
                   }}>
-                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                    {detailData.periodLabel || `Data from last ${formatPeriodText(selectedPeriod)}`}
                   </div>
                 </div>
 
@@ -1071,7 +1100,7 @@ function Reports({ projectId }) {
                     padding: '4px 8px',
                     borderRadius: '4px'
                   }}>
-                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                    {detailData.periodLabel || `Data from last ${formatPeriodText(selectedPeriod)}`}
                   </div>
                 </div>
 
@@ -1226,7 +1255,7 @@ function Reports({ projectId }) {
                     padding: '4px 8px',
                     borderRadius: '4px'
                   }}>
-                    Data from last {selectedPeriod} days
+                    Data from last {formatPeriodText(selectedPeriod)}
                   </div>
                 </div>
 
@@ -1489,7 +1518,7 @@ function Reports({ projectId }) {
                     padding: '4px 8px',
                     borderRadius: '4px'
                   }}>
-                    {detailData.periodLabel || `Data from last ${selectedPeriod} days`}
+                    {detailData.periodLabel || `Data from last ${formatPeriodText(selectedPeriod)}`}
                   </div>
                 </div>
 
@@ -1836,7 +1865,7 @@ function Reports({ projectId }) {
               {category.icon}
               <div>
                 <div style={{ fontSize: '16px', fontWeight: '600', color: category.color, marginBottom: '4px' }}>
-                  {category.value?.toLocaleString() || 0}
+                  {category.value.toLocaleString()}
                 </div>
                 <div style={{ fontSize: '13px', color: '#64748b' }}>
                   {category.label}
@@ -2104,7 +2133,7 @@ function Reports({ projectId }) {
 
             <button className="btn btn-primary" onClick={handleExportCSV} disabled={loading}>
               <Download size={16} />
-              {loading ? 'Exporting...' : `Export Last ${selectedPeriod} Days`}
+              {loading ? 'Exporting...' : `Export Last ${formatPeriodText(selectedPeriod)}`}
             </button>
           </div>
         </div>
@@ -2218,13 +2247,8 @@ function Reports({ projectId }) {
                   onChange={(e) => {
                     const newPeriod = e.target.value
                     setSelectedPeriod(newPeriod)
-                    // Show loading briefly when period changes
-                    setLoadingData(true)
-                    // If a category is selected, update its data immediately
-                    if (selectedCategoryKey) {
-                      const cat = reportCategories.find(c => c.title === selectedCategoryKey)
-                      if (cat) handleCategoryClick(cat, { syncUrl: false })
-                    }
+                    // Trigger immediate data refresh for better UX
+                    fetchReportData()
                   }}
                 >
                   <option value="1">Last 1 Day</option>
