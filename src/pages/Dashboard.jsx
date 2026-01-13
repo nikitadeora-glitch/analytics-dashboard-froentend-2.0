@@ -108,7 +108,8 @@ function Dashboard() {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999
+            zIndex: 999,
+            backgroundAttachment: 'local'
           }}
         />
       )}
@@ -117,27 +118,18 @@ function Dashboard() {
         className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
         style={{
           borderLeft: '1px solid #1e293b',
-          backgroundImage: `url(${analyticImage})`,
+          transition: 'transform 0.3s ease',
+          position: 'relative',
+          minHeight: '100vh',
+          background: `linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url(${analyticImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          position: 'relative',
-          transition: 'transform 0.3s ease'
+          backgroundAttachment: 'local'
         }}
       >
-        {/* Overlay for better text readability */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.85)',
-          zIndex: 1
-        }} />
-
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <div className="sidebar-brand" style={{
             display: 'flex',
             alignItems: 'center',
