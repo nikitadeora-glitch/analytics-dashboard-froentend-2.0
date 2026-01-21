@@ -10,6 +10,12 @@ import { useEffect } from "react"
 
 
 function Login() {
+  // Debug environment variables
+  console.log('🔍 Environment Debug:');
+  console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+  console.log('VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+  console.log('All env:', import.meta.env);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''

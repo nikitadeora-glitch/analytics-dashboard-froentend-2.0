@@ -9,6 +9,11 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Debug logging
+console.log('🔧 API Configuration:');
+console.log('baseURL:', import.meta.env.VITE_API_URL);
+console.log('Environment mode:', import.meta.env.MODE);
+
 // Token management
 const getToken = () => localStorage.getItem('authToken');
 const setToken = (token) => {
