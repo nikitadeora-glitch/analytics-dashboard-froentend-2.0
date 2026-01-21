@@ -261,7 +261,95 @@ const getFinalEnglishTitle = (title, page) => {
     <>
       {/* Header */}
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Pages</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Pages</h1>
+          
+          {/* Date Filter - Yellow Highlighted Area */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Yellow background 
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} style={{
+                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = 'white'
+                      }
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+
         {project && (
           <div style={{
             display: 'flex',
