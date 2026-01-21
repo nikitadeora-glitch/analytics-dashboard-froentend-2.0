@@ -29,7 +29,7 @@ function VisitorMap({ projectId }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState(null)
-  const [dateRange, setDateRange] = useState('30') // Default 30 days
+  const [dateRange, setDateRange] = useState('1') // Default 1 day
 
   useEffect(() => {
     loadMap()

@@ -69,8 +69,26 @@ export const authAPI = {
 export const visitorsAPI = {
   getActivity: (projectId, limit = 1000) => 
     api.get(`/visitors/${projectId}/activity?limit=${limit}`),
-  getActivityView: (projectId, limit = 1000) => 
-    api.get(`/visitors/${projectId}/activity-view?limit=${limit}`),
+  getActivityView: (projectId, limit = null, startDate = null, endDate = null) => {
+    let url = `/visitors/${projectId}/activity-view`
+    const params = []
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
+    }
+    
+    if (limit !== null) {
+      params.push(`limit=${limit}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('🔍 VisitorsAPI - Making request to:', url)
+    return api.get(url)
+  },
   getPath: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/path/${visitorId}`),
   getMap: (projectId) => 
@@ -84,7 +102,23 @@ export const visitorsAPI = {
   getVisitorsByPage: (projectId, pageUrl) => 
     api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } }),
   getBulkSessions: (projectId, visitorIds) => 
-    api.post(`/visitors/${projectId}/bulk-sessions`, visitorIds)
+    api.post(`/visitors/${projectId}/bulk-sessions`, visitorIds),
+  getGeographicData: (projectId, startDate = null, endDate = null) => {
+    let url = `/visitors/${projectId}/geographic-data`
+    const params = []
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('🌍 VisitorsAPI - Getting geographic data:', url)
+    return api.get(url)
+  }
 };
 
 export const projectsAPI = {
@@ -94,7 +128,6 @@ export const projectsAPI = {
   create: (data) => api.post('/projects/', data),
   delete: (id) => api.delete(`/projects/${id}`)
 };
-
 
 export const analyticsAPI = {
   getSummary: (projectId, days) => 
@@ -112,12 +145,63 @@ export const analyticsAPI = {
 export const pagesAPI = {
   getPagesOverview: (projectId, limit = 10) => 
     api.get(`/pages/${projectId}/pages-overview?limit=${limit}`),
-  getMostVisited: (projectId, limit = 1000) => 
-    api.get(`/pages/${projectId}/most-visited?limit=${limit}`),
-  getEntryPages: (projectId, limit = 1000) => 
-    api.get(`/pages/${projectId}/entry-pages?limit=${limit}`),
-  getExitPages: (projectId, limit = 1000) => 
-    api.get(`/pages/${projectId}/exit-pages?limit=${limit}`),
+  getMostVisited: (projectId, limit = 10, startDate = null, endDate = null) => {
+    let url = `/pages/${projectId}/most-visited`
+    const params = []
+    
+    params.push(`limit=${limit}`)
+    params.push(`offset=0`) // Always start from 0 for Reports page
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('📄 PagesAPI - Getting most visited:', url)
+    return api.get(url)
+  },
+  getEntryPages: (projectId, limit = 10, startDate = null, endDate = null) => {
+    let url = `/pages/${projectId}/entry-pages`
+    const params = []
+    
+    params.push(`limit=${limit}`)
+    params.push(`offset=0`) // Always start from 0 for Reports page
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${endDate}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('📄 PagesAPI - Getting entry pages:', url)
+    return api.get(url)
+  },
+  getExitPages: (projectId, limit = 10, startDate = null, endDate = null) => {
+    let url = `/pages/${projectId}/exit-pages`
+    const params = []
+    
+    params.push(`limit=${limit}`)
+    params.push(`offset=0`) // Always start from 0 for Reports page
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('📄 PagesAPI - Getting exit pages:', url)
+    return api.get(url)
+  },
   getPageActivity: (projectId, hours = 24) => 
     api.get(`/pages/${projectId}/page-activity?hours=${hours}`)
 };
@@ -125,8 +209,22 @@ export const pagesAPI = {
 export const trafficAPI = {
   getTrafficOverview: (projectId) => 
     api.get(`/traffic/${projectId}/traffic-overview`),
-  getSources: (projectId) => 
-    api.get(`/traffic/${projectId}/sources`),
+  getSources: (projectId, startDate, endDate) => {
+    let url = `/traffic/${projectId}/sources`
+    if (startDate && endDate) {
+      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+    }
+    console.log('🌐 TrafficAPI - Making request to:', url)
+    return api.get(url)
+  },
+  getSourceDetail: (projectId, sourceType, startDate, endDate) => {
+    let url = `/traffic/${projectId}/source-detail/${sourceType}`
+    if (startDate && endDate) {
+      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+    }
+    console.log('🌐 TrafficAPI - Getting source detail:', url)
+    return api.get(url)
+  },
   getKeywords: (projectId, limit = 20) => 
     api.get(`/traffic/${projectId}/keywords?limit=${limit}`),
   getReferrers: (projectId) => 
@@ -138,10 +236,11 @@ export const trafficAPI = {
 export const reportsAPI = {
   exportCSV: (projectId, days = 30) => 
     api.get(`/reports/${projectId}/export/csv?days=${days}`),
-  getSummaryReport: (projectId, startDate, endDate) =>
-    api.get(`/reports/${projectId}/summary-report`, { 
-      params: { start_date: startDate, end_date: endDate } 
+  getSummaryReport: (projectId, startDate, endDate) => {
+    return api.get(`/reports/${projectId}/summary-report`, {
+      params: { start_date: startDate, end_date: endDate }
     })
+  }
 };
 
 // Token management exports

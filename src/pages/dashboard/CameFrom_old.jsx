@@ -192,30 +192,30 @@ function CameFrom({ projectId }) {
   const DateFilterComponent = () => (
     <div style={{ position: 'relative' }} data-date-dropdown>
       <div
-        onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                background: '#3b82f6', // Yellow background
-                
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#eeedebff',
-                transition: 'all 0.2s',
-                userSelect: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#2563eb'
-                e.currentTarget.style.borderColor = '#2563eb'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#3b82f6'
-                e.currentTarget.style.borderColor = '#3b82f6'
-              }}
+        onClick={() => setShowDateDropdown(!showDateDropdown)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          background: '#fef3c7',
+          border: '2px solid #f59e0b',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '600',
+          color: '#92400e',
+          transition: 'all 0.2s',
+          userSelect: 'none'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#fde68a'
+          e.currentTarget.style.borderColor = '#d97706'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = '#fef3c7'
+          e.currentTarget.style.borderColor = '#f59e0b'
+        }}
       >
         <Calendar size={16} />
         <span>
@@ -278,10 +278,7 @@ function CameFrom({ projectId }) {
   if (loading) return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
-          <h1 style={{ margin: 0 }}>Came From</h1>
-          <DateFilterComponent />
-        </div>
+        <h1 style={{ margin: 0 }}>Came From</h1>
         {project && (
           <div style={{
             display: 'flex',
@@ -291,6 +288,7 @@ function CameFrom({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
+
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -318,45 +316,10 @@ function CameFrom({ projectId }) {
     </>
   )
 
-  if (error) {
-    return (
-      <>
-        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
-            <h1 style={{ margin: 0 }}>Came From</h1>
-            <DateFilterComponent />
-          </div>
-        </div>
-        <div className="content">
-          <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '16px', color: '#ef4444', marginBottom: '10px' }}>{error}</div>
-            <button
-              onClick={loadVisitors}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
-          <h1 style={{ margin: 0 }}>Came From</h1>
-          <DateFilterComponent />
-        </div>
+        <h1 style={{ margin: 0 }}>Came From</h1>
         {project && (
           <div style={{
             display: 'flex',
@@ -366,6 +329,7 @@ function CameFrom({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
+
             <span>Project: {project.name}</span>
           </div>
         )}

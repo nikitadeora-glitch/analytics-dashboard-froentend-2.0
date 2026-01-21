@@ -104,6 +104,7 @@ function Summary({ projectId }) {
       setLoading(true)
       const response = await analyticsAPI.getSummaryView(projectId, dateRange)
       setData(response.data)
+      console.log(response.data,"divyaaaaaa")
       // Only reset page if it's not a navigation back from hourly view
       // Check if we're coming back from hourly view by checking if location.state has currentPage
       if (!location.state || location.state.currentPage === undefined) {
@@ -203,9 +204,9 @@ function Summary({ projectId }) {
   const isFirstPage = currentPage === 0
   const isLastPage = currentPage >= totalPages - 1
 
-  // ===================== AVERAGES CALCULATION =====================
+  // ===================== AVERAGES =====================
 
-  // Calculate averages based on filtered data
+  // Calculate averages based on filtered data (for weekly/monthly periods)
   const calculateAverages = () => {
     if (!filteredData.length) {
       return {
@@ -241,7 +242,8 @@ function Summary({ projectId }) {
     }
   }
 
-  const periodAverages = calculateAverages()
+  // Use backend averages for daily period, calculate for weekly/monthly
+  const periodAverages = period === 'daily' && data.averages ? data.averages : calculateAverages()
 
   // ===================== CHART SCALE =====================
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
-import { Globe } from 'lucide-react'
+import { Calendar, ChevronDown } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
 
 function VisitorActivity({ projectId }) {
@@ -10,13 +10,29 @@ function VisitorActivity({ projectId }) {
   const [project, setProject] = useState(null)
   const [error, setError] = useState(null)
   const [displayCount, setDisplayCount] = useState(10)
+  const [dateFilter, setDateFilter] = useState(() => {
+    // Get saved filter from localStorage, default to '1' (1 day)
+    const savedFilter = localStorage.getItem(`visitor-activity-filter-${projectId}`)
+    return savedFilter || '1'  // Changed from '30' to '1'
+  })
+  const [showDateDropdown, setShowDateDropdown] = useState(false)
 
   useEffect(() => {
     loadVisitors()
     loadProjectInfo()
-    const interval = setInterval(loadVisitors, 30000)
-    return () => clearInterval(interval)
-  }, [projectId])
+  }, [projectId, dateFilter])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDateDropdown && !event.target.closest('[data-date-dropdown]')) {
+        setShowDateDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showDateDropdown])
 
   const loadProjectInfo = async () => {
     try {
@@ -27,13 +43,63 @@ function VisitorActivity({ projectId }) {
     }
   }
 
+  const getDateRange = (days) => {
+    // Get current date in local timezone
+    const today = new Date()
+    
+    // For 1 day: today 00:00:00 to today 23:59:59 (local time)
+    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (local time)  
+    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (local time)
+    
+    const endDate = new Date(today)
+    endDate.setHours(23, 59, 59, 999) // End of today (local time)
+    
+    const startDate = new Date(today)
+    if (days === '1') {
+      // For 1 day, start from today 00:00:00 (local time)
+      startDate.setHours(0, 0, 0, 0)
+    } else {
+      // For multiple days, go back (days-1) from today and start from 00:00:00
+      startDate.setDate(today.getDate() - (parseInt(days) - 1))
+      startDate.setHours(0, 0, 0, 0)
+    }
+    
+    // Convert to UTC for API
+    const startUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000)).toISOString()
+    const endUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000)).toISOString()
+    
+    console.log(`📅 Date Range for ${days} day(s):`)
+    console.log(`  Local Start: ${startDate.toLocaleString()}`)
+    console.log(`  Local End: ${endDate.toLocaleString()}`)
+    console.log(`  UTC Start: ${startUTC}`)
+    console.log(`  UTC End: ${endUTC}`)
+    
+    return {
+      startDate: startUTC,
+      endDate: endUTC
+    }
+  }
+
   const loadVisitors = async () => {
     try {
       setError(null)
-      // PERFORMANCE FIX: Reduced limit from 10,000 to 100. 
-      // Fetching 10k records in one go was the main reason for the extreme slowness.
-      const response = await visitorsAPI.getActivityView(projectId, 1000)
+      setLoading(true)
+      
+      console.log('VisitorActivity - Loading data with filter:', dateFilter)
+      
+      let response
+      if (dateFilter === 'all') {
+        // Load all data without date filtering
+        response = await visitorsAPI.getActivityView(projectId)
+      } else {
+        // Load data with date filtering
+        const { startDate, endDate } = getDateRange(dateFilter)
+        console.log('VisitorActivity - Using date range:', { startDate, endDate })
+        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      }
+      
       setVisitors(response.data || [])
+      console.log(`✅ Loaded ${response.data?.length || 0} visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor activity. Please try again.')
@@ -42,8 +108,17 @@ function VisitorActivity({ projectId }) {
     }
   }
 
+  const handleDateFilterChange = (newFilter) => {
+    console.log('VisitorActivity - Date filter changing to:', newFilter)
+    setDateFilter(newFilter)
+    setDisplayCount(10) // Reset display count when filter changes
+    setShowDateDropdown(false)
+    // Save filter to localStorage so it persists on page reload
+    localStorage.setItem(`visitor-activity-filter-${projectId}`, newFilter)
+  }
+
   const loadMore = () => {
-    setDisplayCount(prev => prev + 10) // Increased increment for better UX
+    setDisplayCount(prev => prev + 10)
   }
 
   const getCountryFlag = (country) => {
@@ -83,11 +158,102 @@ function VisitorActivity({ projectId }) {
     return date.toLocaleString('en-IN', options)
   }
 
+  // Date Filter Component
+  const DateFilterComponent = () => (
+    <div style={{ position: 'relative' }} data-date-dropdown>
+      <div
+        onClick={() => setShowDateDropdown(!showDateDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Yellow background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+      >
+        <Calendar size={16} />
+        <span>
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+        </span>
+        <ChevronDown size={16} style={{
+          transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s'
+        }} />
+      </div>
+
+      {/* Dropdown */}
+      {showDateDropdown && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '4px',
+          background: 'white',
+          border: '2px solid #e5e7eb',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          minWidth: '120px',
+          overflow: 'hidden'
+        }}>
+          {['1', '7', '30', 'all'].map((filter) => (
+            <div
+              key={filter}
+              onClick={() => handleDateFilterChange(filter)}
+              style={{
+                padding: '12px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: dateFilter === filter ? '#1e40af' : '#374151',
+                background: dateFilter === filter ? '#eff6ff' : 'white',
+                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = '#f9fafb'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = 'white'
+                }
+              }}
+            >
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   if (loading) {
     return (
       <>
         <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-          <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+            <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+            <DateFilterComponent />
+          </div>
+          
           {project && (
             <div style={{
               display: 'flex',
@@ -97,13 +263,11 @@ function VisitorActivity({ projectId }) {
               fontSize: '14px',
               fontWeight: '500'
             }}>
-
               <span>Project: {project.name}</span>
             </div>
           )}
         </div>
         <div className="content">
-          {/* Visitor List - Material-UI */}
           <Box className="chart-container" sx={{
             padding: 0,
             overflowX: 'hidden',
@@ -114,62 +278,41 @@ function VisitorActivity({ projectId }) {
                 padding: '12px 20px',
                 borderBottom: i < 8 ? '1px solid #e2e8f0' : 'none'
               }}>
-                {/* Two Column Layout */}
                 <Grid container spacing={2} sx={{ overflow: 'hidden', width: '100%' }}>
-
-                  {/* Left Column */}
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-
-                      {/* Page Views */}
                       <Box>
                         <Skeleton variant="text" width={70} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={40} height={12} animation="wave" />
                       </Box>
-
-                      {/* Visit Time */}
                       <Box>
                         <Skeleton variant="text" width={100} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={150} height={12} animation="wave" />
                       </Box>
-
-                      {/* Location */}
                       <Box>
                         <Skeleton variant="text" width={60} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={120} height={12} animation="wave" />
                       </Box>
-
-                      {/* Entry Page */}
                       <Box>
                         <Skeleton variant="text" width={80} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={200} height={12} animation="wave" />
                       </Box>
                     </Box>
                   </Grid>
-
-                  {/* Right Column */}
                   <Grid item xs={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-
-                      {/* Session Duration */}
                       <Box>
                         <Skeleton variant="text" width={90} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={60} height={12} animation="wave" />
                       </Box>
-
-                      {/* Device Info */}
                       <Box>
                         <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={140} height={12} animation="wave" />
                       </Box>
-
-                      {/* Browser */}
                       <Box>
                         <Skeleton variant="text" width={50} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={100} height={12} animation="wave" />
                       </Box>
-
-                      {/* Referrer */}
                       <Box>
                         <Skeleton variant="text" width={60} height={10} animation="wave" sx={{ marginBottom: 0.25 }} />
                         <Skeleton variant="text" width={180} height={12} animation="wave" />
@@ -188,8 +331,11 @@ function VisitorActivity({ projectId }) {
   if (error) {
     return (
       <>
-        <div className="header">
-          <h1>Visitor Activity</h1>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+            <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+            <DateFilterComponent />
+          </div>
         </div>
         <div className="content">
           <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -217,7 +363,11 @@ function VisitorActivity({ projectId }) {
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Visitor Activity</h1>
+          <DateFilterComponent />
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -227,14 +377,22 @@ function VisitorActivity({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
+            {!loading && visitors.length > 0 && (
+              <span style={{ color: '#10b981', marginLeft: '8px' }}>
+                • {visitors.length} visitors found
+                {dateFilter !== 'all' && (
+                  <span style={{ color: '#64748b', marginLeft: '4px' }}>
+                    (last {dateFilter} day{dateFilter !== '1' ? 's' : ''})
+                  </span>
+                )}
+              </span>
+            )}
           </div>
         )}
       </div>
 
       <div className="content">
-        {/* Visitor List */}
         <div className="chart-container" style={{
           padding: 0,
           overflowX: 'hidden',
@@ -253,7 +411,6 @@ function VisitorActivity({ projectId }) {
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  {/* Two Column Layout */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr',
@@ -261,7 +418,6 @@ function VisitorActivity({ projectId }) {
                     overflow: 'hidden',
                     width: '100%'
                   }}>
-
                     {/* Left Column */}
                     <div style={{
                       display: 'flex',
@@ -270,7 +426,6 @@ function VisitorActivity({ projectId }) {
                       minWidth: 0,
                       overflow: 'hidden'
                     }}>
-
                       {/* Page Views */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
@@ -323,7 +478,6 @@ function VisitorActivity({ projectId }) {
                           </span>
                         </div>
                       </div>
-
                     </div>
 
                     {/* Right Column */}
@@ -334,7 +488,6 @@ function VisitorActivity({ projectId }) {
                       minWidth: 0,
                       overflow: 'hidden'
                     }}>
-
                       {/* Total Sessions */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
@@ -428,7 +581,6 @@ function VisitorActivity({ projectId }) {
                           </div>
                         )}
                       </div>
-
                     </div>
                   </div>
                 </div>

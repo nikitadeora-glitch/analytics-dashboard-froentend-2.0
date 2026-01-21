@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, ChevronRight, X, Globe } from 'lucide-react'
+import { Filter, Download, ExternalLink, ChevronRight, X, Globe, Calendar, ChevronDown } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
 
 function VisitorPath({ projectId }) {
@@ -13,7 +13,15 @@ function VisitorPath({ projectId }) {
   const [selectedVisitorSessions, setSelectedVisitorSessions] = useState(null)
   const [loadingVisitorSessions, setLoadingVisitorSessions] = useState(false)
   const [project, setProject] = useState(null)
-  const [displayCount, setDisplayCount] = useState(10)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [dateFilter, setDateFilter] = useState(() => {
+    // Get saved filter from localStorage, default to '1' (1 day)
+    const savedFilter = localStorage.getItem(`visitor-path-filter-${projectId}`)
+    return savedFilter || '1'
+  })
+  const [showDateDropdown, setShowDateDropdown] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadVisitors()
@@ -23,7 +31,19 @@ function VisitorPath({ projectId }) {
     if (location.state?.selectedVisitorId) {
       loadVisitorSessions(location.state.selectedVisitorId)
     }
-  }, [projectId, location.state])
+  }, [projectId, location.state, dateFilter])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDateDropdown && !event.target.closest('[data-date-dropdown]')) {
+        setShowDateDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showDateDropdown])
 
   const loadProjectInfo = async () => {
     try {
@@ -34,14 +54,86 @@ function VisitorPath({ projectId }) {
     }
   }
 
-  const loadVisitors = async () => {
+  const getDateRange = (days) => {
+    // Get current date in local timezone
+    const today = new Date()
+    
+    // For 1 day: today 00:00:00 to today 23:59:59 (local time)
+    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (local time)  
+    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (local time)
+    
+    const endDate = new Date(today)
+    endDate.setHours(23, 59, 59, 999) // End of today (local time)
+    
+    const startDate = new Date(today)
+    if (days === '1') {
+      // For 1 day, start from today 00:00:00 (local time)
+      startDate.setHours(0, 0, 0, 0)
+    } else {
+      // For multiple days, go back (days-1) from today and start from 00:00:00
+      startDate.setDate(today.getDate() - (parseInt(days) - 1))
+      startDate.setHours(0, 0, 0, 0)
+    }
+    
+    // Convert to UTC for API
+    const startUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000)).toISOString()
+    const endUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000)).toISOString()
+    
+    console.log(`📅 Date Range for ${days} day(s):`)
+    console.log(`  Local Start: ${startDate.toLocaleString()}`)
+    console.log(`  Local End: ${endDate.toLocaleString()}`)
+    console.log(`  UTC Start: ${startUTC}`)
+    console.log(`  UTC End: ${endUTC}`)
+    
+    return {
+      startDate: startUTC,
+      endDate: endUTC
+    }
+  }
+
+  const loadVisitors = async (append = false) => {
     try {
-      const response = await visitorsAPI.getActivity(projectId, 50)
-      setVisitors(response.data)
+      setError(null)
+      if (!append) {
+        setLoading(true)
+        setVisitors([])
+      } else {
+        setIsLoadingMore(true)
+      }
+      
+      console.log('VisitorPath - Loading data with filter:', dateFilter)
+      
+      let response
+      const currentLimit = append ? visitors.length + 50 : 50
+      
+      if (dateFilter === 'all') {
+        // Load all data without date filtering but with limit
+        response = await visitorsAPI.getActivityView(projectId, currentLimit, null, null)
+      } else {
+        // Load data with date filtering and limit
+        const { startDate, endDate } = getDateRange(dateFilter)
+        console.log('VisitorPath - Using date range:', { startDate, endDate })
+        response = await visitorsAPI.getActivityView(projectId, currentLimit, startDate, endDate)
+      }
+      
+      const newVisitors = response.data || []
+      
+      if (append) {
+        setVisitors(newVisitors)
+      } else {
+        setVisitors(newVisitors)
+      }
+      
+      // Check if there might be more data
+      setHasMore(newVisitors.length === currentLimit)
+      
+      console.log(`✅ Loaded ${newVisitors.length} visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
     } catch (error) {
       console.error('Error loading visitors:', error)
+      setError('Failed to load visitor paths. Please try again.')
     } finally {
       setLoading(false)
+      setIsLoadingMore(false)
     }
   }
 
@@ -68,7 +160,15 @@ function VisitorPath({ projectId }) {
   }
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 4)
+    loadVisitors(true)
+  }
+
+  const handleDateFilterChange = (newFilter) => {
+    console.log('VisitorPath - Date filter changing to:', newFilter)
+    setDateFilter(newFilter)
+    setShowDateDropdown(false)
+    // Save filter to localStorage so it persists on page reload
+    localStorage.setItem(`visitor-path-filter-${projectId}`, newFilter)
   }
 
   const getCountryCode = (country) => {
@@ -154,10 +254,100 @@ function VisitorPath({ projectId }) {
     }) + ' (IST)'
   }
 
+  // Date Filter Component
+  const DateFilterComponent = () => (
+    <div style={{ position: 'relative' }} data-date-dropdown>
+      <div
+        onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Yellow background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+      >
+        <Calendar size={16} />
+        <span>
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+        </span>
+        <ChevronDown size={16} style={{
+          transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s'
+        }} />
+      </div>
+
+      {/* Dropdown */}
+      {showDateDropdown && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '4px',
+          background: 'white',
+          border: '2px solid #e5e7eb',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          minWidth: '120px',
+          overflow: 'hidden'
+        }}>
+          {['1', '7', '30', 'all'].map((filter) => (
+            <div
+              key={filter}
+              onClick={() => handleDateFilterChange(filter)}
+              style={{
+                padding: '12px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: dateFilter === filter ? '#1e40af' : '#374151',
+                background: dateFilter === filter ? '#eff6ff' : 'white',
+                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = '#f9fafb'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = 'white'
+                }
+              }}
+            >
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   if (loading) return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Visitor Paths</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Visitor Paths</h1>
+          <DateFilterComponent />
+        </div>
         {project && (
           <div style={{
             display: 'flex',
@@ -167,7 +357,6 @@ function VisitorPath({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -231,6 +420,38 @@ function VisitorPath({ projectId }) {
       `}</style>
     </>
   )
+
+  if (error) {
+    return (
+      <>
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+            <h1 style={{ margin: 0 }}>Visitor Paths</h1>
+            <DateFilterComponent />
+          </div>
+        </div>
+        <div className="content">
+          <div className="chart-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', color: '#ef4444', marginBottom: '10px' }}>{error}</div>
+            <button
+              onClick={loadVisitors}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   // If visitor sessions are selected, show them on the page (not in popup)
   if (selectedVisitorSessions) {
@@ -589,7 +810,11 @@ function VisitorPath({ projectId }) {
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Visitor Path</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Visitor Path</h1>
+          <DateFilterComponent />
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -601,11 +826,12 @@ function VisitorPath({ projectId }) {
           }}>
             <Globe size={14} />
             <span>Viewing: {project.name}</span>
+            
           </div>
         )}
       </div>
 
-      {/* Referrer Details Modal - Keep this as popup */}
+      {/* Referrer Details Modal */}
       {selectedReferrer && (
         <div
           onClick={closeModal}
@@ -656,7 +882,7 @@ function VisitorPath({ projectId }) {
                 </h2>
                 <div style={{ fontSize: '15px', color: '#64748b', display: 'flex', gap: '16px', alignItems: 'center' }}>
                   <span>
-                    Visitor ID: <span style={{ fontWeight: '600', color: '#3b82f6', fontFamily: 'monospace' }}>{selectedVisitorSessions.visitor_id}</span>
+                    Visitor ID: <span style={{ fontWeight: '600', color: '#3b82f6', fontFamily: 'monospace' }}>{selectedReferrer.visitor_id}</span>
                   </span>
                   <span style={{
                     padding: '4px 12px',
@@ -666,7 +892,7 @@ function VisitorPath({ projectId }) {
                     color: '#065f46',
                     fontSize: '13px'
                   }}>
-                    📊 {selectedVisitorSessions.total_sessions} {selectedVisitorSessions.total_sessions === 1 ? 'Session' : 'Sessions'}
+                    📊 {selectedReferrer.total_sessions || 1} {selectedReferrer.total_sessions === 1 ? 'Session' : 'Sessions'}
                   </span>
                 </div>
               </div>
@@ -703,7 +929,7 @@ function VisitorPath({ projectId }) {
 
             {/* Sessions Timeline */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-              {selectedVisitorSessions.sessions.map((session, sessionIdx) => (
+              {selectedReferrer.sessions?.map((session, sessionIdx) => (
                 <div
                   key={sessionIdx}
                   style={{
@@ -1008,201 +1234,6 @@ function VisitorPath({ projectId }) {
         </div>
       )}
 
-      {/* Referrer Details Modal */}
-      {selectedReferrer && (
-        <div
-          onClick={closeModal}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.2s ease'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '600px',
-              width: '90%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              animation: 'slideIn 0.3s ease'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>
-                  🔗 Came From Details
-                </h2>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>
-                  Session #{selectedReferrer.id}
-                </div>
-              </div>
-              <button
-                onClick={closeModal}
-                style={{
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '36px',
-                  height: '36px',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  flexShrink: 0,
-                  marginLeft: '16px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: '16px' }}>
-              {/* Referrer */}
-              <div style={{
-                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #93c5fd'
-              }}>
-                <div style={{ fontSize: '13px', color: '#1e40af', fontWeight: '600', marginBottom: '8px' }}>
-                  🌐 Referrer Source
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#1d4ed8', marginBottom: '8px' }}>
-                  {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct'
-                    ? formatUrl(selectedReferrer.referrer)
-                    : 'Direct Traffic'}
-                </div>
-                {selectedReferrer.referrer && selectedReferrer.referrer !== 'direct' && (
-                  <a
-                    href={selectedReferrer.referrer}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: '13px',
-                      color: '#3b82f6',
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    Visit Referrer <ExternalLink size={12} />
-                  </a>
-                )}
-              </div>
-
-              {/* Entry Page */}
-              <div style={{
-                background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #6ee7b7'
-              }}>
-                <div style={{ fontSize: '13px', color: '#065f46', fontWeight: '600', marginBottom: '8px' }}>
-                  🚪 Entry Page
-                </div>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: '#047857', marginBottom: '8px', wordBreak: 'break-all', overflowWrap: 'anywhere', lineHeight: '1.4' }}>
-                  {selectedReferrer.entry_page || 'Unknown'}
-                </div>
-                {selectedReferrer.entry_page && (
-                  <a
-                    href={selectedReferrer.entry_page}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: '13px',
-                      color: '#10b981',
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    Visit Page <ExternalLink size={12} />
-                  </a>
-                )}
-              </div>
-
-              {/* Additional Info */}
-              <div style={{
-                background: '#f8fafc',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #e2e8f0'
-              }}>
-                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '600', marginBottom: '12px' }}>
-                  📊 Session Information
-                </div>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Location:</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {getCountryFlag(selectedReferrer.country)} {selectedReferrer.city}, {selectedReferrer.country}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Device:</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {getDeviceIcon(selectedReferrer.device)} {selectedReferrer.device || 'Unknown'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Browser:</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {selectedReferrer.browser || 'Unknown'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>Visit Time:</span>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                      {formatDate(selectedReferrer.visited_at)} {formatTime(selectedReferrer.visited_at)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              marginTop: '24px',
-              padding: '16px',
-              background: '#eff6ff',
-              borderRadius: '8px',
-              fontSize: '13px',
-              color: '#1e40af',
-              border: '1px solid #bfdbfe'
-            }}>
-              <strong style={{ color: '#1e40af' }}>💡 Insight:</strong> {
-                selectedReferrer.referrer && selectedReferrer.referrer !== 'direct'
-                  ? 'This visitor came from an external source. Consider tracking this referrer for partnership opportunities.'
-                  : 'This visitor came directly to your site (typed URL, bookmark, or no referrer data).'
-              }
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="content" style={{ overflowX: 'hidden' }}>
         {/* Filters and Export */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -1233,7 +1264,7 @@ function VisitorPath({ projectId }) {
                 <div>LOCATION</div>
                 <div>PAGE DETAILS</div>
               </div>
-              {visitors.slice(0, displayCount).map((visitor, idx) => (
+              {visitors.map((visitor, idx) => (
                 <div
                   key={idx}
                   className="visitor-row"
@@ -1290,7 +1321,13 @@ function VisitorPath({ projectId }) {
                   {/* PAGE DETAILS */}
                   <div className="visitor-col" data-label="PAGE DETAILS" style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown Domain'}
+                      {visitor.entry_page ? (() => {
+                        try {
+                          return new URL(visitor.entry_page).hostname
+                        } catch {
+                          return 'Unknown Domain'
+                        }
+                      })() : 'Unknown Domain'}
                     </div>
                     <div style={{ fontSize: '11px', color: '#10b981', marginBottom: '6px' }}>
                       {visitor.referrer && visitor.referrer !== 'direct' ? '(Referring link)' : '(No referring link)'}
@@ -1319,7 +1356,7 @@ function VisitorPath({ projectId }) {
               ))}
 
               {/* Load More Button */}
-              {displayCount < visitors.length && (
+              {hasMore && visitors.length > 0 && (
                 <div style={{
                   padding: '20px',
                   textAlign: 'center',
@@ -1327,21 +1364,27 @@ function VisitorPath({ projectId }) {
                 }}>
                   <button
                     onClick={loadMore}
+                    disabled={isLoadingMore}
                     style={{
                       padding: '10px 24px',
-                      backgroundColor: '#3b82f6',
+                      backgroundColor: isLoadingMore ? '#94a3b8' : '#3b82f6',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: 'pointer',
+                      cursor: isLoadingMore ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      opacity: isLoadingMore ? 0.7 : 1
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                    onMouseEnter={(e) => {
+                      if (!isLoadingMore) e.currentTarget.style.backgroundColor = '#2563eb'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLoadingMore) e.currentTarget.style.backgroundColor = '#3b82f6'
+                    }}
                   >
-                    Load More ({visitors.length - displayCount} remaining)
+                    {isLoadingMore ? 'Loading...' : `Load More Visitors`}
                   </button>
                 </div>
               )}

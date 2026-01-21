@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
-import { Eye, ChevronDown, Globe } from 'lucide-react'
+import api from '../../api/api'
+import { Eye, ChevronDown, Globe, Calendar } from 'lucide-react'
 
 function PagesView({ projectId }) {
   const [allVisitors, setAllVisitors] = useState([])
@@ -10,17 +11,66 @@ function PagesView({ projectId }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [project, setProject] = useState(null)
   const [hasMore, setHasMore] = useState(false)
+  const [period, setPeriod] = useState(() => {
+    const savedPeriod = localStorage.getItem(`pagesview-period-${projectId}`)
+    return savedPeriod || '1'  // Changed from '30' to '1'
+  })
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
   useEffect(() => {
-    console.log('🎯 PagesView useEffect - projectId:', projectId)
+    console.log(' PagesView useEffect - projectId:', projectId, 'period:', period)
     if (projectId) {
       loadVisitors()
       loadProjectInfo()
     } else {
-      console.log('❌ No projectId provided')
+      console.log(' No projectId provided')
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, period])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPeriodDropdown && !event.target.closest('[data-period-dropdown]')) {
+        setShowPeriodDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPeriodDropdown])
+
+  const getDateRange = (days) => {
+    // Get current date in IST
+    const nowIST = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    )
+    
+    // For end date, use today (current date)
+    const endDate = new Date(nowIST)
+    
+    // For start date, go back by (days - 1) to include today
+    // Example: 7 days = today + last 6 days = 7 total days
+    const startDate = new Date(nowIST)
+    
+    // Fix: Use days-1 for proper calculation
+    const daysToSubtract = parseInt(days) - 1
+    startDate.setDate(endDate.getDate() - daysToSubtract)
+    
+    console.log(`📅 PagesView Date Range Calculation for ${days} days:`)
+    console.log(`  Days to subtract: ${daysToSubtract}`)
+    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
+    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
+    console.log(`  Total days: ${Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}`)
+    
+    const format = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return {
+      startDate: format(startDate),
+      endDate: format(endDate)
+    }
+  }
 
   const loadProjectInfo = async () => {
     try {
@@ -33,33 +83,64 @@ function PagesView({ projectId }) {
 
   const loadVisitors = async () => {
     try {
-      console.log('🔄 Loading visitors for project:', projectId)
-      const response = await visitorsAPI.getActivity(projectId, 100)
-      console.log('✅ API Response:', response.data)
-      console.log('📊 Data length:', response.data?.length)
+      console.log('🔄 PagesView - Loading visitors for project:', projectId)
+      const { startDate, endDate } = getDateRange(period)
+      console.log('📅 PagesView - Using date range:', { startDate, endDate, period })
+      
+      // First, let's check what data exists for debugging
+      try {
+        const debugResponse = await api.get(`/visitors/${projectId}/debug-data`)
+        console.log('🔍 Debug data:', debugResponse.data)
+      } catch (debugError) {
+        console.log('🔍 Debug endpoint not available:', debugError.message)
+      }
+      
+      // Use getActivityView API with date parameters - no limit to get all data in range
+      const response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      console.log('✅ PagesView - API Response received:')
+      console.log('  Response data:', response.data)
+      console.log('  Data type:', typeof response.data)
+      console.log('  Is array:', Array.isArray(response.data))
+      console.log('  Data length:', response.data?.length)
 
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        console.log('✅ PagesView - Setting visitor data:', response.data.length, 'visitors')
         setAllVisitors(response.data)
         // Initially show first 10 items
         const initialChunk = response.data.slice(0, 10)
         setDisplayedVisitors(initialChunk)
         setCurrentIndex(10)
         setHasMore(response.data.length > 10)
-        console.log('✅ Visitors data loaded successfully')
+        console.log('✅ PagesView - Visitors data loaded successfully')
       } else {
-        console.log('⚠️ No visitors data received')
+        console.log('⚠️ PagesView - No visitors data received')
+        console.log('  Response data:', response.data)
+        console.log('  Response status:', response.status)
         setAllVisitors([])
         setDisplayedVisitors([])
         setHasMore(false)
       }
     } catch (error) {
-      console.error('❌ Error loading visitors:', error)
+      console.error('❌ PagesView - Error loading visitors:', error)
+      console.error('  Error response:', error.response?.data)
+      console.error('  Error status:', error.response?.status)
       setAllVisitors([])
       setDisplayedVisitors([])
       setHasMore(false)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    console.log('📅 PagesView - Period changing from:', period, 'to:', newPeriod)
+    setPeriod(newPeriod)
+    localStorage.setItem(`pagesview-period-${projectId}`, newPeriod)
+    setShowPeriodDropdown(false)
+    
+    // Log the new date range for debugging
+    const { startDate, endDate } = getDateRange(newPeriod)
+    console.log('📅 PagesView - New date range:', { startDate, endDate, period: newPeriod })
   }
 
   const loadMore = () => {
@@ -124,7 +205,12 @@ function PagesView({ projectId }) {
   if (loading) return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Pages View</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Pages View</h1>
+          
+        </div>
+        
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -208,7 +294,95 @@ function PagesView({ projectId }) {
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Pages View</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Pages View</h1>
+          
+          {/* Date Filter - Yellow Highlighted Area */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Yellow background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} style={{
+                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = 'white'
+                      }
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -218,7 +392,6 @@ function PagesView({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -390,7 +563,14 @@ function PagesView({ projectId }) {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
-                        {visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'}
+                        {(() => {
+                        try {
+                          return visitor.entry_page ? new URL(visitor.entry_page).hostname : 'Unknown'
+                        } catch (error) {
+                          console.warn('Invalid URL:', visitor.entry_page)
+                          return 'Unknown'
+                        }
+                      })()}
                       </div>
                       <div style={{
                         fontSize: '10px',

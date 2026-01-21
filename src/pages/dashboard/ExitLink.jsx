@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { trafficAPI, pagesAPI, projectsAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, LogOut, Search, Globe } from 'lucide-react'
+import { Filter, Download, ExternalLink, LogOut, Search, Globe, Calendar, ChevronDown } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
 
 function ExitLink({ projectId }) {
@@ -10,11 +10,66 @@ function ExitLink({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [selectedExit, setSelectedExit] = useState(null)
   const [project, setProject] = useState(null)
+  const [period, setPeriod] = useState(() => {
+    const savedPeriod = localStorage.getItem(`exitlink-period-${projectId}`)
+    return savedPeriod || '1'  // Changed from '30' to '1'
+  })
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
   useEffect(() => {
-    loadExitData()
-    loadProjectInfo()
-  }, [projectId])
+    console.log(' ExitLink useEffect - projectId:', projectId, 'period:', period)
+    if (projectId) {
+      loadExitData()
+      loadProjectInfo()
+    } else {
+      console.log(' No projectId provided')
+      setLoading(false)
+    }
+  }, [projectId, period])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPeriodDropdown && !event.target.closest('[data-period-dropdown]')) {
+        setShowPeriodDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPeriodDropdown])
+
+  const getDateRange = (days) => {
+    // Get current date in IST
+    const nowIST = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    )
+    
+    // For end date, use today (current date)
+    const endDate = new Date(nowIST)
+    
+    // For start date, go back by (days - 1) to include today
+    // Example: 7 days = today + last 6 days = 7 total days
+    const startDate = new Date(nowIST)
+    
+    // Fix: Use days-1 for proper calculation
+    const daysToSubtract = parseInt(days) - 1
+    startDate.setDate(endDate.getDate() - daysToSubtract)
+    
+    console.log(`📅 ExitLink Date Range Calculation for ${days} days:`)
+    console.log(`  Days to subtract: ${daysToSubtract}`)
+    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
+    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
+    console.log(`  Total days: ${Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}`)
+    
+    const format = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return {
+      startDate: format(startDate),
+      endDate: format(endDate)
+    }
+  }
 
   const loadProjectInfo = async () => {
     try {
@@ -27,16 +82,22 @@ function ExitLink({ projectId }) {
 
   const loadExitData = async () => {
     try {
-      // Get external exit links (clicks to external URLs)
-      const linksResponse = await trafficAPI.getExitLinks(projectId)
+      console.log('🔄 ExitLink - Loading exit data for project:', projectId)
+      const { startDate, endDate } = getDateRange(period)
+      console.log('📅 ExitLink - Using date range:', { startDate, endDate, period })
+      
+      // Get external exit links (clicks to external URLs) with date filtering
+      const linksResponse = await trafficAPI.getExitLinks(projectId, startDate, endDate)
+      console.log('✅ ExitLink - External links response:', linksResponse.data)
       // Sort by date descending (newest first)
       const sortedLinks = linksResponse.data.sort((a, b) =>
         new Date(b.clicked_at) - new Date(a.clicked_at)
       )
       setExitLinks(sortedLinks)
 
-      // Get internal exit pages (pages where users left the site)
-      const pagesResponse = await pagesAPI.getExitPages(projectId)
+      // Get internal exit pages (pages where users left the site) with date filtering
+      const pagesResponse = await pagesAPI.getExitPages(projectId, null, startDate, endDate)
+      console.log('✅ ExitLink - Exit pages response:', pagesResponse.data)
       // Sort by date descending (newest first)
       const sortedPages = pagesResponse.data.sort((a, b) => {
         const dateA = a.visits && a.visits[0] ? new Date(a.visits[0].visited_at) : new Date(0)
@@ -44,11 +105,26 @@ function ExitLink({ projectId }) {
         return dateB - dateA
       })
       setExitPages(sortedPages)
+      
+      console.log('✅ ExitLink - Exit data loaded successfully')
     } catch (error) {
-      console.error('Error loading exit data:', error)
+      console.error('❌ ExitLink - Error loading exit data:', error)
+      console.error('  Error response:', error.response?.data)
+      console.error('  Error status:', error.response?.status)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    console.log('📅 ExitLink - Period changing from:', period, 'to:', newPeriod)
+    setPeriod(newPeriod)
+    localStorage.setItem(`exitlink-period-${projectId}`, newPeriod)
+    setShowPeriodDropdown(false)
+    
+    // Log the new date range for debugging
+    const { startDate, endDate } = getDateRange(newPeriod)
+    console.log('📅 ExitLink - New date range:', { startDate, endDate, period: newPeriod })
   }
 
   const handleExitClick = (e, exit) => {
@@ -100,7 +176,11 @@ function ExitLink({ projectId }) {
   if (loading) return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Exit Links</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Exit Links</h1>
+         
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -134,13 +214,112 @@ function ExitLink({ projectId }) {
           ))}
         </Box>
       </div>
+      
+      <style>{`
+        @keyframes skeleton-loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   )
 
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Exit Link</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Exit Links</h1>
+          
+          {/* Date Filter - Yellow Highlighted Area */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Yellow background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} style={{
+                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = 'white'
+                      }
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -150,7 +329,6 @@ function ExitLink({ projectId }) {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}

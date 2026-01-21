@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pagesAPI, projectsAPI } from '../../api/api'
-import { Globe } from 'lucide-react'
+import { Calendar, ChevronDown } from 'lucide-react'
 import PagesSessionView from './PagesSessionView'
 import VisitorPathSimple from './VisitorPathSimple'
 import { Skeleton, Box, Tabs, Tab } from '@mui/material'
@@ -19,12 +19,17 @@ function Pages({ projectId }) {
   const [selectedVisitorId, setSelectedVisitorId] = useState(null)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [selectedPageSessions, setSelectedPageSessions] = useState(null)
+  const [period, setPeriod] = useState(() => {
+    const savedPeriod = localStorage.getItem(`pages-period-${projectId}`)
+    return savedPeriod || '1'  // Default to 1 day instead of 30
+  })
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
-  // Pagination states
+  // Pagination states - simplified
   const [pagination, setPagination] = useState({
-    entry: { limit: 10, hasMore: true, loadCount: 0 },
-    top: { limit: 10, hasMore: true, loadCount: 0 },
-    exit: { limit: 10, hasMore: true, loadCount: 0 }
+    entry: { offset: 0, hasMore: true },
+    top: { offset: 0, hasMore: true },
+    exit: { offset: 0, hasMore: true }
   })
 
   // Function to sanitize and clean text data - preserves foreign languages but removes problematic characters
@@ -72,7 +77,19 @@ const getFinalEnglishTitle = (title, page) => {
   useEffect(() => {
     loadInitialData()
     loadProjectInfo()
-  }, [projectId])
+  }, [projectId, period])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPeriodDropdown && !event.target.closest('[data-period-dropdown]')) {
+        setShowPeriodDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPeriodDropdown])
 
   const loadProjectInfo = async () => {
     try {
@@ -83,15 +100,60 @@ const getFinalEnglishTitle = (title, page) => {
     }
   }
 
+  const getDateRange = (days) => {
+    // Get current date in IST
+    const nowIST = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    )
+    
+    // For end date, use today (current date)
+    const endDate = new Date(nowIST)
+    
+    // For start date, go back by (days - 1) to include today
+    // Example: 7 days = today + last 6 days = 7 total days
+    const startDate = new Date(nowIST)
+    
+    // Fix: Use days-1 for proper calculation
+    const daysToSubtract = parseInt(days) - 1
+    startDate.setDate(endDate.getDate() - daysToSubtract)
+    
+    console.log(`📅 Date Range Calculation for ${days} days:`)
+    console.log(`  Days to subtract: ${daysToSubtract}`)
+    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
+    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
+    console.log(`  Total days: ${Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}`)
+    
+    const format = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return {
+      startDate: format(startDate),
+      endDate: format(endDate)
+    }
+  }
+
+
+
   const loadInitialData = async () => {
     setLoading(true)
     try {
-      // Use the new single API call for the Pages route
-      const response = await pagesAPI.getPagesOverview(projectId, 10)
+      console.log('Pages - Loading initial data with period:', period)
+      const { startDate, endDate } = getDateRange(period)
+      console.log('Pages - Using date range:', { startDate, endDate })
+      
+      // Load first chunk (10 items each) with offset 0
+      const [mostVisitedRes, entryPagesRes, exitPagesRes] = await Promise.all([
+        pagesAPI.getMostVisited(projectId, 10, startDate, endDate),
+        pagesAPI.getEntryPages(projectId, 10, startDate, endDate),
+        pagesAPI.getExitPages(projectId, 10, startDate, endDate)
+      ])
 
-      const { most_visited, entry_pages, exit_pages } = response.data
+      // Handle new response format with data wrapper
+      const most_visited = mostVisitedRes.data.data || mostVisitedRes.data
+      const entry_pages = entryPagesRes.data.data || entryPagesRes.data  
+      const exit_pages = exitPagesRes.data.data || exitPagesRes.data
 
-      console.log(' Pages Overview API Response:')
+      console.log('📊 Pages Initial Load:')
       console.log('  Most Visited:', most_visited.length)
       console.log('  Entry Pages:', entry_pages.length)
       console.log('  Exit Pages:', exit_pages.length)
@@ -100,11 +162,20 @@ const getFinalEnglishTitle = (title, page) => {
       setEntryPages(entry_pages)
       setExitPages(exit_pages)
 
-      // Update hasMore based on returned data
+      // Update pagination based on response
       setPagination({
-        entry: { limit: 10, hasMore: entry_pages.length === 10, loadCount: 0 },
-        top: { limit: 10, hasMore: most_visited.length === 10, loadCount: 0 },
-        exit: { limit: 10, hasMore: exit_pages.length === 10, loadCount: 0 }
+        entry: { 
+          offset: entry_pages.length, 
+          hasMore: entryPagesRes.data.has_more || false 
+        },
+        top: { 
+          offset: most_visited.length, 
+          hasMore: mostVisitedRes.data.has_more || false 
+        },
+        exit: { 
+          offset: exit_pages.length, 
+          hasMore: exitPagesRes.data.has_more || false 
+        }
       })
     } catch (error) {
       console.error('Error loading pages:', error)
@@ -121,43 +192,41 @@ const getFinalEnglishTitle = (title, page) => {
 
     setLoadingMore(true)
     try {
-      // Calculate increment: 3-4 items per load
-      const increment = currentPagination.loadCount % 2 === 0 ? 3 : 4
-      const newLimit = currentPagination.limit + increment
+      const { startDate, endDate } = getDateRange(period)
+      const currentOffset = currentPagination.offset
 
-      console.log(`📥 Loading more ${activeTab} pages: ${currentPagination.limit} → ${newLimit}`)
+      console.log(`📥 Loading more ${activeTab} pages from offset: ${currentOffset}`)
 
       let response
       if (activeTab === 'entry') {
-        response = await pagesAPI.getEntryPages(projectId, newLimit)
+        response = await pagesAPI.getEntryPages(projectId, 10, startDate, endDate)
       } else if (activeTab === 'top') {
-        response = await pagesAPI.getMostVisited(projectId, newLimit)
+        response = await pagesAPI.getMostVisited(projectId, 10, startDate, endDate)
       } else {
-        response = await pagesAPI.getExitPages(projectId, newLimit)
+        response = await pagesAPI.getExitPages(projectId, 10, startDate, endDate)
       }
 
-      const newData = Array.isArray(response.data) ? response.data : response
+      const newData = response.data.data || response.data
 
-      // Update the appropriate state
+      // Append new data to existing data
       if (activeTab === 'entry') {
-        setEntryPages(newData)
+        setEntryPages(prev => [...prev, ...newData])
       } else if (activeTab === 'top') {
-        setMostVisited(newData)
+        setMostVisited(prev => [...prev, ...newData])
       } else {
-        setExitPages(newData)
+        setExitPages(prev => [...prev, ...newData])
       }
 
       // Update pagination
       setPagination(prev => ({
         ...prev,
         [tabKey]: {
-          limit: newLimit,
-          hasMore: newData.length === newLimit,
-          loadCount: prev[tabKey].loadCount + 1
+          offset: currentOffset + newData.length,
+          hasMore: response.data.has_more || false
         }
       }))
 
-      console.log(`✅ Loaded ${newData.length} ${activeTab} pages`)
+      console.log(`✅ Loaded ${newData.length} more ${activeTab} pages`)
     } catch (error) {
       console.error('Error loading more pages:', error)
     } finally {
@@ -165,7 +234,28 @@ const getFinalEnglishTitle = (title, page) => {
     }
   }
 
-
+  const handlePeriodChange = (newPeriod) => {
+    console.log('📅 Pages - Period changing from:', period, 'to:', newPeriod)
+    setPeriod(newPeriod)
+    localStorage.setItem(`pages-period-${projectId}`, newPeriod)
+    setShowPeriodDropdown(false)
+    
+    // Reset pagination when period changes
+    setPagination({
+      entry: { offset: 0, hasMore: true },
+      top: { offset: 0, hasMore: true },
+      exit: { offset: 0, hasMore: true }
+    })
+    
+    // Clear existing data
+    setMostVisited([])
+    setEntryPages([])
+    setExitPages([])
+    
+    // Log the new date range for debugging
+    const { startDate, endDate } = getDateRange(newPeriod)
+    console.log('📅 Pages - New date range:', { startDate, endDate, period: newPeriod })
+  }
 
   if (loading) return (
     <>
@@ -262,12 +352,25 @@ const getFinalEnglishTitle = (title, page) => {
   const handleSessionsClick = async (e, page) => {
     e.stopPropagation()
 
-    // Show all sessions for this page with complete journey
+    console.log('🔍 Sessions clicked for page:', page)
+    console.log('📊 Page visits count:', page.visits?.length || 0)
+    console.log('📊 Current Pages.jsx period:', period)
+
+    // Pass the current period from Pages.jsx to PagesSessionView
+    const pageWithPeriod = {
+      ...page,
+      currentPeriod: period  // Pass current period
+    }
+
+    // Show all sessions for this page - pass ALL data from Pages.jsx
     if (page.visits && page.visits.length > 0) {
-      setSelectedPageSessions(page)
+      console.log('✅ Found visits data, opening PagesSessionView with period:', period)
+      setSelectedPageSessions(pageWithPeriod)
       setShowAllSessions(true)
     } else {
-      alert('No session data available for this page')
+      console.log('⚠️ No session data available for this page')
+      setSelectedPageSessions(pageWithPeriod)
+      setShowAllSessions(true)
     }
   }
 
@@ -349,7 +452,95 @@ const getFinalEnglishTitle = (title, page) => {
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <h1 style={{ margin: 0 }}>Pages</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <h1 style={{ margin: 0 }}>Pages</h1>
+          
+          {/* Date Filter - Yellow Highlighted Area */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#2563eb', // Yellow background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#ffffffff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} style={{
+                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = 'white'
+                      }
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -359,7 +550,6 @@ const getFinalEnglishTitle = (title, page) => {
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -664,33 +854,35 @@ const getFinalEnglishTitle = (title, page) => {
                             onClick={(e) => handleSessionsClick(e, page)}
                             style={{
                               textAlign: 'center',
-                              cursor: page.visits && page.visits.length > 0 ? 'pointer' : 'not-allowed',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              minWidth: '70px',
+                              cursor: 'pointer',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              minWidth: '80px',
                               userSelect: 'none',
-                              backgroundColor: page.visits && page.visits.length > 0 ? '#f0f9ff' : '#f8fafc',
-                              border: page.visits && page.visits.length > 0 ? '1px solid #3b82f6' : '1px solid #e2e8f0',
-                              transition: 'all 0.2s'
+                              backgroundColor: '#f0f9ff',
+                              border: '2px solid #3b82f6',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(59, 130, 246, 0.1)'
                             }}
                             onMouseEnter={(e) => {
-                              if (page.visits && page.visits.length > 0) {
-                                e.currentTarget.style.backgroundColor = '#dbeafe'
-                                e.currentTarget.style.transform = 'scale(1.05)'
-                              }
+                              e.currentTarget.style.backgroundColor = '#dbeafe'
+                              e.currentTarget.style.transform = 'scale(1.05)'
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.2)'
                             }}
                             onMouseLeave={(e) => {
-                              if (page.visits && page.visits.length > 0) {
-                                e.currentTarget.style.backgroundColor = '#f0f9ff'
-                                e.currentTarget.style.transform = 'scale(1)'
-                              }
+                              e.currentTarget.style.backgroundColor = '#f0f9ff'
+                              e.currentTarget.style.transform = 'scale(1)'
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.1)'
                             }}
                           >
-                            <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '1px' }}>
+                            <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '2px' }}>
                               {activeTab === 'entry' ? 'Sessions' : activeTab === 'top' ? 'Views' : 'Exits'}
                             </div>
                             <div style={{ fontSize: '16px', fontWeight: '700', color: '#3b82f6' }}>
                               {page.total_page_views || page.total_views || page.sessions || page.exits || 0}
+                            </div>
+                            <div style={{ fontSize: '8px', color: '#10b981', fontWeight: '600', marginTop: '1px' }}>
+                              Click to view
                             </div>
                           </div>
                           <div style={{ textAlign: 'center', minWidth: '70px' }}>

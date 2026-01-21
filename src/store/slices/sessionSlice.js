@@ -46,14 +46,78 @@ const processSessionJourney = (sessionData, visit) => {
   return result
 }
 
+// Optimized helper - uses visit data directly without heavy API calls
+const processSingleVisitorSessionOptimized = async (visit, projectId) => {
+  try {
+    console.log(`🔍 Processing visitor ${visit.visitor_id}, session ${visit.session_id}`)
+    
+    // Get session journey directly from the visitor sessions API
+    const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
+    const sessions = pathResponse.data?.sessions || []
+    
+    console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
+    
+    const sessionData = sessions.find(s => s.session_number === visit.session_id)
+    
+    if (sessionData) {
+      console.log(`✅ Found matching session data for ${visit.visitor_id}`)
+    } else {
+      console.log(`⚠️ No matching session found for ${visit.visitor_id}, session ${visit.session_id}`)
+    }
+
+    const processedJourney = processSessionJourney(sessionData, visit)
+
+    return {
+      // Use visit data directly (already contains country, city, device, etc.)
+      ...visit,
+      path: processedJourney,
+      entry_page: sessionData?.entry_page,
+      exit_page: sessionData?.exit_page,
+      total_time: sessionData?.session_duration || visit.time_spent || 0,
+      // Add session details
+      session_id: visit.session_id,
+      visitor_id: visit.visitor_id,
+      visited_at: visit.visited_at,
+      country: visit.country,
+      city: visit.city,
+      device: visit.device,
+      browser: visit.browser,
+      os: visit.os,
+      ip_address: visit.ip_address,
+      referrer: sessionData?.referrer
+    }
+  } catch (error) {
+    console.warn(`Could not fetch details for visitor ${visit.visitor_id}:`, error)
+    return { 
+      ...visit, 
+      path: [],
+      session_id: visit.session_id,
+      visitor_id: visit.visitor_id
+    }
+  }
+}
+
 // Internal helper to process a single visitor's session details
 const processSingleVisitorSession = async (visit, projectId, allVisitorsData) => {
   const visitorData = allVisitorsData?.find(v => v.visitor_id === visit.visitor_id) || {}
 
   try {
+    console.log(`🔍 Processing visitor ${visit.visitor_id}, session ${visit.session_id}`)
+    
     const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
     const sessions = pathResponse.data?.sessions || []
+    
+    console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
+    console.log(`🔍 Looking for session_number: ${visit.session_id}`)
+    
     const sessionData = sessions.find(s => s.session_number === visit.session_id)
+    
+    if (sessionData) {
+      console.log(`✅ Found matching session data for ${visit.visitor_id}`)
+    } else {
+      console.log(`⚠️ No matching session found for ${visit.visitor_id}, session ${visit.session_id}`)
+      console.log('Available sessions:', sessions.map(s => s.session_number))
+    }
 
     const processedJourney = processSessionJourney(sessionData, visit)
 
@@ -74,32 +138,52 @@ const processSingleVisitorSession = async (visit, projectId, allVisitorsData) =>
 // Async thunk for fetching initial session details
 export const fetchSessionDetails = createAsyncThunk(
   'session/fetchSessionDetails',
-  async ({ projectId, selectedPageSessions, limit = 10 }, { rejectWithValue }) => {
+  async ({ projectId, selectedPageSessions, limit = 20 }, { rejectWithValue }) => {
     try {
+      console.log('🔍 SessionSlice - fetchSessionDetails called with:', {
+        projectId,
+        selectedPageSessions: {
+          title: selectedPageSessions?.title,
+          page: selectedPageSessions?.page,
+          url: selectedPageSessions?.url,
+          visitsCount: selectedPageSessions?.visits?.length
+        },
+        limit
+      })
+
       if (!selectedPageSessions?.visits?.length) {
+        console.log('⚠️ SessionSlice - No visits data found')
         return { sessions: [], hasMore: false, currentLimit: limit, totalSessions: 0, visitors: [] }
       }
 
-      // Fetch all visitors - we'll store this to reuse during pagination
-      const visitorsResponse = await visitorsAPI.getActivity(projectId, 1000)
-      const allVisitors = visitorsResponse.data || []
+      // Use ALL visits data from Pages.jsx - already date filtered by backend
+      const allVisits = selectedPageSessions.visits
+      console.log('📊 SessionSlice - Using ALL visit data from Pages.jsx (already date filtered)')
+      console.log(`📊 Total visits available: ${allVisits.length}`)
 
-      const visitsToProcess = selectedPageSessions.visits.slice(0, limit)
+      // Process only the first chunk (limit) of visits
+      const visitsToProcess = allVisits.slice(0, limit)
+      console.log(`📥 SessionSlice - Processing ${visitsToProcess.length} out of ${allVisits.length} total visits`)
+      
       const detailsPromises = visitsToProcess.map(visit =>
-        processSingleVisitorSession(visit, projectId, allVisitors)
+        processSingleVisitorSessionOptimized(visit, projectId)
       )
 
       const results = await Promise.allSettled(detailsPromises)
       const details = results.filter(r => r.status === 'fulfilled').map(r => r.value)
 
+      console.log(`✅ SessionSlice - Processed ${details.length} session details`)
+      console.log(`📊 Has more data: ${allVisits.length > limit} (${allVisits.length} total vs ${limit} loaded)`)
+
       return {
         sessions: details,
-        hasMore: selectedPageSessions.visits.length > limit,
+        hasMore: allVisits.length > limit,  // Show "Load More" if more data available
         currentLimit: limit,
-        totalSessions: selectedPageSessions.visits.length,
-        visitors: allVisitors // Pass this to state for caching
+        totalSessions: allVisits.length,    // Total available sessions (already filtered)
+        visitors: []
       }
     } catch (error) {
+      console.error('❌ SessionSlice - Error in fetchSessionDetails:', error)
       return rejectWithValue(error.message)
     }
   }
@@ -110,37 +194,41 @@ export const fetchMoreSessionDetails = createAsyncThunk(
   'session/fetchMoreSessionDetails',
   async ({ projectId, selectedPageSessions, limit }, { rejectWithValue, getState }) => {
     try {
-      const { currentLimit, cachedVisitors } = getState().session
+      const { currentLimit } = getState().session
 
       if (!selectedPageSessions?.visits?.length) {
         throw new Error('No visits data available')
       }
 
-      const newVisits = selectedPageSessions.visits.slice(currentLimit, limit)
+      // Use ALL visits data from Pages.jsx - already date filtered by backend
+      const allVisits = selectedPageSessions.visits
+      console.log(`📊 Total visits available: ${allVisits.length}`)
+
+      const newVisits = allVisits.slice(currentLimit, limit)
+      
       if (newVisits.length === 0) {
-        return { newSessions: [], hasMore: false, currentLimit, totalSessions: selectedPageSessions.visits.length }
+        console.log('📊 No more visits to load')
+        return { newSessions: [], hasMore: false, currentLimit, totalSessions: allVisits.length }
       }
 
-      // Optimization: Use cached visitors if available, otherwise fetch
-      let allVisitors = cachedVisitors
-      if (!allVisitors || allVisitors.length === 0) {
-        const visitorsResponse = await visitorsAPI.getActivity(projectId, 1000)
-        allVisitors = visitorsResponse.data || []
-      }
+      console.log(`📥 Loading more: ${newVisits.length} visits from ${currentLimit} to ${limit}`)
 
+      // Use optimized processing - no heavy API calls
       const detailsPromises = newVisits.map(visit =>
-        processSingleVisitorSession(visit, projectId, allVisitors)
+        processSingleVisitorSessionOptimized(visit, projectId)
       )
 
       const results = await Promise.allSettled(detailsPromises)
       const newSessions = results.filter(r => r.status === 'fulfilled').map(r => r.value)
 
+      console.log(`✅ Loaded ${newSessions.length} more sessions`)
+
       return {
         newSessions,
-        hasMore: selectedPageSessions.visits.length > limit,
+        hasMore: allVisits.length > limit,
         currentLimit: limit,
-        totalSessions: selectedPageSessions.visits.length,
-        visitors: allVisitors
+        totalSessions: allVisits.length,
+        visitors: []
       }
     } catch (error) {
       return rejectWithValue(error.message)
@@ -168,9 +256,9 @@ const sessionSlice = createSlice({
     loadingMore: false,
     error: null,
     hasMore: true,
-    currentLimit: 10,
+    currentLimit: 20, // Start with 20 sessions chunk
     totalSessions: 0,
-    cachedVisitors: [], // Store visitors list for pagination
+    cachedVisitors: [],
     lastFetch: null,
   },
   reducers: {
@@ -178,7 +266,7 @@ const sessionSlice = createSlice({
       state.sessionDetails = []
       state.error = null
       state.hasMore = true
-      state.currentLimit = 10
+      state.currentLimit = 20 // Reset to 20 sessions chunk
       state.totalSessions = 0
       state.loadingMore = false
     },

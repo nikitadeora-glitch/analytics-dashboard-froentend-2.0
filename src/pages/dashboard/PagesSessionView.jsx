@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchSessionDetails, clearSessionDetails, fetchMoreSessionDetails } from '../../store/slices/sessionSlice'
 import { Skeleton, Box } from '@mui/material'
-import { Globe } from 'lucide-react'
+import { Calendar, ChevronDown } from 'lucide-react'
 
 function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, project }) {
   const dispatch = useDispatch()
@@ -10,28 +10,107 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
 
   // Local state for pagination
   const [loadCount, setLoadCount] = useState(0)
+  
+  // Date filter state - sync with Pages.jsx initially
+  const [period, setPeriod] = useState(() => {
+    // First check if period is passed from Pages.jsx
+    if (selectedPageSessions?.currentPeriod) {
+      return selectedPageSessions.currentPeriod
+    }
+    // Then check localStorage
+    const savedPeriod = localStorage.getItem(`pages-session-period-${projectId}`)
+    return savedPeriod || '1'  // Default to 1 day
+  })
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
+
+  // Sync period with Pages.jsx when selectedPageSessions changes
+  useEffect(() => {
+    if (selectedPageSessions?.currentPeriod && selectedPageSessions.currentPeriod !== period) {
+      console.log('📅 Syncing period from Pages.jsx:', selectedPageSessions.currentPeriod)
+      setPeriod(selectedPageSessions.currentPeriod)
+    }
+  }, [selectedPageSessions?.currentPeriod])
 
   useEffect(() => {
     if (selectedPageSessions) {
-      // Reset load count and fetch initial data (3 sessions for fastest loading)
+      // Reset load count and fetch data - no date filtering needed (already filtered by backend)
       setLoadCount(0)
-      dispatch(fetchSessionDetails({ projectId, selectedPageSessions, limit: 3 }))
+      
+      console.log('📅 PagesSessionView - Loading data with period:', period)
+      console.log('📊 Total visits from Pages.jsx:', selectedPageSessions.visits?.length)
+      
+      dispatch(fetchSessionDetails({ 
+        projectId, 
+        selectedPageSessions, 
+        limit: 20  // Start with 20 sessions chunk
+      }))
     }
 
     // Cleanup on unmount
     return () => {
       dispatch(clearSessionDetails())
     }
-  }, [dispatch, projectId, selectedPageSessions])
+  }, [dispatch, projectId, selectedPageSessions, period])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPeriodDropdown && !event.target.closest('[data-period-dropdown]')) {
+        setShowPeriodDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showPeriodDropdown])
+
+  // Date range function - same as Pages.jsx
+  const getDateRange = (days) => {
+    // Get current date in IST
+    const nowIST = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    )
+    
+    // For end date, use today (current date)
+    const endDate = new Date(nowIST)
+    
+    // For start date, go back by (days - 1) to include today
+    const startDate = new Date(nowIST)
+    const daysToSubtract = parseInt(days) - 1
+    startDate.setDate(endDate.getDate() - daysToSubtract)
+    
+    console.log(`📅 PagesSessionView Date Range for ${days} days:`)
+    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
+    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
+    
+    const format = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    return {
+      startDate: format(startDate),
+      endDate: format(endDate)
+    }
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    console.log('📅 PagesSessionView - Period changing from:', period, 'to:', newPeriod)
+    setPeriod(newPeriod)
+    localStorage.setItem(`pages-session-period-${projectId}`, newPeriod)
+    setShowPeriodDropdown(false)
+    
+    // Note: When period changes, we need fresh data from backend
+    // This will trigger useEffect to reload data
+    console.log('📅 PagesSessionView - Period changed, will reload data via useEffect')
+  }
 
   const handleLoadMore = () => {
     if (loadingMore || !hasMore) return
 
-    // Calculate increment: 3-4 items per load
-    const increment = loadCount % 2 === 0 ? 3 : 4
-    const newLimit = currentLimit + increment
+    // Load 20 more sessions at a time (chunked loading)
+    const newLimit = currentLimit + 20
 
     console.log(`📥 Loading more sessions: ${currentLimit} → ${newLimit}`)
+    console.log(`📊 Total available sessions: ${selectedPageSessions?.visits?.length}`)
 
     dispatch(fetchMoreSessionDetails({
       projectId,
@@ -124,27 +203,93 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
     <>
       {/* Header */}
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
-          <button
-            onClick={onBack}
-            style={{
-              padding: '8px 16px',
-              background: 'white',
-              border: '1px solid #e2e8f0',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#010812ff',
-              transition: 'all 0.2s',
-              marginTop: '8px'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-          >
-            ← Back
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'} Sessions</h1>
+            <button
+              onClick={onBack}
+              style={{
+                padding: '8px 16px',
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#010812ff',
+                transition: 'all 0.2s',
+                marginTop: '8px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+            >
+              ← Back to Pages
+            </button>
+          </div>
+          
+          {/* Date Filter - Same as Pages.jsx */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#2563eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#ffffffff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -154,7 +299,6 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -281,29 +425,116 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
   return (
     <>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'}</h1>
-          <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
-
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{pageType === 'entry' ? 'Entry Page' : pageType === 'top' ? 'Top Page' : 'Exit Page'} Sessions</h1>
+            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: '12px' }}>
+              {selectedPageSessions?.title || selectedPageSessions?.page || selectedPageSessions?.url}
+            </div>
+            <button
+              onClick={onBack}
+              style={{
+                padding: '8px 16px',
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#010812ff',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+            >
+              ← Back to Pages
+            </button>
           </div>
-          <button
-            onClick={onBack}
-            style={{
-              padding: '8px 16px',
-              background: 'white',
-              border: '1px solid #e2e8f0',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#010812ff',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-          >
-            ← Back
-          </button>
+          
+          {/* Date Filter - Same as Pages.jsx */}
+          <div style={{ position: 'relative' }} data-period-dropdown>
+            <div
+              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#2563eb',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#ffffffff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+            >
+              <Calendar size={16} />
+              <span>
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+              </span>
+              <ChevronDown size={16} style={{
+                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }} />
+            </div>
+
+            {/* Dropdown */}
+            {showPeriodDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000,
+                minWidth: '120px',
+                overflow: 'hidden'
+              }}>
+                {['1', '7', '30'].map((p) => (
+                  <div
+                    key={p}
+                    onClick={() => handlePeriodChange(p)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: period === p ? '#1e40af' : '#374151',
+                      background: period === p ? '#eff6ff' : 'white',
+                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (period !== p) {
+                        e.currentTarget.style.background = 'white'
+                      }
+                    }}
+                  >
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+        
         {project && (
           <div style={{
             display: 'flex',
@@ -313,7 +544,6 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
             fontSize: '14px',
             fontWeight: '500'
           }}>
-
             <span>Project: {project.name}</span>
           </div>
         )}
@@ -486,7 +716,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                       <span style={{ fontSize: '14px' }}>🌐</span>
                     </div>
                     <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e293b', marginBottom: '2px' }}>
-                      {session.os || 'Unknown OS'}, {session.browser || 'Unknown'} {session.browser_version || ''}
+                      {session.os || 'Unknown OS'}, {session.browser || 'Unknown Browser'}
                     </div>
                     <div style={{ fontSize: '9px', color: '#64748b' }}>
                       {session.screen_resolution || 'Unknown Resolution'}
@@ -716,7 +946,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                 color: '#64748b',
                 marginTop: '8px'
               }}>
-                Showing {sessionDetails.length} of {selectedPageSessions?.visits?.length || 0} sessions
+                Showing {sessionDetails.length} of {selectedPageSessions?.visits?.length || 0} total sessions
               </div>
             </div>
           )}
