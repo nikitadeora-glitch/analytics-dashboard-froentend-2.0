@@ -525,7 +525,7 @@ function ExitLink({ projectId }) {
             <button
               onClick={() => setActiveTab('external')}
               style={{
-                padding: '16px 24px',
+                padding: '8px 24px',
                 background: 'transparent',
                 border: 'none',
                 borderBottom: activeTab === 'external' ? '3px solid #dc2626' : '3px solid transparent',
@@ -538,22 +538,7 @@ function ExitLink({ projectId }) {
             >
               🔗 External Links ({exitLinks.length})
             </button>
-            <button
-              onClick={() => setActiveTab('pages')}
-              style={{
-                padding: '16px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'pages' ? '3px solid #dc2626' : '3px solid transparent',
-                color: activeTab === 'pages' ? '#dc2626' : '#64748b',
-                fontWeight: activeTab === 'pages' ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              📄 Exit Pages ({exitPages.length})
-            </button>
+            
           </div>
         </div>
 
@@ -564,7 +549,7 @@ function ExitLink({ projectId }) {
             <div className="exit-table-header" style={{
               display: 'grid',
               gridTemplateColumns: activeTab === 'external' ? '100px 120px 1fr 1fr' : '100px 120px 1fr 120px',
-              padding: '16px 24px',
+              padding: '8px 24px',
               background: '#f8fafc',
               borderBottom: '2px solid #e2e8f0',
               fontWeight: '600',
