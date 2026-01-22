@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pagesAPI, projectsAPI } from '../../api/api'
-import { Calendar, ChevronDown } from 'lucide-react'
+import { Calendar, ChevronDown, ExternalLink } from 'lucide-react'
 import PagesSessionView from './PagesSessionView'
 import VisitorPathSimple from './VisitorPathSimple'
 import { Skeleton, Box, Tabs, Tab } from '@mui/material'
@@ -21,7 +21,7 @@ function Pages({ projectId }) {
   const [selectedPageSessions, setSelectedPageSessions] = useState(null)
   const [period, setPeriod] = useState(() => {
     const savedPeriod = localStorage.getItem(`pages-period-${projectId}`)
-    return savedPeriod || '1'  // Default to 1 day instead of 30
+    return savedPeriod || '7'  // Default to 7 days
   })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
@@ -47,11 +47,82 @@ const slugToEnglishTitle = (value) => {
   if (!value) return 'Untitled Page'
 
   try {
-    const lastPart = value.split('/').filter(Boolean).pop() || ''
-    return lastPart
+    // Remove protocol and www if present
+    let cleanUrl = value.replace(/^https?:\/\//, '').replace(/^www\./, '')
+    
+    // Extract domain for brand name
+    const domainParts = cleanUrl.split('/')[0].split('.')
+    const brandName = domainParts.length > 1 ? 
+      domainParts[domainParts.length - 2].charAt(0).toUpperCase() + domainParts[domainParts.length - 2].slice(1) : 
+      'Store'
+    
+    // Get the path parts
+    const pathParts = cleanUrl.split('/').filter(Boolean).slice(1) // Remove domain part
+    
+    // Handle common e-commerce paths
+    if (pathParts.includes('collections')) {
+      const collectionIndex = pathParts.indexOf('collections')
+      if (pathParts[collectionIndex + 1]) {
+        const collectionName = pathParts[collectionIndex + 1]
+        const formattedName = collectionName
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, char => char.toUpperCase())
+          .trim()
+        
+        // Special cases for collections
+        if (collectionName === 'all' || collectionName === 'all-products') {
+          return `All Collections - ${brandName}`
+        }
+        
+        return `${formattedName} - ${brandName}`
+      } else {
+        return `All Collections - ${brandName}`
+      }
+    }
+    
+    if (pathParts.includes('products')) {
+      const productIndex = pathParts.indexOf('products')
+      if (pathParts[productIndex + 1]) {
+        const productName = pathParts[productIndex + 1]
+        const formattedName = productName
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, char => char.toUpperCase())
+          .trim()
+        return `${formattedName} | ${brandName}`
+      }
+    }
+    
+    if (pathParts.includes('categories')) {
+      const categoryIndex = pathParts.indexOf('categories')
+      if (pathParts[categoryIndex + 1]) {
+        const categoryName = pathParts[categoryIndex + 1]
+        const formattedName = categoryName
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, char => char.toUpperCase())
+          .trim()
+        return `${formattedName} | ${brandName}`
+      }
+    }
+    
+    // For home page
+    if (pathParts.length === 0) {
+      return `${brandName} - Home`
+    }
+    
+    // Get the last meaningful part
+    const lastPart = pathParts[pathParts.length - 1] || ''
+    
+    // Remove file extensions and query parameters
+    const cleanPart = lastPart.split('.')[0].split('?')[0].split('#')[0]
+    
+    if (!cleanPart) return `${brandName} - Page`
+    
+    const formattedName = cleanPart
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, char => char.toUpperCase())
       .trim()
+    
+    return `${formattedName} | ${brandName}`
   } catch {
     return 'Untitled Page'
   }
@@ -61,18 +132,37 @@ const slugToEnglishTitle = (value) => {
 const getFinalEnglishTitle = (title, page) => {
   const cleanTitle = sanitizeText(title)
 
-  // 1️⃣ If English exists in title → use it
-  const englishMatch = cleanTitle?.match(/[A-Za-z0-9][A-Za-z0-9\s\-:,.'&()]{2,}/g)
-  if (englishMatch && englishMatch.length > 0) {
-    return englishMatch.join(' ').trim()
+  // Check if this is a cart action page
+  if (page && page.includes('#cart-')) {
+    const cartMatch = page.match(/#cart-(add_to_cart|remove_from_cart)/)
+    if (cartMatch) {
+      const action = cartMatch[1] === 'add_to_cart' ? 'Add to Cart' : 'Remove from Cart'
+      // Extract product name from title if available
+      if (cleanTitle && cleanTitle.includes('Cart Action:')) {
+        return cleanTitle.replace('Cart Action: add_to_cart', 'Add to Cart')
+                        .replace('Cart Action: remove_from_cart', 'Remove from Cart')
+      }
+      return `🛒 ${action}`
+    }
   }
 
-  // 2️⃣ Else → generate English from URL/page
-  return slugToEnglishTitle(page)
+  // 🔍 ARABIC DETECTION: Check if title contains Arabic characters
+  const isArabic = /[\u0600-\u06FF]/.test(cleanTitle)
+  
+  // 1️⃣ If we have a proper title (not a URL, not Arabic) → use it
+  if (cleanTitle && 
+      !cleanTitle.includes('http') && 
+      !cleanTitle.includes('www.') && 
+      cleanTitle.length > 3 &&
+      !cleanTitle.match(/^\/.*\/$/) &&
+      !isArabic) { // ❌ BLOCK Arabic titles
+    return cleanTitle
+  }
+
+  // 2️⃣ If Arabic detected OR no proper title → generate English from URL/page
+  // This ensures Arabic titles are converted to readable English
+  return slugToEnglishTitle(page || title)
 }
-
-
-
 
   useEffect(() => {
     loadInitialData()
@@ -199,11 +289,11 @@ const getFinalEnglishTitle = (title, page) => {
 
       let response
       if (activeTab === 'entry') {
-        response = await pagesAPI.getEntryPages(projectId, 10, startDate, endDate)
+        response = await pagesAPI.getEntryPages(projectId, 10, startDate, endDate, currentOffset)
       } else if (activeTab === 'top') {
-        response = await pagesAPI.getMostVisited(projectId, 10, startDate, endDate)
+        response = await pagesAPI.getMostVisited(projectId, 10, startDate, endDate, currentOffset)
       } else {
-        response = await pagesAPI.getExitPages(projectId, 10, startDate, endDate)
+        response = await pagesAPI.getExitPages(projectId, 10, startDate, endDate, currentOffset)
       }
 
       const newData = response.data.data || response.data
@@ -914,27 +1004,85 @@ const getFinalEnglishTitle = (title, page) => {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '2px', wordBreak: 'break-word' }}>
-                            {getFinalEnglishTitle(page.title, page.page)}
+                          <div style={{ 
+                            fontSize: '14px', 
+                            fontWeight: '600', 
+                            color: page.url && page.url.includes('#cart-') ? '#059669' : '#1e293b', 
+                            marginBottom: '2px', 
+                            wordBreak: 'break-word',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            {page.url && page.url.includes('#cart-') && (
+                              <span style={{ 
+                                background: page.url.includes('add_to_cart') ? '#10b981' : '#ef4444',
+                                color: 'white',
+                                fontSize: '10px',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: '500'
+                              }}>
+                                {page.url.includes('add_to_cart') ? 'ADD' : 'REMOVE'}
+                              </span>
+                            )}
+                            {getFinalEnglishTitle(page.title, page.url)}
                           </div>
 
-                          <a
-                            href={sanitizeText(page.url || page.page) || '/'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              fontSize: '11px',
-                              color: '#3b82f6',
-                              textDecoration: 'none',
-                              wordBreak: 'break-all',
-                              lineHeight: '1.3',
-                              cursor: 'pointer'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                          >
-                            {sanitizeText(page.url || page.page) || '/'}
-                          </a>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <a
+                              href={page.url && page.url.includes('#cart-') ? 
+                                (page.url.split('#')[0] || '/') : 
+                                (sanitizeText(page.url || page.page) || '/')
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: '11px',
+                                color: page.url && page.url.includes('#cart-') ? '#059669' : '#3b82f6',
+                                textDecoration: 'none',
+                                wordBreak: 'break-all',
+                                lineHeight: '1.3',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                            >
+                              {page.url && page.url.includes('#cart-') ? 
+                                `🛒 ${page.url.split('#')[0] || '/'}` : 
+                                (sanitizeText(page.url || page.page) || '/')
+                              }
+                            </a>
+                            <a
+                              href={page.url && page.url.includes('#cart-') ? 
+                                (page.url.split('#')[0] || '/') : 
+                                (sanitizeText(page.url || page.page) || '/')
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#3b82f6',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                padding: '2px',
+                                borderRadius: '2px',
+                                transition: 'all 0.2s',
+                                opacity: 0.8
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '1'
+                                e.currentTarget.style.backgroundColor = '#f0f9ff'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '0.8'
+                                e.currentTarget.style.backgroundColor = 'transparent'
+                              }}
+                              title="Visit page"
+                            >
+                              <ExternalLink size={11} strokeWidth={2} />
+                            </a>
+                          </div>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
                           {/* Sessions Number - Clickable */}

@@ -11,7 +11,7 @@ function TrafficSourcesSimple({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(() => {
     const savedPeriod = localStorage.getItem(`traffic-sources-period-${projectId}`)
-    return savedPeriod || '1'  // Changed from '30' to '1'
+    return savedPeriod || '7'  // Default to 7 days
   })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
@@ -88,7 +88,7 @@ function TrafficSourcesSimple({ projectId }) {
       console.log('📅 TrafficSources - IST Date range (SAME AS REPORTS.JSX):', { startDate, endDate, period })
       
       // Use the same API call format as Reports.jsx
-      console.log('🌐 TrafficSources - Calling trafficAPI.getSources with exact same params as Reports.jsx')
+      console.log('🌐 TrafficSources - Calling trafficAPI.getSources with date range:', { startDate, endDate })
       
       const sourcesRes = await trafficAPI.getSources(projectId, startDate, endDate)
       console.log('✅ Traffic Sources API Response Status:', sourcesRes.status)
@@ -185,10 +185,15 @@ function TrafficSourcesSimple({ projectId }) {
   }
 
   const handlePeriodChange = (newPeriod) => {
-    console.log('TrafficSources - Period changing to:', newPeriod)
+    console.log('📅 TrafficSources - Period changing from:', period, 'to:', newPeriod)
     setPeriod(newPeriod)
     localStorage.setItem(`traffic-sources-period-${projectId}`, newPeriod)
     setShowPeriodDropdown(false)
+    
+    // Log the new date range for debugging
+    const { startDate, endDate } = getDateRange(newPeriod)
+    console.log('📅 TrafficSources - New date range:', { startDate, endDate, period: newPeriod })
+    console.log('🔄 TrafficSources - Triggering data reload with new period')
   }
 
   if (loading) return (

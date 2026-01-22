@@ -37,6 +37,38 @@ function HourlyView({ projectId }) {
     }
   }
 
+  const getFilteredHourlyData = () => {
+    if (!data?.hourly_stats) return [];
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const currentHour = now.getHours();
+    
+    // Check if the selected date is today
+    let isToday = false;
+    if (actualStartDate && actualEndDate) {
+      // For date ranges, check if end date is today
+      const endDate = parseDate(actualEndDate);
+      isToday = endDate.toDateString() === today.toDateString();
+    } else if (date) {
+      // For single date, check if it's today
+      const selectedDate = parseDate(date);
+      isToday = selectedDate.toDateString() === today.toDateString();
+    }
+    
+    // If it's today, filter only passed hours, otherwise show all hours
+    if (isToday) {
+      const filteredData = data.hourly_stats.filter(hour => {
+        const hourNum = parseInt(hour.date.split(':')[0]);
+        return hourNum <= currentHour;
+      });
+      return [...filteredData].reverse();
+    } else {
+      // For past dates, show all hours in descending order
+      return [...data.hourly_stats].reverse();
+    }
+  }
+
   const loadHourlyData = async () => {
     try {
       setLoading(true)
@@ -720,7 +752,7 @@ function HourlyView({ projectId }) {
               </tr>
             </thead>
             <tbody>
-              {data.hourly_stats.map((hour, idx) => (
+              {getFilteredHourlyData().map((hour, idx) => (
                 <tr
                   key={idx}
                   style={{

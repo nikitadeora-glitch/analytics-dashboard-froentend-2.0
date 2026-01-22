@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 
 function Reports({ projectId }) {
   const [loading, setLoading] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState('1')
+  const [selectedPeriod, setSelectedPeriod] = useState('7')
   const [reportData, setReportData] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingData, setLoadingData] = useState(true)

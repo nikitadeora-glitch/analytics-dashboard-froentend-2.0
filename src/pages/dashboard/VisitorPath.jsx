@@ -16,9 +16,9 @@ function VisitorPath({ projectId }) {
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [dateFilter, setDateFilter] = useState(() => {
-    // Get saved filter from localStorage, default to '1' (1 day)
+    // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`visitor-path-filter-${projectId}`)
-    return savedFilter || '1'
+    return savedFilter || '7'
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [error, setError] = useState(null)
@@ -101,19 +101,22 @@ function VisitorPath({ projectId }) {
         setIsLoadingMore(true)
       }
       
-      console.log('VisitorPath - Loading data with filter:', dateFilter)
+      console.log('🔄 VisitorPath - Loading data with filter:', dateFilter)
       
       let response
       const currentLimit = append ? visitors.length + 50 : 50
       
       if (dateFilter === 'all') {
         // Load all data without date filtering but with limit
+        console.log('📅 VisitorPath - Loading all time data')
         response = await visitorsAPI.getActivityView(projectId, currentLimit, null, null)
       } else {
         // Load data with date filtering and limit
         const { startDate, endDate } = getDateRange(dateFilter)
-        console.log('VisitorPath - Using date range:', { startDate, endDate })
+        console.log('📅 VisitorPath - Using date range:', { startDate, endDate, filter: dateFilter })
+        console.log('🔄 VisitorPath - Making API call with date range:', { startDate, endDate })
         response = await visitorsAPI.getActivityView(projectId, currentLimit, startDate, endDate)
+        console.log('📊 VisitorPath - API response received:', response.data?.length, 'visitors')
       }
       
       const newVisitors = response.data || []
@@ -164,11 +167,20 @@ function VisitorPath({ projectId }) {
   }
 
   const handleDateFilterChange = (newFilter) => {
-    console.log('VisitorPath - Date filter changing to:', newFilter)
+    console.log('📅 VisitorPath - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setShowDateDropdown(false)
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`visitor-path-filter-${projectId}`, newFilter)
+    
+    // Log the new date range for debugging
+    if (newFilter !== 'all') {
+      const { startDate, endDate } = getDateRange(newFilter)
+      console.log('📅 VisitorPath - New date range:', { startDate, endDate, filter: newFilter })
+    } else {
+      console.log('📅 VisitorPath - Loading all time data')
+    }
+    console.log('🔄 VisitorPath - Triggering data reload with new filter')
   }
 
   const getCountryCode = (country) => {
@@ -258,7 +270,7 @@ function VisitorPath({ projectId }) {
   const DateFilterComponent = () => (
     <div style={{ position: 'relative' }} data-date-dropdown>
       <div
-        onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+        onClick={() => setShowDateDropdown(!showDateDropdown)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

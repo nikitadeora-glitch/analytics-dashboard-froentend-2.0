@@ -150,12 +150,12 @@ export const analyticsAPI = {
 export const pagesAPI = {
   getPagesOverview: (projectId, limit = 10) => 
     api.get(`/pages/${projectId}/pages-overview?limit=${limit}`),
-  getMostVisited: (projectId, limit = 10, startDate = null, endDate = null) => {
+  getMostVisited: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
     let url = `/pages/${projectId}/most-visited`
     const params = []
     
     params.push(`limit=${limit}`)
-    params.push(`offset=0`) // Always start from 0 for Reports page
+    params.push(`offset=${offset}`) // Use dynamic offset
     
     if (startDate && endDate) {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
@@ -169,16 +169,16 @@ export const pagesAPI = {
     console.log('📄 PagesAPI - Getting most visited:', url)
     return api.get(url)
   },
-  getEntryPages: (projectId, limit = 10, startDate = null, endDate = null) => {
+  getEntryPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
     let url = `/pages/${projectId}/entry-pages`
     const params = []
     
     params.push(`limit=${limit}`)
-    params.push(`offset=0`) // Always start from 0 for Reports page
+    params.push(`offset=${offset}`) // Use dynamic offset
     
     if (startDate && endDate) {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
-      params.push(`end_date=${endDate}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
     }
     
     if (params.length > 0) {
@@ -188,12 +188,12 @@ export const pagesAPI = {
     console.log('📄 PagesAPI - Getting entry pages:', url)
     return api.get(url)
   },
-  getExitPages: (projectId, limit = 10, startDate = null, endDate = null) => {
+  getExitPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
     let url = `/pages/${projectId}/exit-pages`
     const params = []
     
     params.push(`limit=${limit}`)
-    params.push(`offset=0`) // Always start from 0 for Reports page
+    params.push(`offset=${offset}`) // Use dynamic offset
     
     if (startDate && endDate) {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
@@ -234,8 +234,8 @@ export const trafficAPI = {
     api.get(`/traffic/${projectId}/keywords?limit=${limit}`),
   getReferrers: (projectId) => 
     api.get(`/traffic/${projectId}/referrers`),
-  getExitLinks: (projectId) => 
-    api.get(`/traffic/${projectId}/exit-links`)
+  getExitLinks: (projectId, startDate, endDate) => 
+    api.get(`/traffic/${projectId}/exit-links?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`)
 };
 
 export const reportsAPI = {

@@ -13,7 +13,7 @@ function PagesView({ projectId }) {
   const [hasMore, setHasMore] = useState(false)
   const [period, setPeriod] = useState(() => {
     const savedPeriod = localStorage.getItem(`pagesview-period-${projectId}`)
-    return savedPeriod || '1'  // Changed from '30' to '1'
+    return savedPeriod || '7'  // Default to 7 days
   })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
@@ -87,21 +87,13 @@ function PagesView({ projectId }) {
       const { startDate, endDate } = getDateRange(period)
       console.log('📅 PagesView - Using date range:', { startDate, endDate, period })
       
-      // First, let's check what data exists for debugging
-      try {
-        const debugResponse = await api.get(`/visitors/${projectId}/debug-data`)
-        console.log('🔍 Debug data:', debugResponse.data)
-      } catch (debugError) {
-        console.log('🔍 Debug endpoint not available:', debugError.message)
-      }
-      
       // Use getActivityView API with date parameters - no limit to get all data in range
+      console.log('🔄 PagesView - Making API call with date range:', { startDate, endDate })
       const response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
       console.log('✅ PagesView - API Response received:')
-      console.log('  Response data:', response.data)
+      console.log('  Response data length:', response.data?.length)
       console.log('  Data type:', typeof response.data)
       console.log('  Is array:', Array.isArray(response.data))
-      console.log('  Data length:', response.data?.length)
 
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         console.log('✅ PagesView - Setting visitor data:', response.data.length, 'visitors')
@@ -141,6 +133,8 @@ function PagesView({ projectId }) {
     // Log the new date range for debugging
     const { startDate, endDate } = getDateRange(newPeriod)
     console.log('📅 PagesView - New date range:', { startDate, endDate, period: newPeriod })
+    console.log('🔄 PagesView - Triggering data reload with new period')
+    loadVisitors() // Reload data with new period
   }
 
   const loadMore = () => {

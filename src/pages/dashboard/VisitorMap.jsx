@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useNavigate } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -29,7 +29,7 @@ function VisitorMap({ projectId }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState(null)
-  const [dateRange, setDateRange] = useState('1') // Default 1 day
+  const [dateRange, setDateRange] = useState('7') // Default 7 days
 
   useEffect(() => {
     loadMap()
@@ -154,6 +154,7 @@ function VisitorMap({ projectId }) {
                         loc={loc}
                         projectId={projectId}
                         days={dateRange}
+                        onIPClick={(visitor) => navigate(`/dashboard/project/${projectId}/visitor/${visitor.visitor_id || visitor.uuid || visitor.id}`)}
                       />
                     </Marker>
                   )

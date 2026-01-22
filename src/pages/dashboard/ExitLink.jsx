@@ -4,20 +4,19 @@ import { Filter, Download, ExternalLink, LogOut, Search, Globe, Calendar, Chevro
 import { Skeleton, Box } from '@mui/material'
 
 function ExitLink({ projectId }) {
-  const [activeTab, setActiveTab] = useState('external')
   const [exitLinks, setExitLinks] = useState([])
-  const [exitPages, setExitPages] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedExit, setSelectedExit] = useState(null)
   const [project, setProject] = useState(null)
-  const [period, setPeriod] = useState(() => {
-    const savedPeriod = localStorage.getItem(`exitlink-period-${projectId}`)
-    return savedPeriod || '1'  // Changed from '30' to '1'
+  const [dateFilter, setDateFilter] = useState(() => {
+    // Get saved filter from localStorage, default to '7' (7 days)
+    const savedFilter = localStorage.getItem(`exitlink-filter-${projectId}`)
+    return savedFilter || '7'
   })
-  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
+  const [showDateDropdown, setShowDateDropdown] = useState(false)
 
   useEffect(() => {
-    console.log(' ExitLink useEffect - projectId:', projectId, 'period:', period)
+    console.log(' ExitLink useEffect - projectId:', projectId, 'dateFilter:', dateFilter)
     if (projectId) {
       loadExitData()
       loadProjectInfo()
@@ -25,49 +24,54 @@ function ExitLink({ projectId }) {
       console.log(' No projectId provided')
       setLoading(false)
     }
-  }, [projectId, period])
+  }, [projectId, dateFilter])
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showPeriodDropdown && !event.target.closest('[data-period-dropdown]')) {
-        setShowPeriodDropdown(false)
+      if (showDateDropdown && !event.target.closest('[data-date-dropdown]')) {
+        setShowDateDropdown(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showPeriodDropdown])
+  }, [showDateDropdown])
 
   const getDateRange = (days) => {
-    // Get current date in IST
-    const nowIST = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-    )
+    // Get current date in local timezone
+    const today = new Date()
     
-    // For end date, use today (current date)
-    const endDate = new Date(nowIST)
+    // For 1 day: today 00:00:00 to today 23:59:59 (local time)
+    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (local time)  
+    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (local time)
     
-    // For start date, go back by (days - 1) to include today
-    // Example: 7 days = today + last 6 days = 7 total days
-    const startDate = new Date(nowIST)
+    const endDate = new Date(today)
+    endDate.setHours(23, 59, 59, 999) // End of today (local time)
     
-    // Fix: Use days-1 for proper calculation
-    const daysToSubtract = parseInt(days) - 1
-    startDate.setDate(endDate.getDate() - daysToSubtract)
+    const startDate = new Date(today)
+    if (days === '1') {
+      // For 1 day, start from today 00:00:00 (local time)
+      startDate.setHours(0, 0, 0, 0)
+    } else {
+      // For multiple days, go back (days-1) from today and start from 00:00:00
+      startDate.setDate(today.getDate() - (parseInt(days) - 1))
+      startDate.setHours(0, 0, 0, 0)
+    }
     
-    console.log(`📅 ExitLink Date Range Calculation for ${days} days:`)
-    console.log(`  Days to subtract: ${daysToSubtract}`)
-    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
-    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
-    console.log(`  Total days: ${Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}`)
+    // Convert to UTC for API
+    const startUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000)).toISOString()
+    const endUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000)).toISOString()
     
-    const format = (d) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
+    console.log(`📅 ExitLink Date Range for ${days} day(s):`)
+    console.log(`  Local Start: ${startDate.toLocaleString()}`)
+    console.log(`  Local End: ${endDate.toLocaleString()}`)
+    console.log(`  UTC Start: ${startUTC}`)
+    console.log(`  UTC End: ${endUTC}`)
+    
     return {
-      startDate: format(startDate),
-      endDate: format(endDate)
+      startDate: startUTC,
+      endDate: endUTC
     }
   }
 
@@ -83,28 +87,28 @@ function ExitLink({ projectId }) {
   const loadExitData = async () => {
     try {
       console.log('🔄 ExitLink - Loading exit data for project:', projectId)
-      const { startDate, endDate } = getDateRange(period)
-      console.log('📅 ExitLink - Using date range:', { startDate, endDate, period })
       
-      // Get external exit links (clicks to external URLs) with date filtering
-      const linksResponse = await trafficAPI.getExitLinks(projectId, startDate, endDate)
-      console.log('✅ ExitLink - External links response:', linksResponse.data)
+      let response
+      
+      if (dateFilter === 'all') {
+        // Load all data without date filtering
+        console.log('📅 ExitLink - Loading all time data')
+        response = await trafficAPI.getExitLinks(projectId, null, null)
+      } else {
+        // Load data with date filtering
+        const { startDate, endDate } = getDateRange(dateFilter)
+        console.log('📅 ExitLink - Using date range:', { startDate, endDate, filter: dateFilter })
+        response = await trafficAPI.getExitLinks(projectId, startDate, endDate)
+        console.log('📊 ExitLink - API response received:', response.data.length, 'links')
+      }
+      
+      console.log('✅ ExitLink - External links response:', response.data)
+      console.log('📊 ExitLink - Total links received:', response.data.length)
       // Sort by date descending (newest first)
-      const sortedLinks = linksResponse.data.sort((a, b) =>
+      const sortedLinks = response.data.sort((a, b) =>
         new Date(b.clicked_at) - new Date(a.clicked_at)
       )
       setExitLinks(sortedLinks)
-
-      // Get internal exit pages (pages where users left the site) with date filtering
-      const pagesResponse = await pagesAPI.getExitPages(projectId, null, startDate, endDate)
-      console.log('✅ ExitLink - Exit pages response:', pagesResponse.data)
-      // Sort by date descending (newest first)
-      const sortedPages = pagesResponse.data.sort((a, b) => {
-        const dateA = a.visits && a.visits[0] ? new Date(a.visits[0].visited_at) : new Date(0)
-        const dateB = b.visits && b.visits[0] ? new Date(b.visits[0].visited_at) : new Date(0)
-        return dateB - dateA
-      })
-      setExitPages(sortedPages)
       
       console.log('✅ ExitLink - Exit data loaded successfully')
     } catch (error) {
@@ -116,15 +120,20 @@ function ExitLink({ projectId }) {
     }
   }
 
-  const handlePeriodChange = (newPeriod) => {
-    console.log('📅 ExitLink - Period changing from:', period, 'to:', newPeriod)
-    setPeriod(newPeriod)
-    localStorage.setItem(`exitlink-period-${projectId}`, newPeriod)
-    setShowPeriodDropdown(false)
+  const handleDateFilterChange = (newFilter) => {
+    console.log('📅 ExitLink - Date filter changing from:', dateFilter, 'to:', newFilter)
+    setDateFilter(newFilter)
+    setShowDateDropdown(false)
+    // Save filter to localStorage so it persists on page reload
+    localStorage.setItem(`exitlink-filter-${projectId}`, newFilter)
     
     // Log the new date range for debugging
-    const { startDate, endDate } = getDateRange(newPeriod)
-    console.log('📅 ExitLink - New date range:', { startDate, endDate, period: newPeriod })
+    if (newFilter !== 'all') {
+      const { startDate, endDate } = getDateRange(newFilter)
+      console.log('📅 ExitLink - New date range:', { startDate, endDate, filter: newFilter })
+    } else {
+      console.log('📅 ExitLink - Loading all time data')
+    }
   }
 
   const handleExitClick = (e, exit) => {
@@ -136,7 +145,93 @@ function ExitLink({ projectId }) {
     setSelectedExit(null)
   }
 
-  // Helper to format date to IST (India Standard Time)
+  // Date Filter Component
+  const DateFilterComponent = () => (
+    <div style={{ position: 'relative' }} data-date-dropdown>
+      <div
+        onClick={() => setShowDateDropdown(!showDateDropdown)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: '#3b82f6', // Blue background
+                
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#eeedebff',
+                transition: 'all 0.2s',
+                userSelect: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#2563eb'
+                e.currentTarget.style.borderColor = '#2563eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#3b82f6'
+                e.currentTarget.style.borderColor = '#3b82f6'
+              }}
+      >
+        <Calendar size={16} />
+        <span>
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+        </span>
+        <ChevronDown size={16} style={{
+          transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s'
+        }} />
+      </div>
+
+      {/* Dropdown */}
+      {showDateDropdown && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '4px',
+          background: 'white',
+          border: '2px solid #e5e7eb',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          minWidth: '120px',
+          overflow: 'hidden'
+        }}>
+          {['1', '7', '30', 'all'].map((filter) => (
+            <div
+              key={filter}
+              onClick={() => handleDateFilterChange(filter)}
+              style={{
+                padding: '12px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: dateFilter === filter ? '#1e40af' : '#374151',
+                background: dateFilter === filter ? '#eff6ff' : 'white',
+                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = '#f9fafb'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (dateFilter !== filter) {
+                  e.currentTarget.style.background = 'white'
+                }
+              }}
+            >
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   const formatToIST = (dateString, options = {}) => {
     if (!dateString) return ''
 
@@ -178,7 +273,8 @@ function ExitLink({ projectId }) {
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
           <h1 style={{ margin: 0 }}>Exit Links</h1>
-         
+          
+          <DateFilterComponent />
         </div>
         
         {project && (
@@ -234,90 +330,7 @@ function ExitLink({ projectId }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '98%' }}>
           <h1 style={{ margin: 0 }}>Exit Links</h1>
           
-          {/* Date Filter - Yellow Highlighted Area */}
-          <div style={{ position: 'relative' }} data-period-dropdown>
-            <div
-              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                background: '#3b82f6', // Yellow background
-                
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#eeedebff',
-                transition: 'all 0.2s',
-                userSelect: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#2563eb'
-                e.currentTarget.style.borderColor = '#2563eb'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#3b82f6'
-                e.currentTarget.style.borderColor = '#3b82f6'
-              }}
-            >
-              <Calendar size={16} />
-              <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
-              </span>
-              <ChevronDown size={16} style={{
-                transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s'
-              }} />
-            </div>
-
-            {/* Dropdown */}
-            {showPeriodDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '4px',
-                background: 'white',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                zIndex: 1000,
-                minWidth: '120px',
-                overflow: 'hidden'
-              }}>
-                {['1', '7', '30'].map((p) => (
-                  <div
-                    key={p}
-                    onClick={() => handlePeriodChange(p)}
-                    style={{
-                      padding: '12px 16px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: period === p ? '#1e40af' : '#374151',
-                      background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (period !== p) {
-                        e.currentTarget.style.background = '#f9fafb'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (period !== p) {
-                        e.currentTarget.style.background = 'white'
-                      }
-                    }}
-                  >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DateFilterComponent />
         </div>
         
         {project && (
@@ -519,36 +532,13 @@ function ExitLink({ projectId }) {
       )}
 
       <div className="content">
-        {/* Tabs */}
-        <div className="chart-container exit-tabs-container" style={{ padding: 0, marginBottom: '20px' }}>
-          <div className="exit-tabs" style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
-            <button
-              onClick={() => setActiveTab('external')}
-              style={{
-                padding: '8px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === 'external' ? '3px solid #dc2626' : '3px solid transparent',
-                color: activeTab === 'external' ? '#dc2626' : '#64748b',
-                fontWeight: activeTab === 'external' ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              🔗 External Links ({exitLinks.length})
-            </button>
-            
-          </div>
-        </div>
-
-        {/* Exit Links/Pages Table */}
+        {/* Exit Links Table */}
         <div className="chart-container" style={{ padding: 0, overflowX: 'hidden' }}>
           <div>
             {/* Table Header */}
             <div className="exit-table-header" style={{
               display: 'grid',
-              gridTemplateColumns: activeTab === 'external' ? '100px 120px 1fr 1fr' : '100px 120px 1fr 120px',
+              gridTemplateColumns: '100px 120px 1fr 1fr',
               padding: '8px 24px',
               background: '#f8fafc',
               borderBottom: '2px solid #e2e8f0',
@@ -562,12 +552,12 @@ function ExitLink({ projectId }) {
             }}>
               <div>Date</div>
               <div>Time</div>
-              <div>{activeTab === 'external' ? 'Exit Link Clicked' : 'Exit Page URL'}</div>
-              <div>{activeTab === 'external' ? 'From Page' : 'Exits'}</div>
+              <div>Exit Link Clicked</div>
+              <div>From Page</div>
             </div>
 
             {/* Table Rows - External Links */}
-            {activeTab === 'external' && exitLinks.length > 0 ? (
+            {exitLinks.length > 0 ? (
               exitLinks.map((exit, idx) => (
                 <div
                   key={idx}
@@ -652,94 +642,13 @@ function ExitLink({ projectId }) {
                   </div>
                 </div>
               ))
-            ) : activeTab === 'external' ? (
+            ) : (
               <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
                 <LogOut size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                 <p style={{ fontSize: '16px', fontWeight: '500' }}>No external exit links yet</p>
                 <p style={{ fontSize: '14px' }}>External link clicks will appear here</p>
               </div>
-            ) : null}
-
-            {/* Table Rows - Exit Pages */}
-            {activeTab === 'pages' && exitPages.length > 0 ? (
-              exitPages.map((page, idx) => (
-                <div
-                  key={idx}
-                  className="exit-table-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '100px 120px 1fr 120px',
-                    padding: '16px 24px',
-                    borderBottom: idx < exitPages.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    alignItems: 'start',
-                    gap: '12px',
-                    minWidth: 0,
-                    maxWidth: '100%'
-                  }}
-                >
-                  {/* Date - Using first visit date */}
-                  <div className="exit-col" data-label="Date" style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '2px' }}>
-                    <LogOut size={14} style={{ color: '#dc2626' }} />
-                    {page.visits && page.visits[0] ? formatDate(page.visits[0].visited_at) : 'Unknown'}
-                  </div>
-
-                  {/* Time */}
-                  <div className="exit-col" data-label="Time" style={{ fontSize: '14px', color: '#64748b', fontWeight: '500', paddingTop: '2px' }}>
-                    {page.visits && page.visits[0] ? formatTime(page.visits[0].visited_at) : '--:--:--'}
-                  </div>
-
-                  {/* Exit Page URL - Clickable Link */}
-                  <div className="exit-col" data-label="Exit Page URL" style={{
-                    minWidth: 0,
-                    maxWidth: '100%'
-                  }}>
-                    <a
-                      href={page.page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: '14px',
-                        color: '#dc2626',
-                        fontWeight: '500',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        textDecoration: 'none',
-                        wordBreak: 'break-all',
-                        lineHeight: '1.4',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                    >
-                      <ExternalLink size={14} style={{ flexShrink: 0 }} />
-                      {page.page || 'Unknown'}
-                    </a>
-                  </div>
-
-                  {/* Exit Count */}
-                  <div className="exit-col" data-label="Exits" style={{ textAlign: 'center', paddingTop: '2px' }}>
-                    <span style={{
-                      background: '#fef2f2',
-                      color: '#dc2626',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      border: '1px solid #fecaca'
-                    }}>
-                      {page.exits || 0} exits
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : activeTab === 'pages' ? (
-              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                <LogOut size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-                <p style={{ fontSize: '16px', fontWeight: '500' }}>No exit pages yet</p>
-                <p style={{ fontSize: '14px' }}>Pages where visitors leave will appear here</p>
-              </div>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

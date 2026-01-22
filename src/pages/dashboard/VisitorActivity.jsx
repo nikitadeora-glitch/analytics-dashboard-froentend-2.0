@@ -11,9 +11,9 @@ function VisitorActivity({ projectId }) {
   const [error, setError] = useState(null)
   const [displayCount, setDisplayCount] = useState(10)
   const [dateFilter, setDateFilter] = useState(() => {
-    // Get saved filter from localStorage, default to '1' (1 day)
+    // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`visitor-activity-filter-${projectId}`)
-    return savedFilter || '1'  // Changed from '30' to '1'
+    return savedFilter || '7'  // Default to 7 days
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
 
@@ -85,17 +85,20 @@ function VisitorActivity({ projectId }) {
       setError(null)
       setLoading(true)
       
-      console.log('VisitorActivity - Loading data with filter:', dateFilter)
+      console.log('🔄 VisitorActivity - Loading data with filter:', dateFilter)
       
       let response
       if (dateFilter === 'all') {
         // Load all data without date filtering
+        console.log('📅 VisitorActivity - Loading all time data')
         response = await visitorsAPI.getActivityView(projectId)
       } else {
         // Load data with date filtering
         const { startDate, endDate } = getDateRange(dateFilter)
-        console.log('VisitorActivity - Using date range:', { startDate, endDate })
+        console.log('📅 VisitorActivity - Using date range:', { startDate, endDate, filter: dateFilter })
+        console.log('🔄 VisitorActivity - Making API call with date range:', { startDate, endDate })
         response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+        console.log('📊 VisitorActivity - API response received:', response.data?.length, 'visitors')
       }
       
       setVisitors(response.data || [])
@@ -109,12 +112,21 @@ function VisitorActivity({ projectId }) {
   }
 
   const handleDateFilterChange = (newFilter) => {
-    console.log('VisitorActivity - Date filter changing to:', newFilter)
+    console.log('📅 VisitorActivity - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setDisplayCount(10) // Reset display count when filter changes
     setShowDateDropdown(false)
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`visitor-activity-filter-${projectId}`, newFilter)
+    
+    // Log the new date range for debugging
+    if (newFilter !== 'all') {
+      const { startDate, endDate } = getDateRange(newFilter)
+      console.log('📅 VisitorActivity - New date range:', { startDate, endDate, filter: newFilter })
+    } else {
+      console.log('📅 VisitorActivity - Loading all time data')
+    }
+    console.log('🔄 VisitorActivity - Triggering data reload with new filter')
   }
 
   const loadMore = () => {

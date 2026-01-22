@@ -14,9 +14,9 @@ function CameFrom({ projectId }) {
   const [selectedReferrer, setSelectedReferrer] = useState(null)
   const [project, setProject] = useState(null)
   const [dateFilter, setDateFilter] = useState(() => {
-    // Get saved filter from localStorage, default to '1' (1 day)
+    // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`camefrom-filter-${projectId}`)
-    return savedFilter || '1'
+    return savedFilter || '7'
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [error, setError] = useState(null)
@@ -89,18 +89,20 @@ function CameFrom({ projectId }) {
       setError(null)
       setLoading(true)
       
-      console.log('CameFrom - Loading data with filter:', dateFilter)
+      console.log('🔄 CameFrom - Loading data with filter:', dateFilter)
       
       let response
       
       if (dateFilter === 'all') {
         // Load all data without date filtering and without limit
+        console.log('📅 CameFrom - Loading all time data')
         response = await visitorsAPI.getActivityView(projectId, null, null, null)
       } else {
         // Load data with date filtering and without limit
         const { startDate, endDate } = getDateRange(dateFilter)
-        console.log('CameFrom - Using date range:', { startDate, endDate })
+        console.log('📅 CameFrom - Using date range:', { startDate, endDate, filter: dateFilter })
         response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+        console.log('📊 CameFrom - API response received:', response.data.length, 'visitors')
       }
       
       // Filter to show only referral traffic (exclude direct traffic)
@@ -145,11 +147,19 @@ function CameFrom({ projectId }) {
   }
 
   const handleDateFilterChange = (newFilter) => {
-    console.log('CameFrom - Date filter changing to:', newFilter)
+    console.log('📅 CameFrom - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setShowDateDropdown(false)
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`camefrom-filter-${projectId}`, newFilter)
+    
+    // Log the new date range for debugging
+    if (newFilter !== 'all') {
+      const { startDate, endDate } = getDateRange(newFilter)
+      console.log('📅 CameFrom - New date range:', { startDate, endDate, filter: newFilter })
+    } else {
+      console.log('📅 CameFrom - Loading all time data')
+    }
   }
 
   const closeModal = () => {
@@ -192,7 +202,7 @@ function CameFrom({ projectId }) {
   const DateFilterComponent = () => (
     <div style={{ position: 'relative' }} data-date-dropdown>
       <div
-        onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+        onClick={() => setShowDateDropdown(!showDateDropdown)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
