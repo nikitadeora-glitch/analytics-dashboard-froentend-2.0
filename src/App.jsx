@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from './store'
 import Layout from './components/Layout'
+import CookiePopup from './components/CookiePopup'
 import Projects from './pages/Projects'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
@@ -14,6 +15,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 function App() {
   return (
     <Provider store={store}>
+      <CookiePopup />
       <BrowserRouter>
         <Routes>
           {/* Auth routes */}
