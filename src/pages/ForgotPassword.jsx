@@ -22,7 +22,9 @@ function ForgotPassword() {
       setEmailSent(true)
     } catch (error) {
       console.error('Forgot password error:', error)
-      setError(error.response?.data?.message || 'Failed to send reset email. Please try again.')
+      console.log('Error response data:', error.response?.data)
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || 'Failed to send reset email. Please try again.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
