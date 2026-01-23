@@ -1,5 +1,6 @@
 // src/api/api.js
 import axios from 'axios';
+import { getStoredUtms } from '../utils/utm';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -39,6 +40,20 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add UTM data to auth/lead endpoints
+    const UTM_ENDPOINTS = ['/login', '/signup', '/forgot-password', '/google', '/lead/submit'];
+    const url = config.url || '';
+    const shouldAttach = UTM_ENDPOINTS.some((p) => url.includes(p));
+
+    if (shouldAttach && config.method?.toLowerCase() !== 'get') {
+      const utms = getStoredUtms();
+      config.data = {
+        ...(config.data || {}),
+        utm: utms,
+      };
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -248,6 +263,10 @@ export const reportsAPI = {
       params: { start_date: startDate, end_date: endDate }
     })
   }
+};
+
+export const leadsAPI = {
+  submit: (leadData) => api.post('/lead/submit', leadData)
 };
 
 // Token management exports
