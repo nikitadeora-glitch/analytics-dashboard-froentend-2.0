@@ -41,34 +41,37 @@ function PagesView({ projectId }) {
   }, [showPeriodDropdown])
 
   const getDateRange = (days) => {
-    // Get current date in IST
-    const nowIST = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-    )
+    // Get current date in UTC (matching VisitorPath)
+    const today = new Date()
     
-    // For end date, use today (current date)
-    const endDate = new Date(nowIST)
+    // For 1 day: today 00:00:00 to today 23:59:59 (UTC)
+    // For 7 days: today + last 6 days = total 7 days including today (UTC)
+    // For 30 days: today + last 29 days = total 30 days including today (UTC)
     
-    // For start date, go back by (days - 1) to include today
-    // Example: 7 days = today + last 6 days = 7 total days
-    const startDate = new Date(nowIST)
+    const endDate = new Date(today)
+    endDate.setUTCHours(23, 59, 59, 999) // End of today in UTC
     
-    // Fix: Use days-1 for proper calculation
-    const daysToSubtract = parseInt(days) - 1
-    startDate.setDate(endDate.getDate() - daysToSubtract)
+    const startDate = new Date(today)
+    if (days === '1') {
+      // For 1 day, start from today 00:00:00 in UTC
+      startDate.setUTCHours(0, 0, 0, 0)
+    } else {
+      // For multiple days, go back (days-1) days from today and start from 00:00:00 in UTC
+      startDate.setUTCDate(today.getUTCDate() - (parseInt(days) - 1))
+      startDate.setUTCHours(0, 0, 0, 0)
+    }
     
-    console.log(`📅 PagesView Date Range Calculation for ${days} days:`)
-    console.log(`  Days to subtract: ${daysToSubtract}`)
-    console.log(`  Start Date: ${startDate.toISOString().split('T')[0]}`)
-    console.log(`  End Date: ${endDate.toISOString().split('T')[0]}`)
-    console.log(`  Total days: ${Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1}`)
+    // Convert to ISO string for API (matching VisitorPath)
+    const startUTC = startDate.toISOString()
+    const endUTC = endDate.toISOString()
     
-    const format = (d) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
+    console.log(`📅 PagesView Date Range for ${days} day(s):`)
+    console.log(`  UTC Start: ${startUTC}`)
+    console.log(`  UTC End: ${endUTC}`)
+    
     return {
-      startDate: format(startDate),
-      endDate: format(endDate)
+      startDate: startUTC,
+      endDate: endUTC
     }
   }
 
