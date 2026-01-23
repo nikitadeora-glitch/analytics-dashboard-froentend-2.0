@@ -22,6 +22,7 @@ function VisitorPath({ projectId }) {
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [error, setError] = useState(null)
+  const [displayCount, setDisplayCount] = useState(10)
 
   useEffect(() => {
     loadVisitors()
@@ -55,35 +56,34 @@ function VisitorPath({ projectId }) {
   }
 
   const getDateRange = (days) => {
-    // Get current date in local timezone
+    // Get current date in UTC
     const today = new Date()
     
-    // For 1 day: today 00:00:00 to today 23:59:59 (local time)
-    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (local time)  
-    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (local time)
+    // For 1 day: today 00:00:00 to today 23:59:59 (UTC)
+    // For 7 days: today + last 6 days = total 7 days including today (UTC)
+    // For 30 days: today + last 29 days = total 30 days including today (UTC)
     
     const endDate = new Date(today)
-    endDate.setHours(23, 59, 59, 999) // End of today (local time)
+    endDate.setUTCHours(23, 59, 59, 999) // End of today in UTC
     
     const startDate = new Date(today)
     if (days === '1') {
-      // For 1 day, start from today 00:00:00 (local time)
-      startDate.setHours(0, 0, 0, 0)
+      // For 1 day, start from today 00:00:00 in UTC
+      startDate.setUTCHours(0, 0, 0, 0)
     } else {
-      // For multiple days, go back (days-1) from today and start from 00:00:00
-      startDate.setDate(today.getDate() - (parseInt(days) - 1))
-      startDate.setHours(0, 0, 0, 0)
+      // For multiple days, go back (days-1) days from today and start from 00:00:00 in UTC
+      startDate.setUTCDate(today.getUTCDate() - (parseInt(days) - 1))
+      startDate.setUTCHours(0, 0, 0, 0)
     }
     
-    // Convert to UTC for API
-    const startUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000)).toISOString()
-    const endUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000)).toISOString()
+    // Convert to ISO string for API
+    const startUTC = startDate.toISOString()
+    const endUTC = endDate.toISOString()
     
     console.log(`📅 Date Range for ${days} day(s):`)
-    console.log(`  Local Start: ${startDate.toLocaleString()}`)
-    console.log(`  Local End: ${endDate.toLocaleString()}`)
     console.log(`  UTC Start: ${startUTC}`)
     console.log(`  UTC End: ${endUTC}`)
+    console.log(`  Expected: start_date=${startUTC}, end_date=${endUTC}`)
     
     return {
       startDate: startUTC,
@@ -104,31 +104,28 @@ function VisitorPath({ projectId }) {
       console.log('🔄 VisitorPath - Loading data with filter:', dateFilter)
       
       let response
-      const currentLimit = append ? visitors.length + 50 : 50
       
       if (dateFilter === 'all') {
-        // Load all data without date filtering but with limit
+        // Load all data without date filtering and no limit
         console.log('📅 VisitorPath - Loading all time data')
-        response = await visitorsAPI.getActivityView(projectId, currentLimit, null, null)
+        response = await visitorsAPI.getActivityView(projectId, null, null, null)
       } else {
-        // Load data with date filtering and limit
+        // Load data with date filtering and no limit
         const { startDate, endDate } = getDateRange(dateFilter)
         console.log('📅 VisitorPath - Using date range:', { startDate, endDate, filter: dateFilter })
         console.log('🔄 VisitorPath - Making API call with date range:', { startDate, endDate })
-        response = await visitorsAPI.getActivityView(projectId, currentLimit, startDate, endDate)
+        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
         console.log('📊 VisitorPath - API response received:', response.data?.length, 'visitors')
       }
       
       const newVisitors = response.data || []
       
-      if (append) {
-        setVisitors(newVisitors)
-      } else {
+      if (!append) {
         setVisitors(newVisitors)
       }
       
-      // Check if there might be more data
-      setHasMore(newVisitors.length === currentLimit)
+      // No need to check for more data since we're loading all at once
+      setHasMore(false)
       
       console.log(`✅ Loaded ${newVisitors.length} visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
     } catch (error) {
@@ -163,7 +160,8 @@ function VisitorPath({ projectId }) {
   }
 
   const loadMore = () => {
-    loadVisitors(true)
+    // Just increase display count, no API call needed
+    setDisplayCount(prev => prev + 10)
   }
 
   const handleDateFilterChange = (newFilter) => {
@@ -172,8 +170,8 @@ function VisitorPath({ projectId }) {
     setShowDateDropdown(false)
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`visitor-path-filter-${projectId}`, newFilter)
-    
-    // Log the new date range for debugging
+    setDisplayCount(10) // Reset display count when filter changes
+    console.log('🔄 VisitorPath - Triggering data reload with new filter')
     if (newFilter !== 'all') {
       const { startDate, endDate } = getDateRange(newFilter)
       console.log('📅 VisitorPath - New date range:', { startDate, endDate, filter: newFilter })
@@ -1276,7 +1274,7 @@ function VisitorPath({ projectId }) {
                 <div>LOCATION</div>
                 <div>PAGE DETAILS</div>
               </div>
-              {visitors.map((visitor, idx) => (
+              {visitors.slice(0, displayCount).map((visitor, idx) => (
                 <div
                   key={idx}
                   className="visitor-row"
@@ -1368,7 +1366,7 @@ function VisitorPath({ projectId }) {
               ))}
 
               {/* Load More Button */}
-              {hasMore && visitors.length > 0 && (
+              {displayCount < visitors.length && (
                 <div style={{
                   padding: '20px',
                   textAlign: 'center',
@@ -1386,17 +1384,12 @@ function VisitorPath({ projectId }) {
                       cursor: isLoadingMore ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
-                      opacity: isLoadingMore ? 0.7 : 1
+                      transition: 'all 0.2s ease'
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isLoadingMore) e.currentTarget.style.backgroundColor = '#2563eb'
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isLoadingMore) e.currentTarget.style.backgroundColor = '#3b82f6'
-                    }}
+                    onMouseEnter={(e) => !isLoadingMore && (e.currentTarget.style.backgroundColor = '#2563eb')}
+                    onMouseLeave={(e) => !isLoadingMore && (e.currentTarget.style.backgroundColor = '#3b82f6')}
                   >
-                    {isLoadingMore ? 'Loading...' : `Load More Visitors`}
+                    {isLoadingMore ? 'Loading...' : `Load More (${visitors.length - displayCount} remaining)`}
                   </button>
                 </div>
               )}
