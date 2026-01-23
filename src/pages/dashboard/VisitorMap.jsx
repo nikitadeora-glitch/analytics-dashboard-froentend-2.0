@@ -1,4 +1,5 @@
-import { useState, useEffect, useNavigate } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -30,6 +31,7 @@ function VisitorMap({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState(null)
   const [dateRange, setDateRange] = useState('7') // Default 7 days
+  const navigate = useNavigate()
 
   useEffect(() => {
     loadMap()
@@ -210,7 +212,7 @@ function VisitorMap({ projectId }) {
 }
 
 // Separate component for Popup logic to handle fetching
-function MapPopup({ loc, projectId, days }) {
+function MapPopup({ loc, projectId, days, onIPClick }) {
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -337,7 +339,15 @@ function MapPopup({ loc, projectId, days }) {
             <div style={{ display: 'grid', gap: '6px' }}>
               <div>
                 <strong>IP Address:</strong>
-                <span style={{ color: '#2563eb', marginLeft: '6px' }}>
+                <span 
+                  style={{ 
+                    color: '#2563eb', 
+                    marginLeft: '6px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                  onClick={() => onIPClick && onIPClick(currentVisitor)}
+                >
                   {currentVisitor.ip_address}
                 </span>
               </div>

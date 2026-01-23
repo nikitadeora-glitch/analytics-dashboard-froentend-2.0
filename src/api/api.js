@@ -104,6 +104,8 @@ export const visitorsAPI = {
     api.get(`/visitors/${projectId}/visitors-at-location`, { params: { lat, lng, days } }),
   getAllSessions: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/visitor-sessions/${visitorId}`),
+  getVisitorDetail: (projectId, visitorId) => 
+    api.get(`/visitors/${projectId}/visitor-detail/${visitorId}`),
   getVisitorsByPage: (projectId, pageUrl) => 
     api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } }),
   getBulkSessions: (projectId, visitorIds) => 

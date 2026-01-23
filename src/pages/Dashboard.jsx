@@ -12,6 +12,7 @@ import PagesView from './dashboard/PagesView'
 import CameFrom from './dashboard/CameFrom'
 import ExitLink from './dashboard/ExitLink'
 import VisitorMap from './dashboard/VisitorMap'
+import VisitorDetail from './dashboard/VisitorDetail'
 import Reports from './dashboard/Reports'
 import HourlyView from './dashboard/HourlyView'
 
@@ -270,6 +271,7 @@ function Dashboard() {
           <Route path="came-from" element={<CameFrom projectId={projectId} />} />
           <Route path="exit-link" element={<ExitLink projectId={projectId} />} />
           <Route path="visitor-map" element={<VisitorMap projectId={projectId} />} />
+          <Route path="visitor/:visitorId" element={<VisitorDetail />} />
           <Route path="reports" element={<Reports projectId={projectId} />} />
         </Routes>
       </div>
