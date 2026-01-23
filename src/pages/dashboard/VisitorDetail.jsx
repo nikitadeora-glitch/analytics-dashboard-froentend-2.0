@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { visitorsAPI } from '../../api/api'
-import { ArrowLeft, Globe, Monitor, Smartphone, Tablet, Clock, Calendar, User, MapPin, Eye, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Globe, Monitor, Smartphone, Tablet, Clock, Calendar, User, MapPin, Eye, ExternalLink, Link } from 'lucide-react'
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -733,6 +733,62 @@ export default function VisitorDetail() {
                     <span style={{ fontWeight: '500', color: '#64748b', fontSize: '12px', display: 'block' }}>Pages Viewed</span>
                     <span style={{ fontSize: '14px' }}>{session.pageviews.length}</span>
                   </div>
+
+                  {session.entry_page && (
+                    <div>
+                      <span style={{ fontWeight: '500', color: '#64748b', fontSize: '12px', display: 'block' }}>Entry Page</span>
+                      <a 
+                        href={session.entry_page} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          fontSize: '14px', 
+                          color: '#22c55e', 
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          wordBreak: 'break-all'
+                        }}
+                      >
+                        {(() => {
+                          try {
+                            return new URL(session.entry_page).hostname
+                          } catch (e) {
+                            return session.entry_page
+                          }
+                        })()} <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
+
+                  {session.exit_page && (
+                    <div>
+                      <span style={{ fontWeight: '500', color: '#64748b', fontSize: '12px', display: 'block' }}>Exit Page</span>
+                      <a 
+                        href={session.exit_page} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          fontSize: '14px', 
+                          color: '#ef4444', 
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          wordBreak: 'break-all'
+                        }}
+                      >
+                        {(() => {
+                          try {
+                            return new URL(session.exit_page).hostname
+                          } catch (e) {
+                            return session.exit_page
+                          }
+                        })()} <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {session.pageviews.length > 0 && (
@@ -768,12 +824,26 @@ export default function VisitorDetail() {
                             {pvIndex + 1}
                           </span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '13px', fontWeight: '500', color: '#1f2937', wordBreak: 'break-word' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '500', color: '#1f2937', wordBreak: 'break-word', marginBottom: '2px' }}>
                               {pageview.title || pageview.url}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#6b7280', wordBreak: 'break-all' }}>
+                            <a 
+                              href={pageview.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                fontSize: '11px', 
+                                color: '#6b7280', 
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                wordBreak: 'break-all'
+                              }}
+                            >
+                              <Link size={10} />
                               {pageview.url}
-                            </div>
+                            </a>
                           </div>
                           <span style={{ fontSize: '11px', color: '#9ca3af', whiteSpace: 'nowrap', flexShrink: 0 }}>
                             {pageview.timestamp}
