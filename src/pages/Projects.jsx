@@ -14,6 +14,7 @@ function Projects() {
   const [selectedProject, setSelectedProject] = useState(null)
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState(null)
   const navigate = useNavigate()
 
   // Cache for projects data
@@ -89,6 +90,10 @@ function Projects() {
       await projectsAPI.create(formData)
       setFormData({ name: '', domain: '' })
       setShowForm(false)
+      // Show success message
+      setSuccessMessage('Project created successfully!')
+      // Hide success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000)
       // Force refresh after creating new project
       loadProjects(true)
     } catch (error) {
@@ -124,6 +129,10 @@ function Projects() {
     if (window.confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
       try {
         await projectsAPI.delete(project.id)
+        // Show success message
+        setSuccessMessage('Project deleted successfully!')
+        // Hide success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000)
         // Force refresh after deleting project
         loadProjects(true)
       } catch (error) {
@@ -580,6 +589,41 @@ function Projects() {
           </div>
         )}
 
+        {/* Success Message Popup */}
+        {successMessage && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: '#6a9e8dff',
+              color: 'white',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              zIndex: 2000,
+              fontSize: '16px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              animation: 'slideIn 0.3s ease',
+              minWidth: '250px',
+              justifyContent: 'center'
+            }}
+          >
+            <div style={{
+              width: '8px',
+              height: '8px',
+              background: 'white',
+              borderRadius: '50%',
+              animation: 'pulse 1.5s infinite'
+            }} />
+            {successMessage}
+          </div>
+        )}
+
         {/* Add Project Modal */}
         {showForm && (
           <div
@@ -967,6 +1011,24 @@ function Projects() {
           </div>
           <style>
             {`
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+              }
+              to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+              }
+            }
+            @keyframes pulse {
+              0%, 100% {
+                opacity: 1;
+              }
+              50% {
+                opacity: 0.5;
+              }
+            }
             @media (max-width: 768px) {
               .header {
                 padding: 15px !important;

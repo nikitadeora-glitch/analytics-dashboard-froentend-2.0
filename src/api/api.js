@@ -251,8 +251,14 @@ export const trafficAPI = {
     api.get(`/traffic/${projectId}/keywords?limit=${limit}`),
   getReferrers: (projectId) => 
     api.get(`/traffic/${projectId}/referrers`),
-  getExitLinks: (projectId, startDate, endDate) => 
-    api.get(`/traffic/${projectId}/exit-links?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`)
+  getExitLinks: (projectId, startDate, endDate) => {
+    let url = `/traffic/${projectId}/exit-links`
+    if (startDate && endDate) {
+      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+    }
+    console.log('🚪 TrafficAPI - Getting exit links:', url)
+    return api.get(url)
+  }
 };
 
 export const reportsAPI = {
