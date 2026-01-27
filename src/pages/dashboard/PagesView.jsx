@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import api from '../../api/api'
-import { Eye, ChevronDown, Globe, Calendar } from 'lucide-react'
+import { Eye, ChevronDown, Calendar } from 'lucide-react'
+import { NotoGlobeShowingAsiaAustralia } from '../../components/NotoGlobeShowingAsiaAustralia'
 
 function PagesView({ projectId }) {
   const [allVisitors, setAllVisitors] = useState([])
@@ -609,7 +610,7 @@ function PagesView({ projectId }) {
                   <div className="pages-col" data-label="Location" style={{ minWidth: 0 }}>
                     <div className="location-content">
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '14px',
                         fontWeight: '500',
                         color: '#1e293b',
                         marginBottom: '2px',
@@ -617,7 +618,7 @@ function PagesView({ projectId }) {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
-                        {getCountryFlag(visitor.country)} {visitor.country || 'Unknown'},
+                        <NotoGlobeShowingAsiaAustralia style={{ width: '16px', height: '16px', marginRight: '4px' }} /> {visitor.country || 'Unknown'},
                       </div>
                       <div style={{
                         fontSize: '11px',
