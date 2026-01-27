@@ -720,8 +720,11 @@ export default function VisitorDetail() {
                       >
                         {(() => {
                           try {
-                            return new URL(session.referrer).hostname
+                            // Try to create URL object and get hostname + pathname
+                            const url = new URL(session.referrer)
+                            return url.hostname + url.pathname
                           } catch (e) {
+                            // If URL parsing fails, return the original string
                             return session.referrer
                           }
                         })()} <ExternalLink size={12} />
@@ -753,8 +756,11 @@ export default function VisitorDetail() {
                       >
                         {(() => {
                           try {
-                            return new URL(session.entry_page).hostname
+                            // Try to create URL object and get hostname + pathname
+                            const url = new URL(session.entry_page)
+                            return url.hostname + url.pathname
                           } catch (e) {
+                            // If URL parsing fails, return the original string
                             return session.entry_page
                           }
                         })()} <ExternalLink size={12} />
@@ -781,8 +787,11 @@ export default function VisitorDetail() {
                       >
                         {(() => {
                           try {
-                            return new URL(session.exit_page).hostname
+                            // Try to create URL object and get hostname + pathname
+                            const url = new URL(session.exit_page)
+                            return url.hostname + url.pathname
                           } catch (e) {
+                            // If URL parsing fails, return the original string
                             return session.exit_page
                           }
                         })()} <ExternalLink size={12} />

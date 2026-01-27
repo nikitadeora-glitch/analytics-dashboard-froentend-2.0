@@ -88,21 +88,15 @@ function VisitorActivity({ projectId }) {
       console.log('🔄 VisitorActivity - Loading data with filter:', dateFilter)
       
       let response
-      if (dateFilter === 'all') {
-        // Load all data without date filtering
-        console.log('📅 VisitorActivity - Loading all time data')
-        response = await visitorsAPI.getActivityView(projectId)
-      } else {
-        // Load data with date filtering
-        const { startDate, endDate } = getDateRange(dateFilter)
-        console.log('📅 VisitorActivity - Using date range:', { startDate, endDate, filter: dateFilter })
-        console.log('🔄 VisitorActivity - Making API call with date range:', { startDate, endDate })
-        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
-        console.log('📊 VisitorActivity - API response received:', response.data?.length, 'visitors')
-      }
+      // Always use date filtering - removed 'all' option
+      const { startDate, endDate } = getDateRange(dateFilter)
+      console.log('📅 VisitorActivity - Using date range:', { startDate, endDate, filter: dateFilter })
+      console.log('🔄 VisitorActivity - Making API call with date range:', { startDate, endDate })
+      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      console.log('📊 VisitorActivity - API response received:', response.data?.length, 'visitors')
       
       setVisitors(response.data || [])
-      console.log(`✅ Loaded ${response.data?.length || 0} visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
+      console.log(`✅ Loaded ${response.data?.length || 0} visitors for ${dateFilter} days`)
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor activity. Please try again.')
@@ -120,13 +114,12 @@ function VisitorActivity({ projectId }) {
     localStorage.setItem(`visitor-activity-filter-${projectId}`, newFilter)
     
     // Log the new date range for debugging
-    if (newFilter !== 'all') {
-      const { startDate, endDate } = getDateRange(newFilter)
-      console.log('📅 VisitorActivity - New date range:', { startDate, endDate, filter: newFilter })
-    } else {
-      console.log('📅 VisitorActivity - Loading all time data')
-    }
+    const { startDate, endDate } = getDateRange(newFilter)
+    console.log('📅 VisitorActivity - New date range:', { startDate, endDate, filter: newFilter })
     console.log('🔄 VisitorActivity - Triggering data reload with new filter')
+    
+    // Set loading to true immediately to show skeleton when filter changes
+    setLoading(true)
   }
 
   const loadMore = () => {
@@ -201,7 +194,7 @@ function VisitorActivity({ projectId }) {
       >
         <Calendar size={16} />
         <span>
-          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : '60 Days'}
         </span>
         <ChevronDown size={16} style={{
           transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -224,7 +217,7 @@ function VisitorActivity({ projectId }) {
           minWidth: '120px',
           overflow: 'hidden'
         }}>
-          {['1', '7', '30', 'all'].map((filter) => (
+          {['1', '7', '30', '60'].map((filter) => (
             <div
               key={filter}
               onClick={() => handleDateFilterChange(filter)}
@@ -235,7 +228,7 @@ function VisitorActivity({ projectId }) {
                 fontWeight: '500',
                 color: dateFilter === filter ? '#1e40af' : '#374151',
                 background: dateFilter === filter ? '#eff6ff' : 'white',
-                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                borderBottom: filter !== '60' ? '1px solid #f3f4f6' : 'none',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
@@ -249,7 +242,7 @@ function VisitorActivity({ projectId }) {
                 }
               }}
             >
-              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : '60 Days'}
             </div>
           ))}
         </div>
@@ -393,11 +386,9 @@ function VisitorActivity({ projectId }) {
             {!loading && visitors.length > 0 && (
               <span style={{ color: '#10b981', marginLeft: '8px' }}>
                 • {visitors.length} visitors found
-                {dateFilter !== 'all' && (
-                  <span style={{ color: '#64748b', marginLeft: '4px' }}>
-                    (last {dateFilter} day{dateFilter !== '1' ? 's' : ''})
-                  </span>
-                )}
+                <span style={{ color: '#64748b', marginLeft: '4px' }}>
+                  (last {dateFilter} day{dateFilter !== '1' ? 's' : ''})
+                </span>
               </span>
             )}
           </div>

@@ -2,8 +2,10 @@ import { Plus, FolderOpen, BarChart2, LogOut, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import analyticImage from '../assets/analytic.png'
+import { useAuth } from '../App'
 
 function Layout() {
+  const { logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -17,7 +19,7 @@ function Layout() {
   }, [location.pathname])
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    logout()
     localStorage.removeItem('user')
     navigate('/login')
   }

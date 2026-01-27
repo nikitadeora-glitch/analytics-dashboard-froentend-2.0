@@ -16,18 +16,18 @@ console.log('baseURL:', import.meta.env.VITE_API_URL);
 console.log('Environment mode:', import.meta.env.MODE);
 
 // Token management
-const getToken = () => localStorage.getItem('authToken');
+const getToken = () => localStorage.getItem('auth_token');
 const setToken = (token) => {
   if (token) {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem('auth_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('auth_token');
     delete api.defaults.headers.common['Authorization'];
   }
 };
 const removeToken = () => {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem('auth_token');
   delete api.defaults.headers.common['Authorization'];
 };
 
@@ -117,8 +117,22 @@ export const visitorsAPI = {
     api.get(`/visitors/${projectId}/map-view?days=${days}`),
   getVisitorsByLocation: (projectId, lat, lng, days = 30) => 
     api.get(`/visitors/${projectId}/visitors-at-location`, { params: { lat, lng, days } }),
-  getAllSessions: (projectId, visitorId) => 
-    api.get(`/visitors/${projectId}/visitor-sessions/${visitorId}`),
+  getAllSessions: (projectId, visitorId, startDate = null, endDate = null) => {
+    let url = `/visitors/${projectId}/visitor-sessions/${visitorId}`
+    const params = []
+    
+    if (startDate && endDate) {
+      params.push(`start_date=${encodeURIComponent(startDate)}`)
+      params.push(`end_date=${encodeURIComponent(endDate)}`)
+    }
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log('🔍 VisitorsAPI - Getting visitor sessions:', url)
+    return api.get(url)
+  },
   getVisitorDetail: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/visitor-detail/${visitorId}`),
   getVisitorsByPage: (projectId, pageUrl) => 

@@ -91,15 +91,15 @@ function ExitLink({ projectId }) {
       let response
       
       if (dateFilter === 'all') {
-        // Load all data without date filtering
-        console.log('📅 ExitLink - Loading all time data')
-        response = await trafficAPI.getExitLinks(projectId, null, null)
+        // This case should not happen as 'all' option is removed
+        console.log('📅 ExitLink - Unexpected all filter, defaulting to 7 days')
+        const { startDate, endDate } = getDateRange('7')
+        response = await trafficAPI.getExitLinks(projectId, startDate, endDate)
       } else {
         // Load data with date filtering
         const { startDate, endDate } = getDateRange(dateFilter)
         console.log('📅 ExitLink - Using date range:', { startDate, endDate, filter: dateFilter })
         response = await trafficAPI.getExitLinks(projectId, startDate, endDate)
-        console.log('📊 ExitLink - API response received:', response.data.length, 'links')
       }
       
       console.log('✅ ExitLink - External links response:', response.data)
@@ -128,12 +128,8 @@ function ExitLink({ projectId }) {
     localStorage.setItem(`exitlink-filter-${projectId}`, newFilter)
     
     // Log the new date range for debugging
-    if (newFilter !== 'all') {
-      const { startDate, endDate } = getDateRange(newFilter)
-      console.log('📅 ExitLink - New date range:', { startDate, endDate, filter: newFilter })
-    } else {
-      console.log('📅 ExitLink - Loading all time data')
-    }
+    const { startDate, endDate } = getDateRange(newFilter)
+    console.log('📅 ExitLink - New date range:', { startDate, endDate, filter: newFilter })
   }
 
   const handleExitClick = (e, exit) => {
@@ -176,7 +172,7 @@ function ExitLink({ projectId }) {
       >
         <Calendar size={16} />
         <span>
-          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : '60 Days'}
         </span>
         <ChevronDown size={16} style={{
           transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -199,7 +195,7 @@ function ExitLink({ projectId }) {
           minWidth: '120px',
           overflow: 'hidden'
         }}>
-          {['1', '7', '30', 'all'].map((filter) => (
+          {['1', '7', '30', '60'].map((filter) => (
             <div
               key={filter}
               onClick={() => handleDateFilterChange(filter)}
@@ -210,7 +206,7 @@ function ExitLink({ projectId }) {
                 fontWeight: '500',
                 color: dateFilter === filter ? '#1e40af' : '#374151',
                 background: dateFilter === filter ? '#eff6ff' : 'white',
-                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                borderBottom: filter !== '60' ? '1px solid #f3f4f6' : 'none',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
@@ -224,7 +220,7 @@ function ExitLink({ projectId }) {
                 }
               }}
             >
-              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : '60 Days'}
             </div>
           ))}
         </div>

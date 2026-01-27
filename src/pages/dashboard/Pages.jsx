@@ -285,7 +285,9 @@ const getFinalEnglishTitle = (title, page) => {
       const { startDate, endDate } = getDateRange(period)
       const currentOffset = currentPagination.offset
 
-      console.log(`📥 Loading more ${activeTab} pages from offset: ${currentOffset}`)
+      console.log(` Loading more ${activeTab} pages from offset: ${currentOffset}`)
+      console.log(` Current ${activeTab} data length: ${getCurrentData().length}`)
+      console.log(` Current pagination:`, pagination[tabKey])
 
       let response
       if (activeTab === 'entry') {
@@ -298,25 +300,39 @@ const getFinalEnglishTitle = (title, page) => {
 
       const newData = response.data.data || response.data
 
+      console.log(' API Response:', response.data)
+      console.log(' New data length:', newData.length)
+      console.log(' New data sample:', newData.slice(0, 2)) // Show first 2 items
+      console.log(' Has more:', response.data.has_more)
+
+      // Check for potential duplicates
+      const currentData = getCurrentData()
+      const existingPageIds = new Set(currentData.map(item => item.page || item.url))
+      const uniqueNewData = newData.filter(item => !existingPageIds.has(item.page || item.url))
+      
+      console.log(' Existing items count:', currentData.length)
+      console.log(' New unique items count:', uniqueNewData.length)
+      console.log(' Duplicates filtered:', newData.length - uniqueNewData.length)
+
       // Append new data to existing data
       if (activeTab === 'entry') {
-        setEntryPages(prev => [...prev, ...newData])
+        setEntryPages(prev => [...prev, ...uniqueNewData])
       } else if (activeTab === 'top') {
-        setMostVisited(prev => [...prev, ...newData])
+        setMostVisited(prev => [...prev, ...uniqueNewData])
       } else {
-        setExitPages(prev => [...prev, ...newData])
+        setExitPages(prev => [...prev, ...uniqueNewData])
       }
 
       // Update pagination
       setPagination(prev => ({
         ...prev,
         [tabKey]: {
-          offset: currentOffset + newData.length,
+          offset: currentOffset + uniqueNewData.length,
           hasMore: response.data.has_more || false
         }
       }))
 
-      console.log(`✅ Loaded ${newData.length} more ${activeTab} pages`)
+      console.log(`✅ Loaded ${uniqueNewData.length} more ${activeTab} pages`)
     } catch (error) {
       console.error('Error loading more pages:', error)
     } finally {
@@ -383,7 +399,7 @@ const getFinalEnglishTitle = (title, page) => {
             >
               <Calendar size={16} />
               <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
               </span>
               <ChevronDown size={16} style={{
                 transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -406,7 +422,7 @@ const getFinalEnglishTitle = (title, page) => {
                 minWidth: '120px',
                 overflow: 'hidden'
               }}>
-                {['1', '7', '30'].map((p) => (
+                {['1', '7', '30', '60'].map((p) => (
                   <div
                     key={p}
                     onClick={() => handlePeriodChange(p)}
@@ -417,7 +433,7 @@ const getFinalEnglishTitle = (title, page) => {
                       fontWeight: '500',
                       color: period === p ? '#1e40af' : '#374151',
                       background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
@@ -431,7 +447,7 @@ const getFinalEnglishTitle = (title, page) => {
                       }
                     }}
                   >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                   </div>
                 ))}
               </div>
@@ -663,7 +679,7 @@ const getFinalEnglishTitle = (title, page) => {
             >
               <Calendar size={16} />
               <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
               </span>
               <ChevronDown size={16} style={{
                 transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -686,7 +702,7 @@ const getFinalEnglishTitle = (title, page) => {
                 minWidth: '120px',
                 overflow: 'hidden'
               }}>
-                {['1', '7', '30'].map((p) => (
+                {['1', '7', '30', '60'].map((p) => (
                   <div
                     key={p}
                     onClick={() => handlePeriodChange(p)}
@@ -697,7 +713,7 @@ const getFinalEnglishTitle = (title, page) => {
                       fontWeight: '500',
                       color: period === p ? '#1e40af' : '#374151',
                       background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
@@ -711,7 +727,7 @@ const getFinalEnglishTitle = (title, page) => {
                       }
                     }}
                   >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                   </div>
                 ))}
               </div>
@@ -1167,7 +1183,7 @@ const getFinalEnglishTitle = (title, page) => {
                         }
                       }}
                     >
-                      {loadingMore ? ' Loading...' : 'load more'}
+                      {loadingMore ? ' Loading...' : `Load More (${getCurrentData().length}+ items)`}
                     </button>
                   </div>
                 )}
@@ -1183,3 +1199,5 @@ const getFinalEnglishTitle = (title, page) => {
 }
 
 export default Pages
+
+

@@ -1,23 +1,36 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI } from '../../api/api'
-import { ArrowLeft, Clock, Eye, MapPin, Monitor, Globe } from 'lucide-react'
+import { ArrowLeft, Clock, Eye, MapPin, Monitor, Globe, Calendar } from 'lucide-react'
 
 function VisitorPathSimple({ projectId, visitorId, onBack, project }) {
   const [visitorData, setVisitorData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [dateRange, setDateRange] = useState(30)
+  const [showDateRangeDropdown, setShowDateRangeDropdown] = useState(false)
 
   useEffect(() => {
     loadVisitorPath()
-  }, [projectId, visitorId])
+  }, [projectId, visitorId, dateRange])
 
   const loadVisitorPath = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Get visitor's complete session data
-      const response = await visitorsAPI.getAllSessions(projectId, visitorId)
+      // Calculate date range
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(endDate.getDate() - dateRange + 1)
+      
+      // Format dates as YYYY-MM-DD
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const endDateStr = endDate.toISOString().split('T')[0]
+      
+      console.log(`🔍 Loading visitor path for ${visitorId} from ${startDateStr} to ${endDateStr}`)
+      
+      // Get visitor's session data with date filtering
+      const response = await visitorsAPI.getAllSessions(projectId, visitorId, startDateStr, endDateStr)
       setVisitorData(response.data)
     } catch (error) {
       console.error('Error loading visitor path:', error)
@@ -86,7 +99,99 @@ function VisitorPathSimple({ projectId, visitorId, onBack, project }) {
           </button>
           <h1>Loading Visitor Path...</h1>
         </div>
-
+        
+        {/* Date Range Selector */}
+        <div className="date-range-dropdown" style={{ position: 'relative', display: 'inline-block', marginLeft: '20px' }}>
+          <div
+            onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
+            style={{
+              padding: '8px 40px 8px 16px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Calendar size={16} />
+            Last {dateRange} Days
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none',
+              color: '#64748b'
+            }}
+          >
+            ▼
+          </div>
+          {showDateRangeDropdown && (
+            <>
+              <div
+                onClick={() => setShowDateRangeDropdown(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 40
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '4px',
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  zIndex: 50,
+                  minWidth: '150px'
+                }}
+              >
+                {[7, 15, 30, 60].map((days) => (
+                  <div
+                    key={days}
+                    onClick={() => {
+                      console.log(`📅 Date range changing from ${dateRange} to ${days}`)
+                      setDateRange(days)
+                      setShowDateRangeDropdown(false)
+                    }}
+                    style={{
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      background: dateRange === days ? '#eff6ff' : 'white',
+                      color: dateRange === days ? '#1e40af' : '#1e293b',
+                      fontWeight: dateRange === days ? '600' : '500',
+                      fontSize: '13px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (dateRange !== days) e.currentTarget.style.background = '#f8fafc'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (dateRange !== days) e.currentTarget.style.background = 'white'
+                    }}
+                  >
+                    Last {days} Days
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        
         <div className="content">
           <div className="chart-container">
             <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -125,7 +230,7 @@ function VisitorPathSimple({ projectId, visitorId, onBack, project }) {
           </button>
           <h1>Error Loading Visitor</h1>
         </div>
-
+        
         <div className="content">
           <div className="chart-container">
             <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>
@@ -167,7 +272,7 @@ function VisitorPathSimple({ projectId, visitorId, onBack, project }) {
           </button>
           <h1>Visitor: {visitorId}</h1>
         </div>
-
+        
         <div className="content">
           <div className="chart-container">
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
@@ -221,6 +326,99 @@ function VisitorPathSimple({ projectId, visitorId, onBack, project }) {
           </button>
           <h1 style={{ margin: 0 }}>Visitor Journey: {visitorId}</h1>
         </div>
+        
+        {/* Date Range Selector */}
+        <div className="date-range-dropdown" style={{ position: 'relative', display: 'inline-block', marginLeft: '20px' }}>
+          <div
+            onClick={() => setShowDateRangeDropdown(!showDateRangeDropdown)}
+            style={{
+              padding: '8px 40px 8px 16px',
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#475569',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Calendar size={16} />
+            Last {dateRange} Days
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none',
+              color: '#64748b'
+            }}
+          >
+            ▼
+          </div>
+          {showDateRangeDropdown && (
+            <>
+              <div
+                onClick={() => setShowDateRangeDropdown(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 40
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '4px',
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  zIndex: 50,
+                  minWidth: '150px'
+                }}
+              >
+                {[7, 15, 30, 60].map((days) => (
+                  <div
+                    key={days}
+                    onClick={() => {
+                      console.log(`📅 Date range changing from ${dateRange} to ${days}`)
+                      setDateRange(days)
+                      setShowDateRangeDropdown(false)
+                    }}
+                    style={{
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      background: dateRange === days ? '#eff6ff' : 'white',
+                      color: dateRange === days ? '#1e40af' : '#1e293b',
+                      fontWeight: dateRange === days ? '600' : '500',
+                      fontSize: '13px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (dateRange !== days) e.currentTarget.style.background = '#f8fafc'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (dateRange !== days) e.currentTarget.style.background = 'white'
+                    }}
+                  >
+                    Last {days} Days
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        
         {project && (
           <div style={{
             display: 'flex',

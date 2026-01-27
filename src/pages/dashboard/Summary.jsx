@@ -80,11 +80,12 @@ function Summary({ projectId }) {
     }
   }, [location.state, data])
 
-  // Separate useEffect for data loading - only depend on projectId and dateRange, NOT period
+  // Separate useEffect for data loading - reload when projectId or dateRange changes
   useEffect(() => {
-    if (location.state) {
-      // Don't reload data when coming back from navigation - just use existing data
-      console.log('Skipping data load - using existing data from navigation state')
+    // Always load data when dateRange changes, regardless of navigation state
+    // Only skip if we're explicitly coming back from hourly view navigation
+    if (location.state && location.state.fromHourlyView) {
+      console.log('Skipping data load - coming back from hourly view navigation')
       return
     }
     loadSummary()
@@ -102,9 +103,10 @@ function Summary({ projectId }) {
   const loadSummary = async () => {
     try {
       setLoading(true)
+      console.log('🔍 Loading summary with dateRange:', dateRange)
       const response = await analyticsAPI.getSummaryView(projectId, dateRange)
       setData(response.data)
-      console.log(response.data,"divyaaaaaa")
+      console.log('📊 Summary data received:', response.data)
       // Only reset page if it's not a navigation back from hourly view
       // Check if we're coming back from hourly view by checking if location.state has currentPage
       if (!location.state || location.state.currentPage === undefined) {
@@ -128,7 +130,79 @@ function Summary({ projectId }) {
   if (loading) {
     return (
       <>
-        {/* Skeleton UI unchanged */}
+        <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+          <Skeleton variant="text" width={120} height={32} />
+          <Skeleton variant="text" width={200} height={20} />
+        </div>
+
+        <div className="content">
+          <div className="chart-container" style={{ marginBottom: '30px' }}>
+            <div className="controls-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <Skeleton variant="rectangular" width={120} height={36} sx={{ borderRadius: '6px' }} />
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <Skeleton variant="rectangular" width={36} height={32} sx={{ borderRadius: '4px' }} />
+                  <Skeleton variant="rectangular" width={36} height={32} sx={{ borderRadius: '4px' }} />
+                  <Skeleton variant="rectangular" width={36} height={32} sx={{ borderRadius: '4px' }} />
+                  <Skeleton variant="rectangular" width={36} height={32} sx={{ borderRadius: '4px' }} />
+                </div>
+                <Skeleton variant="rectangular" width={160} height={36} sx={{ borderRadius: '6px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '15px', fontSize: '13px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Skeleton variant="rectangular" width={16} height={16} sx={{ borderRadius: '3px' }} />
+                  <Skeleton variant="text" width={80} height={16} />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Skeleton variant="rectangular" width={16} height={16} sx={{ borderRadius: '3px' }} />
+                  <Skeleton variant="text" width={90} height={16} />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Skeleton variant="rectangular" width={16} height={16} sx={{ borderRadius: '3px' }} />
+                  <Skeleton variant="text" width={110} height={16} />
+                </Box>
+              </div>
+            </div>
+
+            <div style={{ position: 'relative', padding: '20px 0' }}>
+              <div style={{
+                borderBottom: '2px solid #e2e8f0',
+                paddingBottom: '20px',
+                marginBottom: '8px'
+              }}>
+                <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: '8px' }} />
+              </div>
+            </div>
+          </div>
+
+          <div className="table-container" style={{ background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
+              <Skeleton variant="text" width={150} height={24} />
+            </div>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell><Skeleton variant="text" width={80} height={20} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={80} height={20} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={80} height={20} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={80} height={20} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={80} height={20} /></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[...Array(10)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton variant="text" width={100} height={20} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} height={20} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} height={20} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} height={20} /></TableCell>
+                    <TableCell><Skeleton variant="text" width={60} height={20} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </>
     )
   }
@@ -721,11 +795,13 @@ function Summary({ projectId }) {
                       zIndex: 1000,
                       overflow: 'hidden'
                     }}>
-                      {[30].map((days) => (
+                      {[30, 60].map((days) => (
                         <div
                           key={days}
                           onClick={() => {
+                            console.log('📅 Date range changing from', dateRange, 'to', days)
                             setDateRange(days)
+                            setCurrentPage(0)
                             setShowDateRangeDropdown(false)
                           }}
                           style={{

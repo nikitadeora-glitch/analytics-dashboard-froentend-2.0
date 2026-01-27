@@ -105,18 +105,12 @@ function VisitorPath({ projectId }) {
       
       let response
       
-      if (dateFilter === 'all') {
-        // Load all data without date filtering and no limit
-        console.log('📅 VisitorPath - Loading all time data')
-        response = await visitorsAPI.getActivityView(projectId, null, null, null)
-      } else {
-        // Load data with date filtering and no limit
-        const { startDate, endDate } = getDateRange(dateFilter)
-        console.log('📅 VisitorPath - Using date range:', { startDate, endDate, filter: dateFilter })
-        console.log('🔄 VisitorPath - Making API call with date range:', { startDate, endDate })
-        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
-        console.log('📊 VisitorPath - API response received:', response.data?.length, 'visitors')
-      }
+      // Load data with date filtering and no limit
+      const { startDate, endDate } = getDateRange(dateFilter)
+      console.log('📅 VisitorPath - Using date range:', { startDate, endDate, filter: dateFilter })
+      console.log('🔄 VisitorPath - Making API call with date range:', { startDate, endDate })
+      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      console.log('📊 VisitorPath - API response received:', response.data?.length, 'visitors')
       
       const newVisitors = response.data || []
       
@@ -127,7 +121,7 @@ function VisitorPath({ projectId }) {
       // No need to check for more data since we're loading all at once
       setHasMore(false)
       
-      console.log(`✅ Loaded ${newVisitors.length} visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
+      console.log(`✅ Loaded ${newVisitors.length} visitors for ${dateFilter} days`)
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor paths. Please try again.')
@@ -172,13 +166,9 @@ function VisitorPath({ projectId }) {
     localStorage.setItem(`visitor-path-filter-${projectId}`, newFilter)
     setDisplayCount(10) // Reset display count when filter changes
     console.log('🔄 VisitorPath - Triggering data reload with new filter')
-    if (newFilter !== 'all') {
-      const { startDate, endDate } = getDateRange(newFilter)
-      console.log('📅 VisitorPath - New date range:', { startDate, endDate, filter: newFilter })
-    } else {
-      console.log('📅 VisitorPath - Loading all time data')
-    }
-    console.log('🔄 VisitorPath - Triggering data reload with new filter')
+    const { startDate, endDate } = getDateRange(newFilter)
+    console.log('📅 VisitorPath - New date range:', { startDate, endDate, filter: newFilter })
+    console.log(' VisitorPath - Triggering data reload with new filter')
   }
 
   const getCountryCode = (country) => {
@@ -295,7 +285,7 @@ function VisitorPath({ projectId }) {
       >
         <Calendar size={16} />
         <span>
-          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : '60 Days'}
         </span>
         <ChevronDown size={16} style={{
           transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -318,7 +308,7 @@ function VisitorPath({ projectId }) {
           minWidth: '120px',
           overflow: 'hidden'
         }}>
-          {['1', '7', '30', 'all'].map((filter) => (
+          {['1', '7', '30', '60'].map((filter) => (
             <div
               key={filter}
               onClick={() => handleDateFilterChange(filter)}
@@ -329,7 +319,7 @@ function VisitorPath({ projectId }) {
                 fontWeight: '500',
                 color: dateFilter === filter ? '#1e40af' : '#374151',
                 background: dateFilter === filter ? '#eff6ff' : 'white',
-                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                borderBottom: filter !== '60' ? '1px solid #f3f4f6' : 'none',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
@@ -343,7 +333,7 @@ function VisitorPath({ projectId }) {
                 }
               }}
             >
-              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : '60 Days'}
             </div>
           ))}
         </div>

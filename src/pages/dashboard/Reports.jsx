@@ -128,6 +128,11 @@ function Reports({ projectId }) {
   }, [selectedPeriod, reportData])
 
   const fetchReportData = async () => {
+    console.log('🚀 fetchReportData() called!', {
+      selectedPeriod,
+      timestamp: new Date().toISOString()
+    })
+    
     setLoadingData(true)
     setError(null)
     try {
@@ -202,8 +207,19 @@ function Reports({ projectId }) {
         periodEndDate: endDate
       })
       
-      // summaryData from analytics (backend period-filtered)
-      setSummaryData(analyticsResponse.data)
+      // IMPORTANT: Use summaryResponse.data for summaryData as it has the correct filtered data
+      setSummaryData(summaryResponse.data)
+      
+      console.log('✅ Data successfully updated:', {
+        period: selectedPeriod,
+        visitorsCount: visitorsData.length,
+        pagesCount: pagesData.length,
+        trafficCount: trafficData.length,
+        geographicCount: geographicData.length,
+        summaryData: summaryResponse.data ? 'loaded from summaryResponse' : 'null',
+        summaryResponseData: summaryResponse.data,
+        analyticsResponseData: analyticsResponse.data
+      })
     } catch (error) {
       console.error('❌ Error fetching report data:', error)
       console.error('❌ Error details:', {
@@ -2448,16 +2464,24 @@ function Reports({ projectId }) {
                   value={selectedPeriod}
                   onChange={(e) => {
                     const newPeriod = e.target.value
+                    console.log('🔄 Period filter changed:', {
+                      from: selectedPeriod,
+                      to: newPeriod,
+                      timestamp: new Date().toISOString()
+                    })
+                    
                     setSelectedPeriod(newPeriod)
+                    console.log('✅ setSelectedPeriod called with:', newPeriod)
+                    
                     // Trigger immediate data refresh for better UX
+                    console.log('🚀 Calling fetchReportData() due to period change...')
                     fetchReportData()
                   }}
                 >
                   <option value="1">Last 1 Day</option>
                   <option value="7">Last 7 Days</option>
                   <option value="30">Last 30 Days</option>
-                  <option value="90">Last 3 Months</option>
-                  <option value="365">Last Year</option>
+                  <option value="60">Last 60 Days</option>
                 </select>
               </div>
             </div>

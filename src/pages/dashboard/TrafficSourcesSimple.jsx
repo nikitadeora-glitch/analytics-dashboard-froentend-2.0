@@ -30,6 +30,7 @@ function TrafficSourcesSimple({ projectId }) {
   useEffect(() => {
     loadData()
     loadProjectInfo()
+    console.log('🔄 TrafficSources - Component mounted with period:', period)
   }, [projectId, period])
 
   // Close dropdown when clicking outside
@@ -186,6 +187,7 @@ function TrafficSourcesSimple({ projectId }) {
 
   const handlePeriodChange = (newPeriod) => {
     console.log('📅 TrafficSources - Period changing from:', period, 'to:', newPeriod)
+    setLoading(true) // Show skeleton immediately when period changes
     setPeriod(newPeriod)
     localStorage.setItem(`traffic-sources-period-${projectId}`, newPeriod)
     setShowPeriodDropdown(false)
@@ -231,7 +233,7 @@ function TrafficSourcesSimple({ projectId }) {
             >
               <Calendar size={16} />
               <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
               </span>
               <ChevronDown size={16} style={{
                 transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -254,7 +256,7 @@ function TrafficSourcesSimple({ projectId }) {
                 minWidth: '120px',
                 overflow: 'hidden'
               }}>
-                {['1', '7', '30'].map((p) => (
+                {['1', '7', '30', '60'].map((p) => (
                   <div
                     key={p}
                     onClick={() => handlePeriodChange(p)}
@@ -265,7 +267,7 @@ function TrafficSourcesSimple({ projectId }) {
                       fontWeight: '500',
                       color: period === p ? '#1e40af' : '#374151',
                       background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
@@ -279,7 +281,7 @@ function TrafficSourcesSimple({ projectId }) {
                       }
                     }}
                   >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                   </div>
                 ))}
               </div>
@@ -409,7 +411,7 @@ function TrafficSourcesSimple({ projectId }) {
             >
               <Calendar size={16} />
               <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
               </span>
               <ChevronDown size={16} style={{
                 transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -432,7 +434,7 @@ function TrafficSourcesSimple({ projectId }) {
                 minWidth: '120px',
                 overflow: 'hidden'
               }}>
-                {['1', '7', '30'].map((p) => (
+                {['1', '7', '30', '60'].map((p) => (
                   <div
                     key={p}
                     onClick={() => handlePeriodChange(p)}
@@ -443,7 +445,7 @@ function TrafficSourcesSimple({ projectId }) {
                       fontWeight: '500',
                       color: period === p ? '#1e40af' : '#374151',
                       background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
@@ -457,7 +459,7 @@ function TrafficSourcesSimple({ projectId }) {
                       }
                     }}
                   >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                   </div>
                 ))}
               </div>
@@ -496,7 +498,7 @@ function TrafficSourcesSimple({ projectId }) {
             <div>Traffic Source</div>
             <div style={{ textAlign: 'center' }}>Sessions</div>
             <div style={{ textAlign: 'center' }}>Bounce %</div>
-            <div style={{ textAlign: 'center' }}>Entire Log ({period === '1' ? '1 day' : period === '7' ? '7 days' : '30 days'}) Sessions</div>
+            <div style={{ textAlign: 'center' }}>Entire Log ({period === '1' ? '1 day' : period === '7' ? '7 days' : period === '30' ? '30 days' : '60 days'}) Sessions</div>
           </div>
 
           {/* Table Rows - Show all standard sources */}
@@ -662,7 +664,7 @@ function TrafficSourcesSimple({ projectId }) {
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
                 <h3 style={{ margin: '0 0 8px 0', color: '#374151' }}>No Traffic Data Available</h3>
                 <p style={{ margin: 0, fontSize: '14px' }}>
-                  No traffic sources found for the selected {period === '1' ? 'day' : period === '7' ? '7 days' : '30 days'} period.
+                  No traffic sources found for the selected {period === '1' ? 'day' : period === '7' ? '7 days' : period === '30' ? '30 days' : '60 days'} period.
                   <br />Try selecting a different date range or check if your tracking is working properly.
                 </p>
               </div>

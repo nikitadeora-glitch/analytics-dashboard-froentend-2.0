@@ -94,8 +94,8 @@ function CameFrom({ projectId }) {
       let response
       
       if (dateFilter === 'all') {
-        // Load all data without date filtering and without limit
-        console.log('📅 CameFrom - Loading all time data')
+        // This case should not happen as 'all' option is removed
+        console.log('📅 CameFrom - Loading all time data (fallback)')
         response = await visitorsAPI.getActivityView(projectId, null, null, null)
       } else {
         // Load data with date filtering and without limit
@@ -117,7 +117,7 @@ function CameFrom({ projectId }) {
       setCurrentIndex(20)
       setHasMore(referralVisitors.length > 20)
       
-      console.log(`✅ Loaded ${referralVisitors.length} referral visitors for ${dateFilter === 'all' ? 'all time' : dateFilter + ' days'}`)
+      console.log(`✅ Loaded ${referralVisitors.length} referral visitors for ${dateFilter} days`)
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor referrer data. Please try again.')
@@ -154,12 +154,8 @@ function CameFrom({ projectId }) {
     localStorage.setItem(`camefrom-filter-${projectId}`, newFilter)
     
     // Log the new date range for debugging
-    if (newFilter !== 'all') {
-      const { startDate, endDate } = getDateRange(newFilter)
-      console.log('📅 CameFrom - New date range:', { startDate, endDate, filter: newFilter })
-    } else {
-      console.log('📅 CameFrom - Loading all time data')
-    }
+    const { startDate, endDate } = getDateRange(newFilter)
+    console.log('📅 CameFrom - New date range:', { startDate, endDate, filter: newFilter })
   }
 
   const closeModal = () => {
@@ -229,7 +225,7 @@ function CameFrom({ projectId }) {
       >
         <Calendar size={16} />
         <span>
-          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : 'All Time'}
+          {dateFilter === '1' ? '1 Day' : dateFilter === '7' ? '7 Days' : dateFilter === '30' ? '30 Days' : dateFilter === '60' ? '60 Days' : 'All Time'}
         </span>
         <ChevronDown size={16} style={{
           transform: showDateDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -252,7 +248,7 @@ function CameFrom({ projectId }) {
           minWidth: '120px',
           overflow: 'hidden'
         }}>
-          {['1', '7', '30', 'all'].map((filter) => (
+          {['1', '7', '30', '60'].map((filter) => (
             <div
               key={filter}
               onClick={() => handleDateFilterChange(filter)}
@@ -263,7 +259,7 @@ function CameFrom({ projectId }) {
                 fontWeight: '500',
                 color: dateFilter === filter ? '#1e40af' : '#374151',
                 background: dateFilter === filter ? '#eff6ff' : 'white',
-                borderBottom: filter !== 'all' ? '1px solid #f3f4f6' : 'none',
+                borderBottom: filter !== '60' ? '1px solid #f3f4f6' : 'none',
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
@@ -277,7 +273,7 @@ function CameFrom({ projectId }) {
                 }
               }}
             >
-              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : 'All Time'}
+              {filter === '1' ? '1 Day' : filter === '7' ? '7 Days' : filter === '30' ? '30 Days' : '60 Days'}
             </div>
           ))}
         </div>

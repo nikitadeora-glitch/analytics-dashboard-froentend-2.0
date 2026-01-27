@@ -82,7 +82,7 @@ function VisitorMap({ projectId }) {
               <option value="1">Today</option>
               <option value="7">Last 7 Days</option>
               <option value="30">Last 30 Days</option>
-              <option value="90">Last 3 Months</option>
+              <option value="60">Last 60 Days</option>
             </select>
           </div>
         </div>
@@ -113,21 +113,73 @@ function VisitorMap({ projectId }) {
           overflow: 'hidden'
         }}>
 
-          {loading && (
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(255,255,255,0.7)',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <div className="spinner"></div>
+          {loading ? (
+            <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+              {/* Map Skeleton */}
+              <Box sx={{ height: '100%', width: '100%', position: 'relative', bgcolor: '#f1f5f9' }}>
+                {/* Header skeleton */}
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 10, 
+                  left: 10, 
+                  right: 10, 
+                  zIndex: 1000,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Skeleton variant="text" width={120} height={24} />
+                  <Skeleton variant="rectangular" width={100} height={32} sx={{ borderRadius: 1 }} />
+                </Box>
+                
+                {/* Map area skeleton with grid pattern */}
+                <Box sx={{ 
+                  height: '100%', 
+                  width: '100%', 
+                  position: 'relative',
+                  backgroundImage: 'linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)',
+                  backgroundSize: '20px 20px',
+                  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                  opacity: 0.3
+                }}>
+                  {/* Skeleton markers */}
+                  {[...Array(8)].map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      variant="circular"
+                      width={20}
+                      height={20}
+                      sx={{
+                        position: 'absolute',
+                        bgcolor: '#ef4444',
+                        top: `${20 + (i * 10)}%`,
+                        left: `${10 + (i * 12)}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                    />
+                  ))}
+                </Box>
+                
+                {/* Legend skeleton */}
+                <Box sx={{
+                  position: 'absolute',
+                  bottom: 20,
+                  right: 20,
+                  background: 'white',
+                  padding: 2,
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  zIndex: 900
+                }}>
+                  <Skeleton variant="text" width={80} height={16} sx={{ mb: 1 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Skeleton variant="circular" width={16} height={16} />
+                    <Skeleton variant="text" width={120} height={14} />
+                  </Box>
+                </Box>
+              </Box>
             </div>
-          )}
-
-          {!loading && locations.length > 0 ? (
+          ) : locations.length > 0 ? (
             <div style={{ height: '100%', width: '100%' }}>
               <MapContainer
                 center={[20, 0]}

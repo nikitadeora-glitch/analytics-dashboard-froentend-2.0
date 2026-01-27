@@ -234,7 +234,7 @@ function PagesView({ projectId }) {
                   >
                     <Calendar size={16} />
                     <span>
-                      {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                      {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
                     </span>
                     <ChevronDown size={16} style={{
                       transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -257,7 +257,7 @@ function PagesView({ projectId }) {
                       minWidth: '120px',
                       overflow: 'hidden'
                     }}>
-                      {['1', '7', '30'].map((p) => (
+                      {['1', '7', '30', '60'].map((p) => (
                         <div
                           key={p}
                           onClick={() => handlePeriodChange(p)}
@@ -268,7 +268,7 @@ function PagesView({ projectId }) {
                             fontWeight: '500',
                             color: period === p ? '#1e40af' : '#374151',
                             background: period === p ? '#eff6ff' : 'white',
-                            borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                            borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                             transition: 'all 0.2s'
                           }}
                           onMouseEnter={(e) => {
@@ -282,7 +282,7 @@ function PagesView({ projectId }) {
                             }
                           }}
                         >
-                          {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                          {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                         </div>
                       ))}
                     </div>
@@ -407,7 +407,7 @@ function PagesView({ projectId }) {
             >
               <Calendar size={16} />
               <span>
-                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : '30 Days'}
+                {period === '1' ? '1 Day' : period === '7' ? '7 Days' : period === '30' ? '30 Days' : '60 Days'}
               </span>
               <ChevronDown size={16} style={{
                 transform: showPeriodDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -430,7 +430,7 @@ function PagesView({ projectId }) {
                 minWidth: '120px',
                 overflow: 'hidden'
               }}>
-                {['1', '7', '30'].map((p) => (
+                {['1', '7', '30', '60'].map((p) => (
                   <div
                     key={p}
                     onClick={() => handlePeriodChange(p)}
@@ -441,7 +441,7 @@ function PagesView({ projectId }) {
                       fontWeight: '500',
                       color: period === p ? '#1e40af' : '#374151',
                       background: period === p ? '#eff6ff' : 'white',
-                      borderBottom: p !== '30' ? '1px solid #f3f4f6' : 'none',
+                      borderBottom: p !== '60' ? '1px solid #f3f4f6' : 'none',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
@@ -455,7 +455,7 @@ function PagesView({ projectId }) {
                       }
                     }}
                   >
-                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : '30 Days'}
+                    {p === '1' ? '1 Day' : p === '7' ? '7 Days' : p === '30' ? '30 Days' : '60 Days'}
                   </div>
                 ))}
               </div>

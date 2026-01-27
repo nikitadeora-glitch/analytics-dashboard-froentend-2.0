@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import { authAPI, tokenManager } from '../api/api'
+import { useAuth } from '../App'
 import logo from '/favicon.png'
 import backgroundImage from '../assets/analytic.png'
 
@@ -10,6 +11,9 @@ import { useEffect } from "react"
 
 
 function Login() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  
   // Debug environment variables
   console.log('🔍 Environment Debug:');
   console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
@@ -24,7 +28,6 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [passwordErrors, setPasswordErrors] = useState([])
-  const navigate = useNavigate()
 
   // Password validation function
   const validatePassword = (password) => {
@@ -66,8 +69,8 @@ function Login() {
       // Call login API
       const response = await authAPI.login(formData)
 
-      // Store token
-      tokenManager.setToken(response.data.access_token)
+      // Store token and update auth state
+      login(response.data.access_token)
 
       // On successful login, navigate to dashboard
       navigate('/dashboard')
@@ -135,7 +138,7 @@ const handleGoogleLogin = async (response) => {
 
     console.log("BACKEND RESPONSE 👉", res.data)
 
-    tokenManager.setToken(res.data.access_token)
+    login(res.data.access_token)
     navigate("/dashboard")
   } catch (err) {
     console.error("GOOGLE LOGIN ERROR 👉", err)
