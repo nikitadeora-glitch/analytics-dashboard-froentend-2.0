@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
-import { Filter, Download, ExternalLink, ChevronRight, X, Globe, Calendar, ChevronDown } from 'lucide-react'
+import { Filter, Download, ExternalLink, ChevronRight, X, Globe, Calendar, ChevronDown, Smartphone, Monitor } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
 
 // Format time spent like PagesSessionView
@@ -232,13 +232,13 @@ function VisitorPath({ projectId }) {
       'Brazil': '🇧🇷',
       'Russia': '🇷🇺'
     }
-    return flags[country] || '🌍'
+    return flags[country] || <Globe style={{ fontSize: '16px' }} />
   }
 
   const getDeviceIcon = (device) => {
-    if (device?.toLowerCase().includes('mobile')) return '📱'
-    if (device?.toLowerCase().includes('tablet')) return '📱'
-    return '💻'
+    if (device?.toLowerCase().includes('mobile')) return <Smartphone size={16} />
+    if (device?.toLowerCase().includes('tablet')) return <Smartphone size={16} />
+    return <Monitor size={16} />
   }
 
   // Helper to format date to IST (India Standard Time)
@@ -551,12 +551,12 @@ function VisitorPath({ projectId }) {
                 }}>
                   <div>
                     <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                      🔢 Session #{session.session_id}
+                       Session #{session.session_id}
                     </div>
                     <div style={{ fontSize: '14px', color: '#64748b', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <span>📅 {formatDate(session.visited_at)}</span>
+                      <span>{formatDate(session.visited_at)}</span>
                       <span>•</span>
-                      <span>🕐 {formatTime(session.visited_at)}</span>
+                      <span>{formatTime(session.visited_at)}</span>
                     </div>
                   </div>
                   <div className="header-right" style={{ textAlign: 'right' }}>
@@ -570,10 +570,10 @@ function VisitorPath({ projectId }) {
                       gap: '6px',
                       justifyContent: 'flex-end'
                     }}>
-                      📄 {session.page_count} {session.page_count === 1 ? 'Page' : 'Pages'}
+                      {session.page_count} {session.page_count === 1 ? 'Page' : 'Pages'}
                     </div>
                     <div style={{ fontSize: '14px', color: '#64748b' }}>
-                      ⏱️ Duration: {session.session_duration ? `${Math.floor(session.session_duration / 60)}m ${session.session_duration % 60}s` : 'N/A'}
+                       Duration: {session.session_duration ? `${Math.floor(session.session_duration / 60)}m ${session.session_duration % 60}s` : 'N/A'}
                     </div>
                   </div>
                 </div>
@@ -1316,7 +1316,7 @@ function VisitorPath({ projectId }) {
 
                   {/* SYSTEM */}
                   <div className="visitor-col" data-label="SYSTEM" style={{ display: 'flex', gap: '12px', alignItems: 'start' }}>
-                    <div style={{ padding: '4px', background: '#f1f5f9', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ fontSize: '18px', lineHeight: 1 }}>{getDeviceIcon(visitor.device)}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1356,25 +1356,46 @@ function VisitorPath({ projectId }) {
                     <div style={{ fontSize: '11px', color: '#10b981', marginBottom: '6px' }}>
                       {visitor.referrer && visitor.referrer !== 'direct' ? '(Referring link)' : '(No referring link)'}
                     </div>
-                    <a
-                      href={visitor.entry_page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        fontSize: '11px',
-                        color: '#3b82f6',
-                        textDecoration: 'none',
-                        wordBreak: 'break-all',
-                        overflowWrap: 'anywhere',
-                        lineHeight: '1.4',
-                        display: 'block',
-                        maxWidth: '200px'
-                      }}
-                      title={visitor.entry_page}
-                    >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+                      <a
+                        href={visitor.entry_page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontSize: '11px',
+                          color: '#3b82f6',
+                          textDecoration: 'none',
+                          wordBreak: 'break-all',
+                          whiteSpace: 'nowrap',
+                          display: 'inline-block',
+                          lineHeight: '1.4',
+                          maxWidth: '100%',
+                          fontWeight: '500',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                        title={visitor.entry_page}
+                      >
                       {formatUrl(visitor.entry_page)}
-                    </a>
+                      </a>
+                      <a
+                        href={visitor.entry_page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                        title={visitor.entry_page}
+                      >
+                        <ExternalLink size={10} style={{ 
+                          color: '#3b82f6', 
+                          flexShrink: 0 
+                        }} />
+                      </a>
+                    </div>
                   </div>
                   
                   {/* User Journey - Separate div container */}
@@ -1414,7 +1435,6 @@ function VisitorPath({ projectId }) {
                             <div style={{
                               minWidth: '20px',
                               height: '20px',
-                              borderRadius: '50%',
                               background: pidx === 0 ? '#059669' : pidx === visitor.page_views_list.length - 1 ? '#dc2626' : '#3b82f6',
                               color: 'white',
                               display: 'flex',
@@ -1430,7 +1450,7 @@ function VisitorPath({ projectId }) {
                             {/* Page Info */}
                             <div style={{ minWidth: 0 }}>
                               <div style={{
-                                fontSize: '9px',
+                                fontSize: '12px',
                                 color: pidx === 0 ? '#059669' : pidx === visitor.page_views_list.length - 1 ? '#dc2626' : '#64748b',
                                 fontWeight: '600',
                                 marginBottom: '1px',
@@ -1438,28 +1458,49 @@ function VisitorPath({ projectId }) {
                               }}>
                                 {pidx === 0 ? 'Entry' : pidx === visitor.page_views_list.length - 1 ? 'Exit' : `Step ${pidx + 1}`}
                               </div>
-                              <a
-                                href={page.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  fontSize: '9px',
-                                  color: '#3b82f6',
-                                  textDecoration: 'none',
-                                  wordBreak: 'break-all',
-                                  whiteSpace: 'normal',
-                                  display: 'block',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  maxWidth: '100%'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                                onClick={(e) => e.stopPropagation()}
-                                title={page.url}
-                              >
-                                {formatUrl(page.url)}
-                              </a>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+                                <a
+                                  href={page.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    fontSize: '12px',
+                                    color: '#3b82f6',
+                                    textDecoration: 'none',
+                                    wordBreak: 'break-all',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-block',
+                                    lineHeight: '1.4',
+                                    maxWidth: '100%',
+                                    fontWeight: '500',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={page.url}
+                                >
+                                  {page.url}
+                                </a>
+                                <a
+                                  href={page.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }}
+                                  title={page.url}
+                                >
+                                  <ExternalLink size={12} style={{ 
+                                    color: '#3b82f6', 
+                                    flexShrink: 0, 
+                                    marginTop: '0' 
+                                  }} />
+                                </a>
+                              </div>
                             </div>
 
                             {/* Time Spent */}
@@ -1474,12 +1515,6 @@ function VisitorPath({ projectId }) {
                                 marginBottom: '1px'
                               }}>
                                 {formatTimeSpent(page.time_spent || Math.floor(Math.random() * 300) + 30)}
-                              </div>
-                              <div style={{
-                                fontSize: '7px',
-                                color: '#6d6f6dff'
-                              }}>
-                                Time
                               </div>
                             </div>
                           </div>

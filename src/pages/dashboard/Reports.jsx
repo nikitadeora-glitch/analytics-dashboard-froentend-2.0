@@ -714,7 +714,7 @@ function Reports({ projectId }) {
               fontSize: '12px',
               fontWeight: '500'
             }}>
-              📅 Period: {formatPeriodText(selectedPeriod)}
+               Period: {formatPeriodText(selectedPeriod)}
             </div>
             <div style={{
               padding: '4px 12px',
@@ -724,7 +724,7 @@ function Reports({ projectId }) {
               fontSize: '12px',
               fontWeight: '500'
             }}>
-              🔄 Updated: {formatToIST(new Date(), { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} (IST)
+              Updated: {formatToIST(new Date(), { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} (IST)
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import api from '../../api/api'
-import { Eye, ChevronDown, Calendar } from 'lucide-react'
+import { Eye, ChevronDown, Calendar, Smartphone, Monitor, Globe } from 'lucide-react'
 import { NotoGlobeShowingAsiaAustralia } from '../../components/NotoGlobeShowingAsiaAustralia'
 
 function PagesView({ projectId }) {
@@ -167,13 +167,13 @@ function PagesView({ projectId }) {
       'Singapore': '🇸🇬',
       'China': '🇨🇳'
     }
-    return flags[country] || '🌍'
+    return flags[country] || <Globe style={{ fontSize: '16px' }} />
   }
 
   const getDeviceIcon = (device) => {
-    if (device?.toLowerCase().includes('mobile')) return '📱'
-    if (device?.toLowerCase().includes('tablet')) return '📱'
-    return '💻'
+    if (device?.toLowerCase().includes('mobile')) return <Smartphone size={20} />
+    if (device?.toLowerCase().includes('tablet')) return <Smartphone size={20} />
+    return <Monitor size={20} />
   }
 
   // Helper to format date to IST (India Standard Time)
@@ -618,7 +618,7 @@ function PagesView({ projectId }) {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
-                        <NotoGlobeShowingAsiaAustralia style={{ width: '16px', height: '16px', marginRight: '4px' }} /> {visitor.country || 'Unknown'},
+                        <Globe style={{ width: '16px', height: '16px', marginRight: '4px' }} /> {visitor.country || 'Unknown'},
                       </div>
                       <div style={{
                         fontSize: '11px',

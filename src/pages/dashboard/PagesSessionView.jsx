@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchSessionDetails, clearSessionDetails, fetchMoreSessionDetails } from '../../store/slices/sessionSlice'
 import { Skeleton, Box } from '@mui/material'
-import { Calendar, ChevronDown } from 'lucide-react'
+import { Calendar, ChevronDown, Smartphone, Monitor, Globe, ExternalLink } from 'lucide-react'
 
 // Globe Icon Component
 export function NotoGlobeShowingAsiaAustralia(props) {
@@ -619,40 +619,79 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                           (IST)
                         </span>
                       </div>
-                      <a
-                        href={selectedPageSessions.url || selectedPageSessions.page}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          fontSize: '10px',
-                          color: '#3b82f6',
-                          textDecoration: 'none',
-                          display: 'block',
-                          marginBottom: '2px',
-                          wordBreak: 'break-all'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        {selectedPageSessions.url || selectedPageSessions.page}
-                      </a>
-                      {session.referrer && session.referrer !== 'direct' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         <a
-                          href={session.referrer}
+                          href={selectedPageSessions.url || selectedPageSessions.page}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
                             fontSize: '10px',
-                            color: '#10b981',
+                            color: '#3b82f6',
                             textDecoration: 'none',
-                            display: 'block',
+                            display: 'inline',
+                            marginBottom: '2px',
                             wordBreak: 'break-all'
                           }}
                           onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
                           onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                         >
-                          {session.referrer}
+                          {selectedPageSessions.url || selectedPageSessions.page}
                         </a>
+                        <a
+                          href={selectedPageSessions.url || selectedPageSessions.page}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#3b82f6',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            marginBottom: '2px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                      {session.referrer && session.referrer !== 'direct' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                          <a
+                            href={session.referrer}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '10px',
+                              color: '#10b981',
+                              textDecoration: 'none',
+                              display: 'inline',
+                              wordBreak: 'break-all'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                          >
+                            {session.referrer}
+                          </a>
+                          <a
+                            href={session.referrer}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#10b981',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#059669'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#10b981'}
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        </div>
                       ) : (
                         <div style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
                           Direct visit
@@ -691,11 +730,11 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                   {/* Session Number & Total Time - Fourth Column */}
                   <div className="session-col" data-label="Session Info">
                     <div style={{
-
+                      display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px',
-
+                      gap: '6px',
+                      margin: '8px 0'
                     }}>
                       <span style={{ fontSize: '13px', fontWeight: '600', color: 'black' }}>
                         Session #{String(session.session_id).substring(0, 8)}
@@ -718,15 +757,27 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
 
                   {/* Device & Browser - Fifth Column */}
                   <div className="session-col" data-label="Device & Browser">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '20px' }}>💻</span>
-                      <NotoGlobeShowingAsiaAustralia style={{ fontSize: '20px' }} />
-                    </div>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e293b', marginBottom: '2px' }}>
-                      {session.os || 'Unknown OS'}, {session.browser || 'Unknown Browser'}
-                    </div>
-                    <div style={{ fontSize: '9px', color: '#64748b' }}>
-                      {session.screen_resolution || 'Unknown Resolution'}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: '4px',
+                      margin: '8px 0'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                        {session.device_type === 'mobile' ? (
+                          <Smartphone size={20} />
+                        ) : (
+                          <Monitor size={20} />
+                        )}
+                        <Globe size={20} />
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#1e293b' }}>
+                        {session.os || 'Unknown OS'}, {session.browser || 'Unknown Browser'}
+                      </div>
+                      <div style={{ fontSize: '9px', color: '#64748b' }}>
+                        {session.screen_resolution || 'Unknown Resolution'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -792,8 +843,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                         {/* Step Number */}
                         <div style={{
                           minWidth: '25px',
-                          height: '35px',
-                          borderRadius: '50%',
+                          height: '30px',
                           background: pidx === 0 ? '#059669' : pidx === session.path.length - 1 ? '#dc2626' : '#3b82f6',
                           color: 'white',
                           display: 'flex',
@@ -828,23 +878,42 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                           }}>
                             {page.title || 'Untitled Page'}
                           </div>
-                          <a
-                            href={page.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              fontSize: '10px',
-                              color: '#3b82f6',
-                              textDecoration: 'none',
-                              wordBreak: 'break-all',
-                              whiteSpace: 'normal',
-                              display: 'block'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                          >
-                            {page.url}
-                          </a>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                            <a
+                              href={page.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: '10px',
+                                color: '#3b82f6',
+                                textDecoration: 'none',
+                                wordBreak: 'break-all',
+                                whiteSpace: 'normal',
+                                display: 'inline'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                            >
+                              {page.url}
+                            </a>
+                            <a
+                              href={page.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#3b82f6',
+                                cursor: 'pointer',
+                                flexShrink: 0
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+                            >
+                              <ExternalLink size={12} />
+                            </a>
+                          </div>
                         </div>
 
                         {/* Time Spent - Enhanced Display */}

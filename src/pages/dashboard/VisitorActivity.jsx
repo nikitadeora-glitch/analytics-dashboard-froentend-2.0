@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
-import { Calendar, ChevronDown } from 'lucide-react'
+import { Calendar, ChevronDown, Smartphone, Monitor, Globe } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
 
 // Globe Icon Component
@@ -142,13 +142,13 @@ function VisitorActivity({ projectId }) {
       'Singapore': '🇸🇬',
       'China': '🇨🇳'
     }
-    return flags[country] || <NotoGlobeShowingAsiaAustralia style={{ fontSize: '16px' }} />
+    return flags[country] || <Globe style={{ fontSize: '16px' }} />
   }
 
   const getDeviceIcon = (device) => {
-    if (device?.toLowerCase().includes('mobile')) return '📱'
-    if (device?.toLowerCase().includes('tablet')) return '📱'
-    return '💻'
+    if (device?.toLowerCase().includes('mobile')) return <Smartphone size={16} />
+    if (device?.toLowerCase().includes('tablet')) return <Smartphone size={16} />
+    return <Monitor size={16} />
   }
 
   // Helper to format date – treats backend data as UTC and converts to local (IST)
@@ -482,7 +482,7 @@ function VisitorActivity({ projectId }) {
                           System:
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '16px' }}>{getDeviceIcon(visitor.device)}</span>
+                          <span style={{ fontSize: '16px',marginTop: '2px' }}>{getDeviceIcon(visitor.device)}</span>
                           <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                             {visitor.os || 'Unknown'}
                           </span>
@@ -514,7 +514,7 @@ function VisitorActivity({ projectId }) {
                           Location:
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '16px' }}>{getCountryFlag(visitor.country)}</span>
+                          <span style={{ fontSize: '10px' }}>{getCountryFlag(visitor.country)}</span>
                           <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
                             {[visitor.city, visitor.state, visitor.country].filter(Boolean).join(', ') || 'Unknown'}
                           </span>
