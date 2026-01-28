@@ -378,8 +378,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                 <Skeleton variant="text" width={100} height={14} animation="wave" />
               </Box>
 
-              {/* User Journey Skeleton - Only for entry and top pages */}
-              {pageType !== 'exit' && (
+              {/* User Journey Skeleton - Show for all page types */}
+              {pageType && (
                 <Box sx={{
                   marginTop: '16px',
                   paddingLeft: '20px'
@@ -809,8 +809,8 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
                   </div>
                 )}
 
-                {/* Visitor Journey - Show only for entry and top pages, not for exit pages */}
-                {pageType !== 'exit' && session.path && session.path.length > 0 && (
+                {/* Visitor Journey - Show for all page types including exit pages */}
+                {session.path && session.path.length > 0 && (
                   <div className="visitor-journey-container" style={{
                     marginTop: '16px',
                     paddingLeft: '20px',
