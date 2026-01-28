@@ -1,4 +1,4 @@
-import { Plus, FolderOpen, BarChart2, LogOut, Menu, X } from 'lucide-react'
+import { Plus, FolderOpen, BarChart2, LogOut, Menu, X, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import analyticImage from '../assets/analytic.png'
@@ -12,6 +12,7 @@ function Layout() {
 
   const isActive = (path) => location.pathname === path
   const isDashboard = location.pathname.includes('/project/')
+  const isDeletedProjects = location.pathname === '/dashboard/deleted-projects'
 
   // Close sidebar on route change
   useEffect(() => {
@@ -169,6 +170,19 @@ function Layout() {
                 >
                   <Plus size={18} />
                   Add Project
+                </div>
+
+                <div
+                  className={`menu-item ${isDeletedProjects ? 'active' : ''}`}
+                  onClick={() => navigate('/dashboard/deleted-projects')}
+                  style={{
+                    color: 'white',
+                    backgroundColor: isDeletedProjects ? 'rgba(38, 44, 77, 0.79)' : 'transparent',
+                    marginTop: '8px'
+                  }}
+                >
+                  <Trash2 size={18} />
+                  Deleted Projects
                 </div>
               </div>
 

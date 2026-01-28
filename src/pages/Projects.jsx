@@ -126,11 +126,11 @@ function Projects() {
   }
 
   const handleDeleteProject = async (project) => {
-    if (window.confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete "${project.name}"? It will be moved to Deleted Projects section.`)) {
       try {
         await projectsAPI.delete(project.id)
         // Show success message
-        setSuccessMessage('Project deleted successfully!')
+        setSuccessMessage('Project moved to Deleted Projects!')
         // Hide success message after 3 seconds
         setTimeout(() => setSuccessMessage(null), 3000)
         // Force refresh after deleting project

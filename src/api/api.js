@@ -162,7 +162,9 @@ export const projectsAPI = {
   getAllStats: () => api.get('/projects/stats/all'),
   getOne: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects/', data),
-  delete: (id) => api.delete(`/projects/${id}`)
+  delete: (id) => api.delete(`/projects/${id}`),
+  getDeleted: () => api.get('/projects/deleted'),
+  restore: (id) => api.post(`/projects/${id}/restore`)
 };
 
 export const analyticsAPI = {

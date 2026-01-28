@@ -4,6 +4,7 @@ import { store } from './store'
 import Layout from './components/Layout'
 import CookiePopup from './components/CookiePopup'
 import Projects from './pages/Projects'
+import DeletedProjects from './pages/DeletedProjects'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -132,6 +133,7 @@ function AppContent() {
           <Route path="/dashboard" element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
             <Route index element={<Projects />} />
             <Route path="projects" element={<Projects />} />
+            <Route path="deleted-projects" element={<DeletedProjects />} />
             <Route path="project/:projectId/*" element={<Dashboard />} />
           </Route>
         </Routes>
