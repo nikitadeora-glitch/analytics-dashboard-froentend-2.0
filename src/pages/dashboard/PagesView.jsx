@@ -91,6 +91,9 @@ function PagesView({ projectId }) {
       const { startDate, endDate } = getDateRange(period)
       console.log('📅 PagesView - Using date range:', { startDate, endDate, period })
       
+      // Set loading to true and clear previous data to prevent state leakage
+      setLoading(true)
+      
       // Use getActivityView API with date parameters - no limit to get all data in range
       console.log('🔄 PagesView - Making API call with date range:', { startDate, endDate })
       const response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
@@ -102,26 +105,36 @@ function PagesView({ projectId }) {
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         console.log('✅ PagesView - Setting visitor data:', response.data.length, 'visitors')
         setAllVisitors(response.data)
-        // Initially show first 10 items
+        
+        // Reset pagination state with new data
         const initialChunk = response.data.slice(0, 10)
         setDisplayedVisitors(initialChunk)
         setCurrentIndex(10)
         setHasMore(response.data.length > 10)
+        
         console.log('✅ PagesView - Visitors data loaded successfully')
+        console.log(`📊 PagesView - Initial display: ${initialChunk.length} of ${response.data.length} visitors`) 
+        console.log(`📊 PagesView - Load More count: ${response.data.length - 10} remaining`)
       } else {
         console.log('⚠️ PagesView - No visitors data received')
         console.log('  Response data:', response.data)
         console.log('  Response status:', response.status)
+        
+        // Clear all state when no data
         setAllVisitors([])
         setDisplayedVisitors([])
+        setCurrentIndex(0)
         setHasMore(false)
       }
     } catch (error) {
       console.error('❌ PagesView - Error loading visitors:', error)
       console.error('  Error response:', error.response?.data)
       console.error('  Error status:', error.response?.status)
+      
+      // Clear all state on error
       setAllVisitors([])
       setDisplayedVisitors([])
+      setCurrentIndex(0)
       setHasMore(false)
     } finally {
       setLoading(false)
@@ -130,6 +143,14 @@ function PagesView({ projectId }) {
 
   const handlePeriodChange = (newPeriod) => {
     console.log('📅 PagesView - Period changing from:', period, 'to:', newPeriod)
+    
+    // Reset pagination state immediately to prevent state leakage
+    setDisplayedVisitors([])
+    setCurrentIndex(0)
+    setHasMore(false)
+    setLoadingMore(false)
+    
+    // Update period and localStorage - useEffect will automatically trigger loadVisitors()
     setPeriod(newPeriod)
     localStorage.setItem(`pagesview-period-${projectId}`, newPeriod)
     setShowPeriodDropdown(false)
@@ -137,8 +158,7 @@ function PagesView({ projectId }) {
     // Log the new date range for debugging
     const { startDate, endDate } = getDateRange(newPeriod)
     console.log('📅 PagesView - New date range:', { startDate, endDate, period: newPeriod })
-    console.log('🔄 PagesView - Triggering data reload with new period')
-    loadVisitors() // Reload data with new period
+    console.log('🔄 PagesView - Period updated, useEffect will trigger data reload')
   }
 
   const loadMore = () => {
@@ -749,7 +769,7 @@ function PagesView({ projectId }) {
                 ) : (
                   <>
                     <ChevronDown size={16} />
-                    Load More ({allVisitors.length - currentIndex} remaining)
+                    Load More ({Math.max(0, allVisitors.length - currentIndex)} remaining)
                   </>
                 )}
               </button>
