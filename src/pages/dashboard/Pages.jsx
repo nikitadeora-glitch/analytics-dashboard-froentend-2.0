@@ -1139,10 +1139,14 @@ const getFinalEnglishTitle = (title, page) => {
                           </div>
                           <div style={{ textAlign: 'center', minWidth: '70px' }}>
                             <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '600', marginBottom: '1px' }}>
-                              Bounce %
+                              {activeTab === 'exit' ? 'Exit %' : 'Bounce %'}
                             </div>
-                            <div style={{ fontSize: '16px', fontWeight: '700', color: page.bounce_rate > 70 ? '#ef4444' : '#10b981' }}>
-                              {page.bounce_rate ? `${page.bounce_rate.toFixed(1)}%` : '0.0%'}
+                            <div style={{ fontSize: '16px', fontWeight: '700', color: 
+                              (activeTab === 'exit' ? page.exit_rate : page.bounce_rate) > 70 ? '#ef4444' : '#10b981' }}>
+                              {activeTab === 'exit' 
+                                ? (page.exit_rate ? `${page.exit_rate.toFixed(1)}%` : '0.0%')
+                                : (page.bounce_rate ? `${page.bounce_rate.toFixed(1)}%` : '0.0%')
+                              }
                             </div>
                           </div>
                         </div>

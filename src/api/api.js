@@ -200,6 +200,11 @@ export const pagesAPI = {
     }
     
     console.log('📄 PagesAPI - Getting most visited:', url)
+    // Add cache-busting timestamp for day 1 data
+    if (startDate === endDate) {
+      url += url.includes('?') ? '&' : '?'
+      url += `_t=${Date.now()}`
+    }
     return api.get(url)
   },
   getEntryPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
@@ -219,6 +224,11 @@ export const pagesAPI = {
     }
     
     console.log('📄 PagesAPI - Getting entry pages:', url)
+    // Add cache-busting timestamp for day 1 data
+    if (startDate === endDate) {
+      url += url.includes('?') ? '&' : '?'
+      url += `_t=${Date.now()}`
+    }
     return api.get(url)
   },
   getExitPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
@@ -238,6 +248,11 @@ export const pagesAPI = {
     }
     
     console.log('📄 PagesAPI - Getting exit pages:', url)
+    // Add cache-busting timestamp for day 1 data
+    if (startDate === endDate) {
+      url += url.includes('?') ? '&' : '?'
+      url += `_t=${Date.now()}`
+    }
     return api.get(url)
   },
   getPageActivity: (projectId, hours = 24) => 
