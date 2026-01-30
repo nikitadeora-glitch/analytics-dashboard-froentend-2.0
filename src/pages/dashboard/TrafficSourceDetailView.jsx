@@ -134,6 +134,8 @@ function TrafficSourceDetailView({ projectId }) {
       }))
 
       console.log('📈 Formatted chart data:', formattedData)
+      console.log('📈 Chart data length:', formattedData.length)
+      console.log('📈 Chart data has sessions:', formattedData.some(d => d.sessions > 0))
       setChartData(formattedData)
 
       // Update source info with real totals
@@ -466,7 +468,7 @@ function TrafficSourceDetailView({ projectId }) {
               Sessions Over Time
             </h3>
           </div>
-          {totalSessions === 0 ? (
+          {chartData.length === 0 || !chartData.some(d => d.sessions > 0) ? (
             <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>📊</div>
               <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>No session data available</p>
@@ -531,7 +533,7 @@ function TrafficSourceDetailView({ projectId }) {
               Bounce Rate Trends
             </h3>
           </div>
-          {totalSessions === 0 ? (
+          {chartData.length === 0 || !chartData.some(d => d.sessions > 0) ? (
             <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>📈</div>
               <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>No bounce rate data available</p>

@@ -511,7 +511,7 @@ function TrafficSourcesSimple({ projectId }) {
               standardSources.map((stdSource, idx) => {
                 const data = getSourceData(stdSource.type)
                 const percentage = calculatePercentage(data.count)
-                const bounceRate = data.bounceRate || (data.count > 0 ? 88 : 0)
+                const bounceRate = data.bounceRate || 0
                 const hasData = data.count > 0
                 
                 return (
