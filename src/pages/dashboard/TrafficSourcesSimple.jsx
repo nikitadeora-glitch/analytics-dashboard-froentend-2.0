@@ -11,7 +11,7 @@ function TrafficSourcesSimple({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(() => {
     const savedPeriod = localStorage.getItem(`traffic-sources-period-${projectId}`)
-    return savedPeriod || '7'  // Default to 7 days
+    return savedPeriod || '30'  // Default to 30 days (better data)
   })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
@@ -133,19 +133,26 @@ function TrafficSourcesSimple({ projectId }) {
     // Sum up all sources of this type (e.g., all "organic" sources)
     const matchingSources = sources.filter(s => s.source_type?.toLowerCase() === type.toLowerCase())
     const totalCount = matchingSources.reduce((sum, s) => sum + (s.count || 0), 0)
-    const avgBounceRate = matchingSources.length > 0
-      ? matchingSources.reduce((sum, s) => sum + (s.bounce_rate || 0), 0) / matchingSources.length
-      : 0
+    
+    // Calculate average bounce rate, properly handling None values
+    const validBounceRates = matchingSources
+      .map(s => s.bounce_rate)
+      .filter(rate => rate !== null && rate !== undefined)
+    
+    const avgBounceRate = validBounceRates.length > 0
+      ? validBounceRates.reduce((sum, rate) => sum + rate, 0) / validBounceRates.length
+      : null
 
     console.log(`🔍 Source type "${type}":`, {
       matchingSources: matchingSources.length,
       totalCount,
-      avgBounceRate: Math.round(avgBounceRate)
+      validBounceRates: validBounceRates.length,
+      avgBounceRate: avgBounceRate !== null ? Math.round(avgBounceRate) : null
     })
 
     return {
       count: totalCount,
-      bounceRate: Math.round(avgBounceRate)
+      bounceRate: avgBounceRate !== null ? Math.round(avgBounceRate) : null
     }
   }
 
@@ -511,7 +518,7 @@ function TrafficSourcesSimple({ projectId }) {
               standardSources.map((stdSource, idx) => {
                 const data = getSourceData(stdSource.type)
                 const percentage = calculatePercentage(data.count)
-                const bounceRate = data.bounceRate || 0
+                const bounceRate = data.bounceRate
                 const hasData = data.count > 0
                 
                 return (
@@ -585,9 +592,9 @@ function TrafficSourcesSimple({ projectId }) {
                       textAlign: 'center',
                       fontSize: '16px',
                       fontWeight: '600',
-                      color: !hasData ? '#cbd5e1' : (bounceRate > 80 ? '#ef4444' : '#10b981')
+                      color: !hasData ? '#cbd5e1' : (bounceRate === null ? '#f59e0b' : (bounceRate > 80 ? '#ef4444' : '#10b981'))
                     }}>
-                      {hasData ? `${bounceRate}%` : 'n/a'}
+                      {!hasData ? 'n/a' : (bounceRate === null ? 'N/A' : `${bounceRate}%`)}
                     </div>
 
                     {/* Session Log Bar */}
