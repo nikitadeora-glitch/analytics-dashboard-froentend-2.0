@@ -119,19 +119,17 @@ function Reports({ projectId }) {
     }
   }
 
-  // Update detailed data when period changes
-  useEffect(() => {
-    if (selectedCategory && reportData) {
-      // Re-click the category to refresh its data with new period
-      handleCategoryClick(selectedCategory, { syncUrl: false })
-    }
-  }, [selectedPeriod, reportData])
-
   const fetchReportData = async () => {
     console.log('🚀 fetchReportData() called!', {
       selectedPeriod,
       timestamp: new Date().toISOString()
     })
+    
+    // IMPORTANT: Clear old data immediately to prevent old data flash
+    if (selectedCategory) {
+      console.log('🧹 Clearing old detail data for period change...')
+      setDetailData(null) // Clear old data immediately
+    }
     
     setLoadingData(true)
     setError(null)
@@ -209,6 +207,12 @@ function Reports({ projectId }) {
       
       // IMPORTANT: Use summaryResponse.data for summaryData as it has the correct filtered data
       setSummaryData(summaryResponse.data)
+      
+      // Auto-update open category with fresh data when period changes
+      if (selectedCategory) {
+        console.log('🔄 Auto-updating category with fresh data:', selectedCategory.title)
+        handleCategoryClick(selectedCategory, { syncUrl: false }) // IMMEDIATE update
+      }
       
       console.log('✅ Data successfully updated:', {
         period: selectedPeriod,
@@ -298,11 +302,12 @@ function Reports({ projectId }) {
   }
 
   const refreshData = () => {
+    console.log('🔄 Manual refresh triggered')
     fetchReportData()
     // If a category is open, also refresh its detailed data
-    if (selectedCategory && reportData) {
+    if (selectedCategory) {
       console.log('🔄 Refreshing detailed data for open category:', selectedCategory.title)
-      handleCategoryClick(selectedCategory, { syncUrl: false })
+      handleCategoryClick(selectedCategory, { syncUrl: false }) 
     }
   }
 
