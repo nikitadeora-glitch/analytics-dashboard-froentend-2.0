@@ -149,42 +149,9 @@ function App() {
 function AppContent() {
   const { isAuthenticated, loading } = useAuth()
 
+  // Don't show any loading screen - let components handle their own loading
   if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#0f172a',
-        color: 'white'
-      }}>
-        <div style={{
-          fontSize: '18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <div style={{
-            width: '20px',
-            height: '20px',
-            border: '2px solid #ffffff',
-            borderTop: '2px solid transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          Loading...
-        </div>
-        <style>
-          {`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}
-        </style>
-      </div>
-    )
+    return null
   }
 
   return (
