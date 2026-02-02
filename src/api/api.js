@@ -135,6 +135,8 @@ export const visitorsAPI = {
   },
   getVisitorDetail: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/visitor-detail/${visitorId}`),
+  getVisitorDetailByIP: (projectId, ipAddress) => 
+    api.get(`/visitors/${projectId}/visitor-detail-by-ip/${ipAddress}`),
   getVisitorsByPage: (projectId, pageUrl) => 
     api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } }),
   getBulkSessions: (projectId, visitorIds) => 

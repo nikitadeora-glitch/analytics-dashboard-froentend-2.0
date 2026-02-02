@@ -24,28 +24,126 @@ const visitorIcon = new L.Icon({
   shadowSize: [41, 41]
 })
 
-export default function VisitorDetail() {
-  const { visitorId } = useParams()
-  const { projectId } = useParams()
+export default function VisitorDetail({ visitorId: propVisitorId, projectId: propProjectId, isModal = false }) {
+  const { visitorId: urlVisitorId } = useParams()
+  const { projectId: urlProjectId } = useParams()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Use prop visitorId if in modal, otherwise use URL visitorId
+  const visitorId = propVisitorId || urlVisitorId
+  const projectId = propProjectId || urlProjectId
+
   useEffect(() => {
+    // Always use IP-based lookup since we're generating visitor IDs from IP clicks
+    console.log('🔍 VisitorDetail - visitorId:', visitorId)
     loadVisitorDetail()
   }, [visitorId, projectId])
 
   const loadVisitorDetail = async () => {
     try {
       setLoading(true)
-      const response = await visitorsAPI.getVisitorDetail(projectId, visitorId)
-      setData(response.data)
+      
+      console.log('📡 Loading visitor detail for:', visitorId)
+      
+      // Always use visitor ID API - no IP-based lookup
+      try {
+        console.log('📡 Using visitor ID API for:', visitorId)
+        const response = await visitorsAPI.getVisitorDetail(projectId, visitorId)
+        setData(response.data)
+        return
+      } catch (error) {
+        console.log('❌ Visitor ID API failed, trying IP-based lookup')
+        
+        // For generated visitor IDs (starting with v_), try to get IP from URL parameters
+        if (visitorId && visitorId.startsWith('v_')) {
+          console.log('📡 Generated ID detected, getting IP from URL parameters')
+          
+          // Try to get IP from URL parameters
+          const urlParams = new URLSearchParams(window.location.search)
+          const ipAddress = urlParams.get('ip')
+          
+          if (ipAddress && ipAddress !== 'Unknown IP') {
+            console.log('📡 Using IP-based API for:', ipAddress)
+            
+            // Use IP-based API to get complete visitor data
+            try {
+              const ipResponse = await visitorsAPI.getVisitorDetailByIP(projectId, ipAddress)
+              console.log('✅ IP-based API success, got complete visitor data')
+              setData(ipResponse.data)
+              return
+            } catch (ipError) {
+              console.log('❌ IP-based API also failed:', ipError)
+              
+              // Create fallback data with the IP address
+              const fallbackData = {
+                visitor: {
+                  visitor_id: visitorId,
+                  ip: ipAddress,
+                  isp: 'Unknown',
+                  country: 'Unknown',
+                  city: 'Unknown',
+                  lat: 0.0,
+                  lng: 0.0,
+                  device: 'Unknown',
+                  os: 'Unknown',
+                  browser: 'Unknown',
+                  resolution: 'Unknown',
+                  returning_visits: 0,
+                  first_seen: new Date().toISOString()
+                },
+                sessions: []
+              }
+              
+              setData(fallbackData)
+              return
+            }
+          } else {
+            console.log('❌ No IP address found in URL parameters')
+            
+            // Create fallback data without IP
+            const fallbackData = {
+              visitor: {
+                visitor_id: visitorId,
+                ip: 'Unknown IP',
+                isp: 'Unknown',
+                country: 'Unknown',
+                city: 'Unknown',
+                lat: 0.0,
+                lng: 0.0,
+                device: 'Unknown',
+                os: 'Unknown',
+                browser: 'Unknown',
+                resolution: 'Unknown',
+                returning_visits: 0,
+                first_seen: new Date().toISOString()
+              },
+              sessions: []
+            }
+            
+            setData(fallbackData)
+            return
+          }
+        }
+        
+        // For non-generated IDs, set to null
+        setData(null)
+        return
+      }
+      
     } catch (error) {
       console.error('Error loading visitor detail:', error)
+      // Don't show error, just return null
+      setData(null)
     } finally {
       setLoading(false)
     }
   }
+
+  // Check if visitorId is a generated visitor ID or IP address for header display
+  const isGeneratedID = visitorId && visitorId.startsWith('v_')
+  const isIPAddress = visitorId && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(visitorId)
 
   const formatTime = (isoString) => {
     if (!isoString) return 'N/A'
@@ -63,6 +161,7 @@ export default function VisitorDetail() {
   }
 
   const formatDuration = (seconds) => {
+    console.log('🔍 formatDuration called with seconds:', seconds)
     if (!seconds) return '0s'
     const hrs = Math.floor(seconds / 3600)
     const mins = Math.floor((seconds % 3600) / 60)
@@ -428,32 +527,8 @@ export default function VisitorDetail() {
     )
   }
 
-  if (!data) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '20px'
-      }}>
-        <p>Visitor not found</p>
-        <button 
-          onClick={() => navigate(`/dashboard/project/${projectId}/visitor-map`)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Back to Visitor Map
-        </button>
-      </div>
-    )
+  if (!data && !loading) {
+    return null // Return null instead of showing error message
   }
 
   const { visitor, sessions } = data
@@ -479,32 +554,12 @@ export default function VisitorDetail() {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         flexWrap: 'wrap'
       }}>
-        <button
-          onClick={() => navigate(`/dashboard/project/${projectId}/visitor-map`)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            backgroundColor: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            color: '#475569',
-            textDecoration: 'none',
-            flexShrink: 0
-          }}
-        >
-          <ArrowLeft size={16} />
-          Back to Map
-        </button>
-        
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>
             Visitor Details
           </h1>
           <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px', wordBreak: 'break-all' }}>
-            ID: {visitor.visitor_id}
+            {isGeneratedID ? `ID: ${visitorId}` : isIPAddress ? `IP: ${visitorId}` : `ID: ${visitorId}`}
           </p>
         </div>
       </div>
@@ -698,7 +753,14 @@ export default function VisitorDetail() {
                 }}>
                   <div>
                     <span style={{ fontWeight: '500', color: '#64748b', fontSize: '12px', display: 'block' }}>Duration</span>
-                    <span style={{ fontSize: '14px', wordBreak: 'break-word' }}>{formatDuration(session.duration)}</span>
+                    <span style={{ fontSize: '14px', wordBreak: 'break-word' }}>
+                      {(() => {
+                        console.log('🔍 Session data for duration:', session)
+                        console.log('🔍 Session duration:', session.duration)
+                        console.log('🔍 Session keys:', Object.keys(session))
+                        return formatDuration(session.duration)
+                      })()}
+                    </span>
                   </div>
                   
                   {session.referrer && (

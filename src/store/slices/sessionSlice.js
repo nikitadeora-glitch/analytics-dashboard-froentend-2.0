@@ -57,7 +57,7 @@ const processSingleVisitorSessionOptimized = async (visit, projectId) => {
     
     console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
     
-    const sessionData = sessions.find(s => s.session_number === visit.session_id)
+    const sessionData = sessions.find(s => s.session_number === `#${visit.session_id}`)
     
     if (sessionData) {
       console.log(`✅ Found matching session data for ${visit.visitor_id}`)
@@ -108,9 +108,9 @@ const processSingleVisitorSession = async (visit, projectId, allVisitorsData) =>
     const sessions = pathResponse.data?.sessions || []
     
     console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
-    console.log(`🔍 Looking for session_number: ${visit.session_id}`)
+    console.log(`🔍 Looking for session_number: #${visit.session_id}`)
     
-    const sessionData = sessions.find(s => s.session_number === visit.session_id)
+    const sessionData = sessions.find(s => s.session_number === `#${visit.session_id}`)
     
     if (sessionData) {
       console.log(`✅ Found matching session data for ${visit.visitor_id}`)

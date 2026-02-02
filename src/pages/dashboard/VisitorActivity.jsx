@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
-import { Calendar, ChevronDown, Smartphone, Monitor, Globe } from 'lucide-react'
+import { Calendar, ChevronDown, Smartphone, Monitor, Globe, ExternalLink, X } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
+import VisitorDetail from './VisitorDetail'
 
 // Globe Icon Component
 function NotoGlobeShowingAsiaAustralia(props) {
@@ -23,6 +24,8 @@ function VisitorActivity({ projectId }) {
     return savedFilter || '7'  // Default to 7 days
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
+  const [showVisitorModal, setShowVisitorModal] = useState(false)
+  const [selectedVisitorId, setSelectedVisitorId] = useState(null)
 
   useEffect(() => {
     loadVisitors()
@@ -168,6 +171,37 @@ function VisitorActivity({ projectId }) {
 
     // Format using browser's locale (converts UTC to Local/IST)
     return date.toLocaleString('en-IN', options)
+  }
+
+  // Handle IP address click - get visitor ID and show modal
+  const handleIPClick = (e, ipAddress, visitor) => {
+    e.stopPropagation()
+    console.log('🔍 IP Address clicked:', ipAddress)
+    console.log('🔍 Full Visitor Data:', JSON.stringify(visitor, null, 2))
+    
+    if (ipAddress && ipAddress !== 'Unknown IP' && visitor) {
+      // Try different possible visitor ID field names
+      const visitorId = visitor.visitor_id || visitor.visitorId || visitor.visitorID || visitor.id || visitor.session_id
+      
+      console.log('🆔 Extracted Visitor ID:', visitorId)
+      
+      if (visitorId) {
+        console.log('🆔 Using visitor ID from visitor data:', visitorId)
+        
+        // Show modal with visitor ID
+        setSelectedVisitorId(visitorId)
+        setShowVisitorModal(true)
+      } else {
+        console.log('❌ No visitor ID found in visitor data')
+        console.log('❌ Available fields:', Object.keys(visitor))
+      }
+    }
+  }
+
+  // Close modal handler
+  const closeVisitorModal = () => {
+    setShowVisitorModal(false)
+    setSelectedVisitorId(null)
   }
 
   // Date Filter Component
@@ -521,20 +555,74 @@ function VisitorActivity({ projectId }) {
                         </div>
                       </div>
 
-                      {/* ISP / IP Address */}
+                      {/* ISP / IP Address - Clickable */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
                           ISP / IP Address:
                         </div>
-                        <div style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
+                        <div style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '600', 
                           color: '#1e293b',
                           wordBreak: 'break-word',
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis'
+                          textOverflow: 'ellipsis',
+                          
+                          alignItems: 'center',
+                          gap: '6px'
                         }}>
-                          {visitor.isp || 'Unknown'} ({visitor.ip_address || 'N/A'})
+                          <span style={{ flex: 1 }}>
+                            {visitor.isp || 'Unknown'}
+                          </span>
+                          <span 
+                            onClick={(e) => handleIPClick(e, visitor.ip_address, visitor)}
+                            style={{ 
+                              color: visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A' ? '#3b82f6' : '#64748b', 
+                              cursor: visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A' ? 'pointer' : 'default',
+                              textDecoration: 'none',
+                              backgroundColor: visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A' ,
+                              padding: '2px 4px',
+                              borderRadius: '3px',
+                              border: visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A' ,
+                              transition: 'all 0.2s ease',
+                              
+                              fontFamily: 'monospace'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A') {
+                                e.currentTarget.style.backgroundColor = '#dbeafe'
+                                e.currentTarget.style.borderColor = '#93c5fd'
+                                e.currentTarget.style.textDecoration = 'underline'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A') {
+                                e.currentTarget.style.backgroundColor = '#f0f9ff'
+                                e.currentTarget.style.borderColor = '#bfdbfe'
+                                e.currentTarget.style.textDecoration = 'none'
+                              }
+                            }}
+                          >
+                            ({visitor.ip_address || 'N/A'})
+                          </span>
+                          {visitor.ip_address && visitor.ip_address !== 'Unknown IP' && visitor.ip_address !== 'N/A' && (
+                            <div
+                              onClick={(e) => handleIPClick(e, visitor.ip_address, visitor)}
+                              style={{
+                                cursor: 'pointer',
+                                color: '#3b82f6',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+                              title="View Visitor Details"
+                            >
+                              <ExternalLink size={12} />
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -648,6 +736,79 @@ function VisitorActivity({ projectId }) {
           )}
         </div>
       </div>
+
+      {/* Visitor Detail Modal */}
+      {showVisitorModal && selectedVisitorId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            height: '90%',
+            maxWidth: '1200px',
+            maxHeight: '800px',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '20px',
+              borderBottom: '1px solid #e2e8f0',
+              backgroundColor: '#f8fafc'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
+                Visitor Details
+              </h2>
+              <button
+                onClick={closeVisitorModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <X size={20} color="#64748b" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{
+              height: 'calc(100% - 73px)',
+              overflow: 'auto',
+              padding: '0'
+            }}>
+              <VisitorDetail 
+                projectId={projectId} 
+                visitorId={selectedVisitorId}
+                isModal={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
