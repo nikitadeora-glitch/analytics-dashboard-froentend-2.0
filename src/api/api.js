@@ -67,7 +67,43 @@ api.interceptors.response.use(
     
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      removeToken();
+      console.log('🔐 401 Unauthorized - Checking token expiration...');
+      
+      const token = getToken();
+      if (token) {
+        try {
+          // Check if token is expired
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          const now = Date.now() / 1000
+          
+          if (payload.exp < now) {
+            console.log('❌ Token expired - removing and redirecting to login');
+            removeToken();
+            // Only redirect if we're not already on login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          } else {
+            console.log('⚠️ Token valid but got 401 - possible server issue');
+            // Token is valid but server returned 401, might be server restart
+            // Try once more after a short delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return api(originalRequest);
+          }
+        } catch (decodeError) {
+          console.error('❌ Failed to decode token:', decodeError);
+          removeToken();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+      } else {
+        console.log('🔐 No token found - redirecting to login');
+        // Only redirect if we're not already on login page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
     }
     
     return Promise.reject(error);

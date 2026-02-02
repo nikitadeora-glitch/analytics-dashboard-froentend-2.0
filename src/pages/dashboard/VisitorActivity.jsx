@@ -74,9 +74,9 @@ function VisitorActivity({ projectId }) {
       startDate.setHours(0, 0, 0, 0)
     }
     
-    // Convert to UTC for API
-    const startUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000)).toISOString()
-    const endUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000)).toISOString()
+    // Convert to UTC for API - use proper ISO conversion
+    const startUTC = startDate.toISOString()
+    const endUTC = endDate.toISOString()
     
     console.log(`📅 Date Range for ${days} day(s):`)
     console.log(`  Local Start: ${startDate.toLocaleString()}`)
@@ -109,7 +109,18 @@ function VisitorActivity({ projectId }) {
       console.log(`✅ Loaded ${response.data?.length || 0} visitors for ${dateFilter} days`)
     } catch (error) {
       console.error('Error loading visitors:', error)
-      setError('Failed to load visitor activity. Please try again.')
+      
+      // Handle authentication errors specifically
+      if (error.response?.status === 401) {
+        console.log('🔐 Authentication error - token may be expired')
+        setError('Your session has expired. Please refresh the page to login again.')
+      } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        console.log('🌐 Network error - backend may be down')
+        setError('Unable to connect to the server. Please check your connection and try again.')
+      } else {
+        console.error('❌ Unknown error loading visitors:', error)
+        setError('Failed to load visitor activity. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

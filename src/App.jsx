@@ -30,13 +30,61 @@ function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const checkAuth = () => {
+  const checkAuth = async () => {
     const token = tokenManager.getToken()
     console.log('🔐 Checking authentication:', token ? 'Token found' : 'No token')
     
     if (token) {
-      setIsAuthenticated(true)
-      tokenManager.setToken(token) // Set in axios defaults
+      try {
+        // Check if token is expired by decoding it
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const now = Date.now() / 1000
+        console.log('⏰ Token expires at:', new Date(payload.exp * 1000).toLocaleString())
+        console.log('⏰ Current time:', new Date().toLocaleString())
+        
+        if (payload.exp < now) {
+          console.log('❌ Token expired - removing and redirecting to login')
+          tokenManager.removeToken()
+          setIsAuthenticated(false)
+          setLoading(false)
+          return
+        }
+        
+        // Validate token with backend with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          credentials: 'include',
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (response.ok) {
+          console.log('✅ Token validated successfully')
+          tokenManager.setToken(token) // Set in axios defaults
+          setIsAuthenticated(true)
+        } else {
+          console.log('❌ Token validation failed:', response.status)
+          tokenManager.removeToken()
+          setIsAuthenticated(false)
+        }
+      } catch (error) {
+        console.error('❌ Token validation error:', error)
+        if (error.name === 'AbortError') {
+          console.log('⏰ Authentication check timed out - using cached token')
+          // If API is unreachable, trust the cached token temporarily
+          tokenManager.setToken(token)
+          setIsAuthenticated(true)
+        } else {
+          tokenManager.removeToken()
+          setIsAuthenticated(false)
+        }
+      }
     } else {
       setIsAuthenticated(false)
     }
