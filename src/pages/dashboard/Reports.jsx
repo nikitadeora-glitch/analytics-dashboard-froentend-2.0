@@ -299,6 +299,11 @@ function Reports({ projectId }) {
 
   const refreshData = () => {
     fetchReportData()
+    // If a category is open, also refresh its detailed data
+    if (selectedCategory && reportData) {
+      console.log('🔄 Refreshing detailed data for open category:', selectedCategory.title)
+      handleCategoryClick(selectedCategory, { syncUrl: false })
+    }
   }
 
   const handleExportCSV = async () => {
