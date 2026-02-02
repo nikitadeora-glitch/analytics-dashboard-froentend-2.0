@@ -33,6 +33,7 @@ function AuthProvider({ children }) {
   const checkAuth = async () => {
     const token = tokenManager.getToken()
     console.log('🔐 Checking authentication:', token ? 'Token found' : 'No token')
+    console.log('🔐 Current URL:', window.location.pathname)
     
     if (token) {
       try {
@@ -50,9 +51,18 @@ function AuthProvider({ children }) {
           return
         }
         
-        // Validate token with backend with timeout
+        // For now, trust the token if it's not expired
+        // This prevents unnecessary API calls on every refresh
+        console.log('✅ Token is valid - setting authenticated')
+        tokenManager.setToken(token) // Set in axios defaults
+        setIsAuthenticated(true)
+        setLoading(false)
+        return
+        
+        // Optional: Validate with backend (commented out for faster refresh)
+        /*
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000)
         
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
           headers: {
@@ -66,26 +76,40 @@ function AuthProvider({ children }) {
         
         if (response.ok) {
           console.log('✅ Token validated successfully')
-          tokenManager.setToken(token) // Set in axios defaults
+          tokenManager.setToken(token)
           setIsAuthenticated(true)
+        } else if (response.status === 401) {
+          console.log('⚠️ Token valid but got 401 - possible server issue')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          const retryResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            credentials: 'include',
+          })
+          if (retryResponse.ok) {
+            console.log('✅ Token validated successfully on retry')
+            tokenManager.setToken(token)
+            setIsAuthenticated(true)
+          } else {
+            console.log('❌ Token validation failed:', response.status)
+            tokenManager.removeToken()
+            setIsAuthenticated(false)
+          }
         } else {
           console.log('❌ Token validation failed:', response.status)
           tokenManager.removeToken()
           setIsAuthenticated(false)
         }
+        */
       } catch (error) {
         console.error('❌ Token validation error:', error)
-        if (error.name === 'AbortError') {
-          console.log('⏰ Authentication check timed out - using cached token')
-          // If API is unreachable, trust the cached token temporarily
-          tokenManager.setToken(token)
-          setIsAuthenticated(true)
-        } else {
-          tokenManager.removeToken()
-          setIsAuthenticated(false)
-        }
+        // If there's an error decoding the token, remove it
+        tokenManager.removeToken()
+        setIsAuthenticated(false)
       }
     } else {
+      console.log('❌ No token found')
       setIsAuthenticated(false)
     }
     setLoading(false)
@@ -184,6 +208,9 @@ function AppContent() {
             <Route path="deleted-projects" element={<DeletedProjects />} />
             <Route path="project/:projectId/*" element={<Dashboard />} />
           </Route>
+          
+          {/* Catch all route - redirect to appropriate page based on auth */}
+          <Route path="*" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </>
