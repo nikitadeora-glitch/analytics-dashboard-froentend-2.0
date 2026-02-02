@@ -54,24 +54,24 @@ function VisitorActivity({ projectId }) {
   }
 
   const getDateRange = (days) => {
-    // Get current date in local timezone
+    // Get current date in UTC
     const today = new Date()
     
-    // For 1 day: today 00:00:00 to today 23:59:59 (local time)
-    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (local time)  
-    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (local time)
+    // For 1 day: today 00:00:00 to today 23:59:59 (UTC)
+    // For 7 days: 6 days ago 00:00:00 to today 23:59:59 (UTC)  
+    // For 30 days: 29 days ago 00:00:00 to today 23:59:59 (UTC)
     
     const endDate = new Date(today)
-    endDate.setHours(23, 59, 59, 999) // End of today (local time)
+    endDate.setUTCHours(23, 59, 59, 999) // End of today (UTC)
     
     const startDate = new Date(today)
     if (days === '1') {
-      // For 1 day, start from today 00:00:00 (local time)
-      startDate.setHours(0, 0, 0, 0)
+      // For 1 day, start from today 00:00:00 (UTC)
+      startDate.setUTCHours(0, 0, 0, 0)
     } else {
       // For multiple days, go back (days-1) from today and start from 00:00:00
-      startDate.setDate(today.getDate() - (parseInt(days) - 1))
-      startDate.setHours(0, 0, 0, 0)
+      startDate.setUTCDate(today.getUTCDate() - (parseInt(days) - 1))
+      startDate.setUTCHours(0, 0, 0, 0)
     }
     
     // Convert to UTC for API - use proper ISO conversion
@@ -79,8 +79,6 @@ function VisitorActivity({ projectId }) {
     const endUTC = endDate.toISOString()
     
     console.log(`📅 Date Range for ${days} day(s):`)
-    console.log(`  Local Start: ${startDate.toLocaleString()}`)
-    console.log(`  Local End: ${endDate.toLocaleString()}`)
     console.log(`  UTC Start: ${startUTC}`)
     console.log(`  UTC End: ${endUTC}`)
     
