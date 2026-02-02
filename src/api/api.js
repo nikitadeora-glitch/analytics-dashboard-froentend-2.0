@@ -142,6 +142,12 @@ export const visitorsAPI = {
       url += `?${params.join('&')}`
     }
     
+    // Add cache-busting timestamp for 1-day data to prevent browser caching
+    if (startDate && endDate && startDate === endDate) {
+      url += url.includes('?') ? '&' : '?'
+      url += `_t=${Date.now()}`
+    }
+    
     console.log('🔍 VisitorsAPI - Making request to:', url)
     return api.get(url)
   },
