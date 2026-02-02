@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { reportsAPI, analyticsAPI, visitorsAPI, pagesAPI, trafficAPI, projectsAPI } from '../../api/api'
 import { Download, TrendingUp, Users, Globe, BarChart3, Eye, RefreshCw, AlertCircle, CheckCircle, ArrowLeft, ExternalLink, Clock, MapPin } from 'lucide-react'
 import { Skeleton, Box, Grid, Card, CardContent } from '@mui/material'
 import { useSearchParams } from 'react-router-dom'
 
 function Reports({ projectId }) {
+  const fetchIdRef = useRef(0) // Race condition protection
   const [loading, setLoading] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState('7')
   const [reportData, setReportData] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingData, setLoadingData] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [periodChanging, setPeriodChanging] = useState(false) // NEW: Period change loading state
   const [error, setError] = useState(null)
   const [exportStatus, setExportStatus] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -120,10 +122,18 @@ function Reports({ projectId }) {
   }
 
   const fetchReportData = async () => {
+    const fetchId = ++fetchIdRef.current
     console.log('🚀 fetchReportData() called!', {
+      fetchId,
       selectedPeriod,
       timestamp: new Date().toISOString()
     })
+    
+    // Set period changing state if not initial load
+    if (!initialLoad) {
+      console.log('🔄 Period changing - showing skeleton loader...')
+      setPeriodChanging(true)
+    }
     
     // IMPORTANT: Clear old data immediately to prevent old data flash
     if (selectedCategory) {
@@ -166,6 +176,12 @@ function Reports({ projectId }) {
           return { data: [] }
         })
       ])
+
+      // Race condition protection - ignore stale responses
+      if (fetchId !== fetchIdRef.current) {
+        console.log('🚫 Ignoring stale response - fetchId:', fetchId, 'current:', fetchIdRef.current)
+        return
+      }
 
       // Backend now handles period filtering, so we can use the data directly
       const visitorsData = visitorsResponse.data || []
@@ -225,6 +241,12 @@ function Reports({ projectId }) {
         analyticsResponseData: analyticsResponse.data
       })
     } catch (error) {
+      // Race condition protection - ignore errors from stale requests
+      if (fetchId !== fetchIdRef.current) {
+        console.log('🚫 Ignoring stale error - fetchId:', fetchId, 'current:', fetchIdRef.current)
+        return
+      }
+      
       console.error('❌ Error fetching report data:', error)
       console.error('❌ Error details:', {
         message: error.message,
@@ -234,8 +256,12 @@ function Reports({ projectId }) {
       })
       setError('Failed to load report data. Please try again.')
     } finally {
-      setLoadingData(false)
-      setInitialLoad(false)
+      // Race condition protection - only update state if this is the latest request
+      if (fetchId === fetchIdRef.current) {
+        setLoadingData(false)
+        setInitialLoad(false)
+        setPeriodChanging(false) // Reset period changing state
+      }
     }
   }
 
@@ -2132,8 +2158,8 @@ function Reports({ projectId }) {
     )
   }
 
-  // Show skeleton during initial load or when data is loading
-  if (loadingData || initialLoad) {
+  // Show skeleton during initial load, data loading, or period change
+  if (loadingData || initialLoad || periodChanging) {
     // Check if we have a category in URL to show appropriate skeleton
     const categoryFromUrl = searchParams.get('category')
     const isCategoryView = categoryFromUrl && selectedCategoryKey
@@ -2483,9 +2509,8 @@ function Reports({ projectId }) {
                     setSelectedPeriod(newPeriod)
                     console.log('✅ setSelectedPeriod called with:', newPeriod)
                     
-                    // Trigger immediate data refresh for better UX
-                    console.log('🚀 Calling fetchReportData() due to period change...')
-                    fetchReportData()
+                    // ❌ DON'T call fetchReportData() here - useEffect will handle it
+                    // This prevents double API calls and race conditions
                   }}
                 >
                   <option value="1">Last 1 Day</option>
