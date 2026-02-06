@@ -347,7 +347,121 @@ export const reportsAPI = {
 };
 
 export const leadsAPI = {
-  submit: (leadData) => api.post('/lead/submit', leadData)
+  submit: (leadData) => api.post('/lead/submit', leadData, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  })
+};
+
+export const aiInsightsAPI = {
+  streamResponse: async (question, userId, onMessage, onError, onDone, onStatus) => {
+    try {
+      console.log('🤖 AI Insights API Call:')
+      console.log('Question:', question)
+      console.log('User ID:', userId)
+      console.log('Type of userId:', typeof userId)
+      
+      const requestBody = {
+        question: question,
+        user_id: parseInt(userId) || userId  // Ensure userId is a number
+      }
+      
+      console.log('Request Body:', requestBody)
+      
+      const response = await fetch('http://localhost:8001/api/insights/agent/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedResponse = "";
+      let currentEvent = "";
+      let finalInsightChunks = [];
+      let isFinalInsightMode = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          if (onDone) onDone();
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        lines.forEach(line => {
+          console.log('🔍 Processing line:', line);
+          
+          if (line.startsWith('event: ')) {
+            currentEvent = line.replace('event: ', '').trim();
+            console.log('📋 Event type:', currentEvent);
+            
+            if (currentEvent === 'final_insight') {
+              isFinalInsightMode = true;
+              console.log('🎯 Final Insight Mode Started!');
+            }
+          } else if (line.startsWith('data: ')) {
+            const data = line.replace('data: ', '').trim();
+            console.log('📦 Data received:', data);
+            console.log('🎯 Current event:', currentEvent);
+            
+            // Handle different event types from backend
+            if (currentEvent === 'stage') {
+              console.log('🎭 Stage event:', data);
+              if (onStatus) onStatus(data); // "Thinking...", "Executing SQL...", etc.
+            } else if (currentEvent === 'insight') {
+              console.log('💡 Insight event:', data);
+              accumulatedResponse += data + "\n";
+              console.log('📝 Accumulated response so far:', accumulatedResponse);
+              if (onMessage) onMessage(accumulatedResponse);
+            } else if (currentEvent === 'final_insight') {
+              console.log('🎯 FINAL INSIGHT EVENT!');
+              console.log('📄 Final data:', data);
+              console.log('📊 Data length:', data.length);
+              console.log('🔍 Data preview:', data.substring(0, 100) + '...');
+              
+              // Accumulate all final_insight chunks
+              finalInsightChunks.push(data);
+              console.log('🧩 Final chunks collected:', finalInsightChunks.length);
+              
+            } else if (currentEvent === 'error') {
+              console.log('❌ Error event:', data);
+              if (onError) onError(new Error(data));
+            } else if (currentEvent === 'end') {
+              console.log('🏁 End event received');
+              
+              // When stream ends, send complete final_insight
+              if (isFinalInsightMode && finalInsightChunks.length > 0) {
+                const completeFinalInsight = finalInsightChunks.join('');
+                console.log('🎯 Sending complete final insight:', completeFinalInsight.substring(0, 100) + '...');
+                console.log('📊 Complete length:', completeFinalInsight.length);
+                if (onMessage) onMessage(completeFinalInsight);
+              }
+              
+              if (onDone) onDone();
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Stream error:', error);
+      if (onError) onError(error);
+    }
+  }
 };
 
 // Token management exports

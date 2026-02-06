@@ -75,7 +75,8 @@ function Projects() {
     try {
       setLoading(true)
       const response = await projectsAPI.getAllStats()
-      setProjects(response.data)
+      console.log('API Response:', response.data) // Debug log
+      setProjects(response.data.data || [])
       setLastFetch(now)
     } catch (error) {
       console.error('Error loading projects:', error)
@@ -145,6 +146,21 @@ function Projects() {
   const handleExport = async () => {
     setExporting(true)
     try {
+      const toExportNumber = (value) => {
+        if (value === null || value === undefined) return 0
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+        if (typeof value === 'string') {
+          const n = Number(value)
+          return Number.isFinite(n) ? n : 0
+        }
+        if (typeof value === 'object') {
+          const candidate = value.count ?? value.value ?? value.unique ?? value.total
+          const n = Number(candidate)
+          return Number.isFinite(n) ? n : 0
+        }
+        return 0
+      }
+
       // Create CSV content matching table structure
       const csvHeaders = [
         'Project ID',
@@ -170,7 +186,13 @@ function Projects() {
         project.yesterday || 0,
         project.month || 0,
         project.total || 0,
-        project.unique_visitors || 0,
+        toExportNumber(
+          project.unique_visitors ??
+          project.uniqueVisitors ??
+          project.unique_visitor ??
+          project.visitors ??
+          project.total_visitors
+        ),
         project.live_visitors || 0,
         project.created_at ? new Date(project.created_at).toLocaleDateString('en-US', {
           year: 'numeric',
@@ -196,7 +218,16 @@ function Projects() {
       const totalYesterday = projects.reduce((sum, p) => sum + (p.yesterday || 0), 0)
       const totalMonth = projects.reduce((sum, p) => sum + (p.month || 0), 0)
       const totalAll = projects.reduce((sum, p) => sum + (p.total || 0), 0)
-      const totalUniqueVisitors = projects.reduce((sum, p) => sum + (p.unique_visitors || 0), 0)
+      const totalUniqueVisitors = projects.reduce(
+        (sum, p) => sum + toExportNumber(
+          p.unique_visitors ??
+          p.uniqueVisitors ??
+          p.unique_visitor ??
+          p.visitors ??
+          p.total_visitors
+        ),
+        0
+      )
       const totalLiveVisitors = projects.reduce((sum, p) => sum + (p.live_visitors || 0), 0)
 
       const summaryRow = [

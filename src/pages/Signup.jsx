@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Building } from 'lucide-react'
 import { authAPI, tokenManager } from '../api/api'
+import { useAuth } from '../App'
 import logo from '/favicon.png'
 import backgroundImage from '../assets/analytic.png'
 
 function Signup() {
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -71,9 +73,9 @@ function Signup() {
       // Call signup API
       const response = await authAPI.register(apiData)
 
-      // Store token if provided (auto-login after signup)
+      // Store token and user data if provided (auto-login after signup)
       if (response.data.access_token) {
-        tokenManager.setToken(response.data.access_token)
+        login(response.data.access_token, response.data.user)
         navigate('/dashboard')
       } else {
         // If email verification required
@@ -158,7 +160,7 @@ function Signup() {
 
       console.log("BACKEND RESPONSE ", res.data)
 
-      tokenManager.setToken(res.data.access_token)
+      login(res.data.access_token, res.data.user)
       navigate("/dashboard")
     } catch (err) {
       console.error("GOOGLE SIGNUP ERROR ", err)

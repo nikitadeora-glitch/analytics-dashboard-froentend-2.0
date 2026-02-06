@@ -69,8 +69,8 @@ function Login() {
       // Call login API
       const response = await authAPI.login(formData)
 
-      // Store token and update auth state
-      login(response.data.access_token)
+      // Store token and update auth state with user data
+      login(response.data.access_token, response.data.user)
 
       // On successful login, navigate to dashboard
       navigate('/dashboard')
@@ -138,7 +138,7 @@ const handleGoogleLogin = async (response) => {
 
     console.log("BACKEND RESPONSE 👉", res.data)
 
-    login(res.data.access_token)
+    login(res.data.access_token, res.data.user)
     navigate("/dashboard")
   } catch (err) {
     console.error("GOOGLE LOGIN ERROR 👉", err)

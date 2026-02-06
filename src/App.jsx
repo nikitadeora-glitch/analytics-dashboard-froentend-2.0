@@ -14,6 +14,7 @@ import TermsOfService from './pages/TermsOfService'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import { useEffect, useState, createContext, useContext } from 'react'
 import { tokenManager } from './api/api'
+import api from './api/api'
 
 // Create Auth Context
 export const AuthContext = createContext()
@@ -29,6 +30,22 @@ export const useAuth = () => {
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
+
+  // Load user data from localStorage on initial mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        console.log('📦 Loaded user data from localStorage:', userData)
+        setUser(userData)
+      } catch (error) {
+        console.log('⚠️ Error parsing stored user data:', error)
+        localStorage.removeItem('user')
+      }
+    }
+  }, [])
 
   const checkAuth = async () => {
     const token = tokenManager.getToken()
@@ -52,10 +69,29 @@ function AuthProvider({ children }) {
         }
         
         // For now, trust the token if it's not expired
-        // This prevents unnecessary API calls on every refresh
-        console.log('✅ Token is valid - setting authenticated')
+        // But also fetch user data to set in context
+        console.log('✅ Token is valid - fetching user data')
         tokenManager.setToken(token) // Set in axios defaults
         setIsAuthenticated(true)
+        
+        // Fetch user data from /me endpoint
+        try {
+          const response = await api.get('/me')
+          
+          if (response.status === 200) {
+            const userData = response.data
+            console.log('✅ User data fetched:', userData)
+            setUser(userData)
+            // Save user data to localStorage for persistence
+            localStorage.setItem('user', JSON.stringify(userData))
+            console.log('💾 Saved fresh user data to localStorage:', userData)
+          } else {
+            console.log('⚠️ Could not fetch user data, but token is valid')
+          }
+        } catch (error) {
+          console.log('⚠️ Error fetching user data:', error)
+        }
+        
         setLoading(false)
         return
         
@@ -64,35 +100,24 @@ function AuthProvider({ children }) {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 10000)
         
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          credentials: 'include',
-          signal: controller.signal
-        })
+        const response = await api.get('/me')
         
         clearTimeout(timeoutId)
         
-        if (response.ok) {
+        if (response.status === 200) {
           console.log('✅ Token validated successfully')
           tokenManager.setToken(token)
           setIsAuthenticated(true)
         } else if (response.status === 401) {
           console.log('⚠️ Token valid but got 401 - possible server issue')
           await new Promise(resolve => setTimeout(resolve, 2000))
-          const retryResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
-            credentials: 'include',
-          })
-          if (retryResponse.ok) {
+          const retryResponse = await api.get('/me')
+          if (retryResponse.status === 200) {
             console.log('✅ Token validated successfully on retry')
             tokenManager.setToken(token)
             setIsAuthenticated(true)
           } else {
-            console.log('❌ Token validation failed:', response.status)
+            console.log('❌ Token validation failed:', retryResponse.status)
             tokenManager.removeToken()
             setIsAuthenticated(false)
           }
@@ -115,14 +140,24 @@ function AuthProvider({ children }) {
     setLoading(false)
   }
 
-  const login = (token) => {
+  const login = (token, userData = null) => {
     tokenManager.setToken(token)
     setIsAuthenticated(true)
+    if (userData) {
+      setUser(userData)
+      // Save user data to localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(userData))
+      console.log('💾 Saved user data to localStorage:', userData)
+    }
   }
 
   const logout = () => {
     tokenManager.removeToken()
     setIsAuthenticated(false)
+    setUser(null)
+    // Clear user data from localStorage
+    localStorage.removeItem('user')
+    console.log('🗑️ Cleared user data from localStorage')
   }
 
   useEffect(() => {
@@ -130,7 +165,7 @@ function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, checkAuth, user }}>
       {children}
     </AuthContext.Provider>
   )

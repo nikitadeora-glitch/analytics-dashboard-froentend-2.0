@@ -3,12 +3,19 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import analyticImage from '../assets/analytic.png'
 import { useAuth } from '../App'
+import AIChat from './AIChat/AIChat'
 
 function Layout() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // Extract projectId from URL if on dashboard page
+  const getProjectId = () => {
+    const match = location.pathname.match(/\/project\/(\d+)/)
+    return match ? match[1] : null
+  }
 
   const isActive = (path) => location.pathname === path
   const isDashboard = location.pathname.includes('/project/')
@@ -210,6 +217,9 @@ function Layout() {
       <div className="main-content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </div>
+
+      {/* AI Chatbox - appears on all pages */}
+      <AIChat userId={user?.id} projectId={getProjectId()} />
 
       <style>
         {`
