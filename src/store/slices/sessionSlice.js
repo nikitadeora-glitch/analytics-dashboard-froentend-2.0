@@ -15,12 +15,12 @@ const processSessionJourney = (sessionData, visit) => {
 
     if (timeSpent === 0) {
       if (journey.length > 1) {
-        const currentTs = page.timestamp || page.visited_at || page.created_at || page.time
+        const currentTs = page.viewed_at || page.timestamp || page.visited_at || page.created_at || page.time
         const currentPageTime = currentTs ? new Date(currentTs).getTime() : NaN
 
         const nextPage = journey[i + 1]
         if (nextPage && !isNaN(currentPageTime)) {
-          const nextTs = nextPage.timestamp || nextPage.visited_at || nextPage.created_at || nextPage.time
+          const nextTs = nextPage.viewed_at || nextPage.timestamp || nextPage.visited_at || nextPage.created_at || nextPage.time
           const nextPageTime = nextTs ? new Date(nextTs).getTime() : NaN
 
           if (!isNaN(nextPageTime)) {
@@ -52,7 +52,7 @@ const processSingleVisitorSessionOptimized = async (visit, projectId) => {
     console.log(`🔍 Processing visitor ${visit.visitor_id}, session ${visit.session_id}`)
     
     // Get session journey directly from the visitor sessions API
-    const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
+    const pathResponse = await visitorsAPI.getVisitorSessions(projectId, visit.visitor_id)
     const sessions = pathResponse.data?.sessions || []
     
     console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
@@ -63,6 +63,9 @@ const processSingleVisitorSessionOptimized = async (visit, projectId) => {
       console.log(`✅ Found matching session data for ${visit.visitor_id}`)
     } else {
       console.log(`⚠️ No matching session found for ${visit.visitor_id}, session ${visit.session_id}`)
+      console.log('Available sessions:', sessions.map(s => s.session_number))
+      console.log('Looking for:', `#${visit.session_id}`)
+      console.log('Session data structure:', sessions.slice(0, 2)) // Show first 2 sessions for debugging
     }
 
     const processedJourney = processSessionJourney(sessionData, visit)
@@ -104,7 +107,7 @@ const processSingleVisitorSession = async (visit, projectId, allVisitorsData) =>
   try {
     console.log(`🔍 Processing visitor ${visit.visitor_id}, session ${visit.session_id}`)
     
-    const pathResponse = await visitorsAPI.getAllSessions(projectId, visit.visitor_id)
+    const pathResponse = await visitorsAPI.getVisitorSessions(projectId, visit.visitor_id)
     const sessions = pathResponse.data?.sessions || []
     
     console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)

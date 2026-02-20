@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { ExternalLink, Search, ChevronDown, Globe, Calendar, X } from 'lucide-react'
 import { Skeleton, Box, List, ListItem } from '@mui/material'
 import { formatUrl } from '../../utils/urlUtils'
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
 
 function CameFrom({ projectId }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [allVisitors, setAllVisitors] = useState([])
   const [displayedVisitors, setDisplayedVisitors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,6 +20,11 @@ function CameFrom({ projectId }) {
   const [selectedReferrer, setSelectedReferrer] = useState(null)
   const [project, setProject] = useState(null)
   const [dateFilter, setDateFilter] = useState(() => {
+    // Get filter from URL parameters first, then fallback to localStorage
+    const urlFilter = searchParams.get('period')
+    if (urlFilter) {
+      return urlFilter
+    }
     // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`camefrom-filter-${projectId}`)
     return savedFilter || '7'
@@ -24,7 +35,7 @@ function CameFrom({ projectId }) {
   useEffect(() => {
     loadVisitors()
     loadProjectInfo()
-  }, [projectId, dateFilter])
+  }, [projectId, searchParams, filters])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,18 +101,23 @@ function CameFrom({ projectId }) {
       setLoading(true)
       
       console.log('🔄 CameFrom - Loading data with filter:', dateFilter)
+      console.log('🔍 CameFrom - Filter context state:', filters)
+      
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🔍 CameFrom - Using filters:', filterParams)
       
       let response
       
       if (dateFilter === 'all') {
         // This case should not happen as 'all' option is removed
         console.log('📅 CameFrom - Loading all time data (fallback)')
-        response = await visitorsAPI.getActivityView(projectId, null, null, null)
+        response = await visitorsAPI.getActivityView(projectId, null, null, null, filterParams)
       } else {
         // Load data with date filtering and without limit
         const { startDate, endDate } = getDateRange(dateFilter)
         console.log('📅 CameFrom - Using date range:', { startDate, endDate, filter: dateFilter })
-        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+        response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate, filterParams)
         console.log('📊 CameFrom - API response received:', response.data.length, 'visitors')
       }
       
@@ -150,6 +166,10 @@ function CameFrom({ projectId }) {
     console.log('📅 CameFrom - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setShowDateDropdown(false)
+    
+    // Update URL parameters
+    setSearchParams({ period: newFilter })
+    
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`camefrom-filter-${projectId}`, newFilter)
     
@@ -376,6 +396,27 @@ function CameFrom({ projectId }) {
           </div>
         )}
       </div>
+      
+      {/* Active Filters Display */}
+      {filters.length > 0 && (
+        <div style={{ marginLeft: '35px', marginTop: '10px', marginBottom: '10px' }}>
+          <ActiveFilters 
+            filters={filters}
+            onRemoveFilter={removeFilter}
+            onClearAll={clearAllFilters}
+          />
+        </div>
+      )}
+      
+      {/* Add Filter Button */}
+      <AddFilterButton 
+        onFilterSelect={(filter) => {
+          console.log('🔍 CameFrom - Adding filter:', filter)
+          addFilter(filter)
+        }}
+        style={{ marginLeft: '35px', marginTop: '10px' }}
+      />
+      
 
       {/* Referrer Details Modal */}
       {selectedReferrer && (

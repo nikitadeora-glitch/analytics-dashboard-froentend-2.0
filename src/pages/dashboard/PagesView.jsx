@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import api from '../../api/api'
 import { Eye, ChevronDown, Calendar, Smartphone, Monitor, Globe } from 'lucide-react'
 import { NotoGlobeShowingAsiaAustralia } from '../../components/NotoGlobeShowingAsiaAustralia'
 
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
+
 function PagesView({ projectId }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [allVisitors, setAllVisitors] = useState([])
   const [displayedVisitors, setDisplayedVisitors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,13 +20,17 @@ function PagesView({ projectId }) {
   const [project, setProject] = useState(null)
   const [hasMore, setHasMore] = useState(false)
   const [period, setPeriod] = useState(() => {
+    // Read from URL parameters first, fallback to localStorage, then default
+    const urlPeriod = searchParams.get('period')
+    if (urlPeriod) return urlPeriod
+    
     const savedPeriod = localStorage.getItem(`pagesview-period-${projectId}`)
     return savedPeriod || '7'  // Default to 7 days
   })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
   useEffect(() => {
-    console.log(' PagesView useEffect - projectId:', projectId, 'period:', period)
+    console.log(' PagesView useEffect - projectId:', projectId, 'period:', period, 'filters:', filters)
     if (projectId) {
       loadVisitors()
       loadProjectInfo()
@@ -27,7 +38,15 @@ function PagesView({ projectId }) {
       console.log(' No projectId provided')
       setLoading(false)
     }
-  }, [projectId, period])
+  }, [projectId, period, filters])
+
+  // Sync URL parameters with state
+  useEffect(() => {
+    const urlPeriod = searchParams.get('period')
+    if (urlPeriod && urlPeriod !== period) {
+      setPeriod(urlPeriod)
+    }
+  }, [searchParams])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -94,9 +113,15 @@ function PagesView({ projectId }) {
       // Set loading to true and clear previous data to prevent state leakage
       setLoading(true)
       
-      // Use getActivityView API with date parameters - no limit to get all data in range
+      // Use getActivityView API with date parameters and filters - no limit to get all data in range
       console.log('🔄 PagesView - Making API call with date range:', { startDate, endDate })
-      const response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🔍 PagesView - Filter context state:', filters)
+      console.log('🔍 PagesView - Using filters:', filterParams)
+      
+      const response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate, filterParams)
       console.log('✅ PagesView - API Response received:')
       console.log('  Response data length:', response.data?.length)
       console.log('  Data type:', typeof response.data)
@@ -149,6 +174,9 @@ function PagesView({ projectId }) {
     setCurrentIndex(0)
     setHasMore(false)
     setLoadingMore(false)
+    
+    // Update URL parameters
+    setSearchParams({ period: newPeriod })
     
     // Update period and localStorage - useEffect will automatically trigger loadVisitors()
     setPeriod(newPeriod)
@@ -497,6 +525,20 @@ function PagesView({ projectId }) {
           </div>
         )}
       </div>
+       {/* Add Filter Button */}
+                                  <AddFilterButton 
+                                    onFilterSelect={addFilter}
+                                    style={{ marginLeft: '35px',
+                                      marginTop:'10px'
+                                    }}
+                                  />
+
+                                  {/* Active Filters */}
+                                  <ActiveFilters 
+                                    filters={filters}
+                                    onRemoveFilter={removeFilter}
+                                    onClearAll={clearAllFilters}
+                                  />
 
       <div className="content">
 

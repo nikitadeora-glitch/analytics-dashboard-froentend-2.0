@@ -1,15 +1,29 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { trafficAPI, projectsAPI } from '../../api/api'
 import { TrendingUp, Globe, Calendar, ChevronDown } from 'lucide-react'
 import { Skeleton, Box, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
 
 function TrafficSourcesSimple({ projectId }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [sources, setSources] = useState([])
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(() => {
+    // Read period from navigation state first (from back button), then URL parameters, then localStorage
+    if (location.state?.period) {
+      return location.state.period
+    }
+    const urlPeriod = searchParams.get('period')
+    if (urlPeriod) {
+      return urlPeriod
+    }
     const savedPeriod = localStorage.getItem(`traffic-sources-period-${projectId}`)
     return savedPeriod || '30'  // Default to 30 days (better data)
   })
@@ -31,7 +45,7 @@ function TrafficSourcesSimple({ projectId }) {
     loadData()
     loadProjectInfo()
     console.log('🔄 TrafficSources - Component mounted with period:', period)
-  }, [projectId, period])
+  }, [projectId, searchParams, filters])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -88,10 +102,15 @@ function TrafficSourcesSimple({ projectId }) {
       const { startDate, endDate } = getDateRange(period)
       console.log('📅 TrafficSources - IST Date range (SAME AS REPORTS.JSX):', { startDate, endDate, period })
       
-      // Use the same API call format as Reports.jsx
-      console.log('🌐 TrafficSources - Calling trafficAPI.getSources with date range:', { startDate, endDate })
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🔍 TrafficSources - Filter context state:', filters)
+      console.log('🔍 TrafficSources - Using filters:', filterParams)
       
-      const sourcesRes = await trafficAPI.getSources(projectId, startDate, endDate)
+      // Use the same API call format as Reports.jsx with filter parameters
+      console.log('🌐 TrafficSources - Calling trafficAPI.getSources with date range and filters:', { startDate, endDate, filterParams })
+      
+      const sourcesRes = await trafficAPI.getSources(projectId, startDate, endDate, filterParams)
       console.log('✅ Traffic Sources API Response Status:', sourcesRes.status)
       console.log('📊 Traffic Sources API Response Data:', sourcesRes.data)
       console.log('📈 Number of sources received:', sourcesRes.data?.length || 0)
@@ -199,11 +218,22 @@ function TrafficSourcesSimple({ projectId }) {
     localStorage.setItem(`traffic-sources-period-${projectId}`, newPeriod)
     setShowPeriodDropdown(false)
     
+    // Update URL parameter
+    setSearchParams({ period: newPeriod })
+    
     // Log the new date range for debugging
     const { startDate, endDate } = getDateRange(newPeriod)
     console.log('📅 TrafficSources - New date range:', { startDate, endDate, period: newPeriod })
     console.log('🔄 TrafficSources - Triggering data reload with new period')
   }
+
+  // Update URL when period changes
+  useEffect(() => {
+    const currentPeriod = searchParams.get('period')
+    if (currentPeriod !== period) {
+      setSearchParams({ period })
+    }
+  }, [period, searchParams, setSearchParams])
 
   if (loading) return (
     <>
@@ -487,6 +517,26 @@ function TrafficSourcesSimple({ projectId }) {
           </div>
         )}
       </div>
+       {/* Add Filter Button */}
+                      <AddFilterButton 
+                        onFilterSelect={(filter) => {
+                          console.log('🔍 TrafficSources - Adding filter:', filter)
+                          addFilter(filter)
+                        }}
+                        style={{ marginLeft: '35px',
+                          marginTop:'10px'
+                        }}
+                      />
+                      
+                      {/* Active Filters */}
+                      {filters.length > 0 && (
+                        <ActiveFilters 
+                          filters={filters}
+                          onRemoveFilter={removeFilter}
+                          onClearAll={clearAllFilters}
+                          style={{ marginLeft: '35px', marginTop: '10px' }}
+                        />
+                      )}
 
       <div className="content">
         <div className="chart-container" style={{ padding: 0 }}>
@@ -508,156 +558,310 @@ function TrafficSourcesSimple({ projectId }) {
             <div style={{ textAlign: 'center' }}>Entire Log ({period === '1' ? '1 day' : period === '7' ? '7 days' : period === '30' ? '30 days' : '60 days'}) Sessions</div>
           </div>
 
-          {/* Table Rows - Show all standard sources */}
+          {/* Table Rows - Show all standard sources or filtered source only */}
           <div>
             {console.log('🎯 Rendering traffic sources with total sessions:', totalSessions)}
             {console.log('🎯 Available sources from API:', sources)}
+            {console.log('🎯 Current filters:', filters)}
             
             {sources.length > 0 ? (
-              // Show data from API
-              standardSources.map((stdSource, idx) => {
-                const data = getSourceData(stdSource.type)
-                const percentage = calculatePercentage(data.count)
-                const bounceRate = data.bounceRate
-                const hasData = data.count > 0
-                
-                return (
-                  <div
-                    key={idx}
-                    className="traffic-row"
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '2fr 120px 120px 200px 120px',
-                      padding: '20px 24px',
-                      borderBottom: idx < standardSources.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      alignItems: 'center',
-                      transition: 'all 0.2s',
-                      opacity: hasData ? 1 : 0.6,
-                      cursor: hasData ? 'pointer' : 'default'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f8fafc'
-                      if (hasData) {
-                        e.currentTarget.style.transform = 'translateY(-1px)'
-                        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                    onClick={() => hasData && handleSourceClick(stdSource, data)}
-                  >
-                    {/* Traffic Source Name */}
-                    <div className="traffic-col" data-label="Traffic Source">
-                      <div style={{
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: hasData ? '#1e293b' : '#94a3b8',
-                        marginBottom: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}>
-                        <div style={{
-                          width: '4px',
-                          height: '20px',
-                          background: hasData ? '#3b82f6' : '#cbd5e1',
-                          borderRadius: '2px'
-                        }} />
-                        {stdSource.name}
-                      </div>
-                      <div style={{
-                        fontSize: '12px',
-                        color: '#64748b',
-                        marginLeft: '12px'
-                      }}>
-                        {percentage}%
-                      </div>
-                    </div>
-
-                    {/* Sessions */}
-                    <div className="traffic-col" data-label="Sessions" style={{
-                      textAlign: 'center',
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      color: hasData ? '#1e293b' : '#cbd5e1'
-                    }}>
-                      {data.count}
-                    </div>
-
-                    {/* Bounce % */}
-                    <div className="traffic-col" data-label="Bounce %" style={{
-                      textAlign: 'center',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: !hasData ? '#cbd5e1' : (bounceRate === null ? '#f59e0b' : (bounceRate > 80 ? '#ef4444' : '#10b981'))
-                    }}>
-                      {!hasData ? 'n/a' : (bounceRate === null ? 'N/A' : `${bounceRate}%`)}
-                    </div>
-
-                    {/* Session Log Bar */}
-                    <div className="traffic-col" data-label="Sessions Trend" style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '40px',
-                      gap: '10px'
-                    }}>
-                      {hasData ? (
-                        <>
+              // Check if traffic_sources filter is applied
+              (() => {
+                const trafficSourceFilter = filters.find(f => f.option.id === 'traffic_sources');
+                if (trafficSourceFilter) {
+                  // Show only the filtered traffic source
+                  const filteredSourceType = trafficSourceFilter.value;
+                  const stdSource = standardSources.find(s => s.type === filteredSourceType);
+                  if (stdSource) {
+                    const data = getSourceData(stdSource.type);
+                    const percentage = calculatePercentage(data.count);
+                    const bounceRate = data.bounceRate;
+                    const hasData = data.count > 0;
+                    
+                    return (
+                      <div
+                        key={stdSource.type}
+                        className="traffic-row"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 120px 120px 200px 120px',
+                          padding: '20px 24px',
+                          borderBottom: '1px solid #f1f5f9',
+                          alignItems: 'center',
+                          transition: 'all 0.2s',
+                          opacity: hasData ? 1 : 0.6,
+                          cursor: hasData ? 'pointer' : 'default'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#f8fafc'
+                          if (hasData) {
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                        onClick={() => hasData && handleSourceClick(stdSource, data)}
+                      >
+                        {/* Traffic Source Name */}
+                        <div className="traffic-col" data-label="Traffic Source">
                           <div style={{
-                            flex: 1,
-                            height: '8px',
-                            background: '#e2e8f0',
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            position: 'relative'
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: hasData ? '#1e293b' : '#94a3b8',
+                            marginBottom: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
                           }}>
                             <div style={{
-                              height: '100%',
-                              width: `${Math.min((data.count / Math.max(totalSessions, 1)) * 100, 100)}%`,
-                              background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
-                              borderRadius: '10px',
-                              transition: 'width 0.3s ease',
-                              boxShadow: '0 0 8px rgba(59, 130, 246, 0.3)'
+                              width: '4px',
+                              height: '20px',
+                              background: hasData ? '#3b82f6' : '#cbd5e1',
+                              borderRadius: '2px'
                             }} />
+                            {stdSource.name}
                           </div>
                           <div style={{
-                            fontSize: '13px',
-                            fontWeight: '600',
+                            fontSize: '12px',
                             color: '#64748b',
-                            minWidth: '35px',
-                            textAlign: 'right'
+                            marginLeft: '12px'
                           }}>
-                            {data.count}
+                            {percentage}%
                           </div>
-                        </>
-                      ) : (
-                        <>
+                        </div>
+
+                        {/* Sessions */}
+                        <div className="traffic-col" data-label="Sessions" style={{
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          color: hasData ? '#1e293b' : '#cbd5e1'
+                        }}>
+                          {data.count}
+                        </div>
+
+                        {/* Bounce % */}
+                        <div className="traffic-col" data-label="Bounce %" style={{
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: !hasData ? '#cbd5e1' : (bounceRate === null ? '#f59e0b' : (bounceRate > 80 ? '#ef4444' : '#10b981'))
+                        }}>
+                          {!hasData ? 'n/a' : (bounceRate === null ? 'N/A' : `${bounceRate}%`)}
+                        </div>
+
+                        {/* Session Log Bar */}
+                        <div className="traffic-col" data-label="Sessions Trend" style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '40px',
+                          gap: '10px'
+                        }}>
+                          {hasData ? (
+                            <>
+                              <div style={{
+                                flex: 1,
+                                height: '8px',
+                                background: '#e2e8f0',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  height: '100%',
+                                  width: `${Math.min((data.count / Math.max(totalSessions, 1)) * 100, 100)}%`,
+                                  background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
+                                  borderRadius: '10px',
+                                  transition: 'width 0.3s ease',
+                                  boxShadow: '0 0 8px rgba(59, 130, 246, 0.3)'
+                                }} />
+                              </div>
+                              <div style={{
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                color: '#64748b',
+                                minWidth: '35px',
+                                textAlign: 'right'
+                              }}>
+                                {data.count}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{
+                                flex: 1,
+                                height: '8px',
+                                background: '#f8fafc',
+                                borderRadius: '10px',
+                                border: '1px dashed #e2e8f0'
+                              }} />
+                              <div style={{
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                color: '#cbd5e1',
+                                minWidth: '35px',
+                                textAlign: 'right'
+                              }}>
+                                0
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                } else {
+                  // Show all standard sources (no filter applied)
+                  return standardSources.map((stdSource, idx) => {
+                    const data = getSourceData(stdSource.type)
+                    const percentage = calculatePercentage(data.count)
+                    const bounceRate = data.bounceRate
+                    const hasData = data.count > 0
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="traffic-row"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 120px 120px 200px 120px',
+                          padding: '20px 24px',
+                          borderBottom: idx < standardSources.length - 1 ? '1px solid #f1f5f9' : 'none',
+                          alignItems: 'center',
+                          transition: 'all 0.2s',
+                          opacity: hasData ? 1 : 0.6,
+                          cursor: hasData ? 'pointer' : 'default'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#f8fafc'
+                          if (hasData) {
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                        onClick={() => hasData && handleSourceClick(stdSource, data)}
+                      >
+                        {/* Traffic Source Name */}
+                        <div className="traffic-col" data-label="Traffic Source">
                           <div style={{
-                            flex: 1,
-                            height: '8px',
-                            background: '#f8fafc',
-                            borderRadius: '10px',
-                            border: '1px dashed #e2e8f0'
-                          }} />
-                          <div style={{
-                            fontSize: '13px',
+                            fontSize: '15px',
                             fontWeight: '600',
-                            color: '#cbd5e1',
-                            minWidth: '35px',
-                            textAlign: 'right'
+                            color: hasData ? '#1e293b' : '#94a3b8',
+                            marginBottom: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
                           }}>
-                            0
+                            <div style={{
+                              width: '4px',
+                              height: '20px',
+                              background: hasData ? '#3b82f6' : '#cbd5e1',
+                              borderRadius: '2px'
+                            }} />
+                            {stdSource.name}
                           </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            marginLeft: '12px'
+                          }}>
+                            {percentage}%
+                          </div>
+                        </div>
+
+                        {/* Sessions */}
+                        <div className="traffic-col" data-label="Sessions" style={{
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          fontWeight: '700',
+                          color: hasData ? '#1e293b' : '#cbd5e1'
+                        }}>
+                          {data.count}
+                        </div>
+
+                        {/* Bounce % */}
+                        <div className="traffic-col" data-label="Bounce %" style={{
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: !hasData ? '#cbd5e1' : (bounceRate === null ? '#f59e0b' : (bounceRate > 80 ? '#ef4444' : '#10b981'))
+                        }}>
+                          {!hasData ? 'n/a' : (bounceRate === null ? 'N/A' : `${bounceRate}%`)}
+                        </div>
+
+                        {/* Session Log Bar */}
+                        <div className="traffic-col" data-label="Sessions Trend" style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '40px',
+                          gap: '10px'
+                        }}>
+                          {hasData ? (
+                            <>
+                              <div style={{
+                                flex: 1,
+                                height: '8px',
+                                background: '#e2e8f0',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  height: '100%',
+                                  width: `${Math.min((data.count / Math.max(totalSessions, 1)) * 100, 100)}%`,
+                                  background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
+                                  borderRadius: '10px',
+                                  transition: 'width 0.3s ease',
+                                  boxShadow: '0 0 8px rgba(59, 130, 246, 0.3)'
+                                }} />
+                              </div>
+                              <div style={{
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                color: '#64748b',
+                                minWidth: '35px',
+                                textAlign: 'right'
+                              }}>
+                                {data.count}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{
+                                flex: 1,
+                                height: '8px',
+                                background: '#f8fafc',
+                                borderRadius: '10px',
+                                border: '1px dashed #e2e8f0'
+                              }} />
+                              <div style={{
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                color: '#cbd5e1',
+                                minWidth: '35px',
+                                textAlign: 'right'
+                              }}>
+                                0
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                }
+              })()
             ) : (
               // Show "No data" message
               <div style={{

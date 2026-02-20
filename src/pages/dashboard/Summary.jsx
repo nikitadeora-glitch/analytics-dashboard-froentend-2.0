@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { analyticsAPI, projectsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
 import BarChart from '../../components/BarChart'
@@ -11,15 +11,20 @@ const CACHE_BUSTER = Date.now()
 function Summary({ projectId }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [data, setData] = useState(null)
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState(() => {
-    // Try to get saved period from localStorage, fallback to 'daily'
-    const savedPeriod = localStorage.getItem(`summary-period-${projectId}`)
-    return savedPeriod || 'daily'
+    // Try to get period from URL parameters, fallback to 'daily'
+    const urlPeriod = searchParams.get('period')
+    return urlPeriod || 'daily'
   })
-  const [dateRange, setDateRange] = useState(30)
+  const [dateRange, setDateRange] = useState(() => {
+    // Try to get dateRange from URL parameters, fallback to 30
+    const urlDateRange = searchParams.get('dateRange')
+    return urlDateRange ? parseInt(urlDateRange, 10) : 30
+  })
   const [currentPage, setCurrentPage] = useState(0)
   const [showPageViews, setShowPageViews] = useState(true)
   const [showUniqueVisits, setShowUniqueVisits] = useState(true)
@@ -33,12 +38,24 @@ function Summary({ projectId }) {
   const [monthlyData, setMonthlyData] = useState({}) // Store monthly hourly data
 
   useEffect(() => {
+    const urlPeriod = searchParams.get('period')
+    const urlDateRange = searchParams.get('dateRange')
+    
+    if (urlPeriod && urlPeriod !== period) {
+      setPeriod(urlPeriod)
+    }
+    if (urlDateRange && parseInt(urlDateRange, 10) !== dateRange) {
+      setDateRange(parseInt(urlDateRange, 10))
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     if (location.state) {
       const { period: savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage, showPeriodDropdown: savedShowPeriodDropdown } = location.state
-      // Prioritize localStorage over navigation state for period
-      const localStoragePeriod = localStorage.getItem(`summary-period-${projectId}`)
-      if (localStoragePeriod) {
-        setPeriod(localStoragePeriod)
+      // Prioritize URL parameters over navigation state for period
+      const urlPeriod = searchParams.get('period')
+      if (urlPeriod) {
+        setPeriod(urlPeriod)
       } else if (savedPeriod) {
         setPeriod(savedPeriod)
       }
@@ -46,9 +63,9 @@ function Summary({ projectId }) {
       if (savedCurrentPage !== undefined) setCurrentPage(savedCurrentPage)
       if (savedShowPeriodDropdown !== undefined) setShowPeriodDropdown(savedShowPeriodDropdown)
       // Debug logging
-      console.log('Summary - Restored state:', { period: localStoragePeriod || savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage, showPeriodDropdown: savedShowPeriodDropdown })
+      console.log('Summary - Restored state:', { period: urlPeriod || savedPeriod, dateRange: savedDateRange, currentPage: savedCurrentPage, showPeriodDropdown: savedShowPeriodDropdown })
     }
-  }, [location.state, projectId])
+  }, [location.state, projectId, searchParams])
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -80,16 +97,16 @@ function Summary({ projectId }) {
     }
   }, [location.state, data])
 
-  // Separate useEffect for data loading - reload when projectId or dateRange changes
+  // Separate useEffect for data loading - reload when projectId, dateRange, or period changes
   useEffect(() => {
-    // Always load data when dateRange changes, regardless of navigation state
+    // Always load data when dateRange or period changes, regardless of navigation state
     // Only skip if we're explicitly coming back from hourly view navigation
     if (location.state && location.state.fromHourlyView) {
       console.log('Skipping data load - coming back from hourly view navigation')
       return
     }
     loadSummary()
-  }, [projectId, dateRange])
+  }, [projectId, dateRange, period])
 
   const loadProjectInfo = async () => {
     try {
@@ -121,10 +138,11 @@ function Summary({ projectId }) {
 
   const handlePeriodChange = (e) => {
     console.log(' Period changing to:', e.target.value)
-    setPeriod(e.target.value)
+    const newPeriod = e.target.value
+    setPeriod(newPeriod)
     setCurrentPage(0)
-    // Force browser to recognize changes
-    window.location.hash = `period-${e.target.value}-${Date.now()}`
+    // Update URL parameters
+    setSearchParams({ period: newPeriod, dateRange: dateRange.toString() })
   }
 
   if (loading) {
@@ -215,8 +233,7 @@ function Summary({ projectId }) {
 
   if (period === 'daily') {
     filteredData = data.daily_stats || []
-  } 
-  else if (period === 'weekly') {
+  } else if (period === 'weekly') {
     const weeks = []
     const stats = data.daily_stats || []
 
@@ -236,8 +253,7 @@ function Summary({ projectId }) {
       })
     }
     filteredData = weeks
-  } 
-  else if (period === 'monthly') {
+  } else if (period === 'monthly') {
     const months = {}
 
     ;(data.daily_stats || []).forEach(day => {
@@ -340,13 +356,13 @@ function Summary({ projectId }) {
     try {
       const [startDate, endDate] = weekData.dateRange.split(' → ')
       const response = await analyticsAPI.getHourlyDataRange(projectId, startDate, endDate)
-      
+
       // Also get daily data for the week
       const stats = data.daily_stats || []
       const weekStartIndex = idx * 7
       const weekEndIndex = Math.min(weekStartIndex + 6, stats.length - 1)
       const weekDailyData = stats.slice(weekStartIndex, weekEndIndex + 1)
-      
+
       console.log('Loading weekly data:', {
         idx,
         weekStartIndex,
@@ -354,7 +370,7 @@ function Summary({ projectId }) {
         weekDailyData: weekDailyData.length,
         totalStats: stats.length
       })
-      
+
       // Process hourly data for the week
       const processedData = {
         ...response.data,
@@ -362,7 +378,7 @@ function Summary({ projectId }) {
           .map((stat, index) => {
             let hour = '00';
             let hourNumber = 0;
-            
+
             if (stat.hour) {
               if (stat.hour.includes(':')) {
                 hour = stat.hour.split(':')[0];
@@ -398,7 +414,7 @@ function Summary({ projectId }) {
 
   const handleWeekClick = (weekData, idx) => {
     console.log('Week clicked:', { weekData, idx, expandedWeek })
-    
+
     if (expandedWeek === idx) {
       console.log('Collapsing week:', idx)
       setExpandedWeek(null) // Collapse if already expanded
@@ -420,7 +436,7 @@ function Summary({ projectId }) {
     try {
       // Get the month name and year from the monthData.date
       const monthKey = monthData.date // e.g., "Jan 2025"
-      
+
       // Find all daily stats that belong to this month
       const stats = data.daily_stats || []
       const monthDailyData = stats.filter(day => {
@@ -429,18 +445,18 @@ function Summary({ projectId }) {
         const dayMonth = `${dateParts[2]} ${dateParts[3]}` // "Jan 2025"
         return dayMonth === monthKey
       })
-      
+
       // Get date range for the month
       const startDate = monthDailyData[0]?.date
       const endDate = monthDailyData[monthDailyData.length - 1]?.date
-      
+
       if (!startDate || !endDate) {
         console.error('Could not determine date range for month:', monthKey)
         return
       }
-      
+
       const response = await analyticsAPI.getHourlyDataRange(projectId, startDate, endDate)
-      
+
       console.log('Loading monthly data:', {
         idx,
         monthKey,
@@ -449,7 +465,7 @@ function Summary({ projectId }) {
         monthDailyData: monthDailyData.length,
         totalStats: stats.length
       })
-      
+
       // Process hourly data for the month
       const processedData = {
         ...response.data,
@@ -457,7 +473,7 @@ function Summary({ projectId }) {
           .map((stat, index) => {
             let hour = '00';
             let hourNumber = 0;
-            
+
             if (stat.hour) {
               if (stat.hour.includes(':')) {
                 hour = stat.hour.split(':')[0];
@@ -493,7 +509,7 @@ function Summary({ projectId }) {
 
   const handleMonthClick = (monthData, idx) => {
     console.log('Month clicked:', { monthData, idx, expandedMonth })
-    
+
     if (expandedMonth === idx) {
       console.log('Collapsing month:', idx)
       setExpandedMonth(null) // Collapse if already expanded
@@ -552,8 +568,6 @@ function Summary({ projectId }) {
         )}
       </div>
 
-
-
       <div className="content">
         <div className="chart-container" style={{ marginBottom: '30px' }}>
           <div className="controls-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px 20px', borderBottom: '1px solid #e2e8f0' }}>
@@ -564,9 +578,9 @@ function Summary({ projectId }) {
                   console.log(' Period changing to:', e.target.value)
                   const newPeriod = e.target.value
                   setPeriod(newPeriod)
-                  // Save to localStorage for persistence
-                  localStorage.setItem(`summary-period-${projectId}`, newPeriod)
                   setCurrentPage(0)
+                  // Update URL parameters
+                  setSearchParams({ period: newPeriod, dateRange: dateRange.toString() })
                 }}
                 onClick={() => setShowPeriodDropdown(true)}
                 style={{
@@ -803,6 +817,8 @@ function Summary({ projectId }) {
                             setDateRange(days)
                             setCurrentPage(0)
                             setShowDateRangeDropdown(false)
+                            // Update URL parameters
+                            setSearchParams({ period: period, dateRange: days.toString() })
                           }}
                           style={{
                             padding: '10px 16px',

@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { trafficAPI, pagesAPI, projectsAPI } from '../../api/api'
 import { Filter, Download, ExternalLink, LogOut, Search, Globe, Calendar, ChevronDown } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
 
 function ExitLink({ projectId }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [exitLinks, setExitLinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedExit, setSelectedExit] = useState(null)
   const [project, setProject] = useState(null)
   const [dateFilter, setDateFilter] = useState(() => {
+    // Read from URL parameters first, then fallback to localStorage
+    const urlFilter = searchParams.get('period')
+    if (urlFilter) {
+      return urlFilter
+    }
     // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`exitlink-filter-${projectId}`)
     return savedFilter || '7'
@@ -16,7 +27,7 @@ function ExitLink({ projectId }) {
   const [showDateDropdown, setShowDateDropdown] = useState(false)
 
   useEffect(() => {
-    console.log(' ExitLink useEffect - projectId:', projectId, 'dateFilter:', dateFilter)
+    console.log(' ExitLink useEffect - projectId:', projectId, 'dateFilter:', dateFilter, 'filters:', filters)
     if (projectId) {
       loadExitData()
       loadProjectInfo()
@@ -24,7 +35,15 @@ function ExitLink({ projectId }) {
       console.log(' No projectId provided')
       setLoading(false)
     }
-  }, [projectId, dateFilter])
+  }, [projectId, dateFilter, filters])
+
+  // Update state when URL parameters change
+  useEffect(() => {
+    const urlFilter = searchParams.get('period')
+    if (urlFilter && urlFilter !== dateFilter) {
+      setDateFilter(urlFilter)
+    }
+  }, [searchParams, dateFilter])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,7 +116,13 @@ function ExitLink({ projectId }) {
         // Load data with date filtering
         const { startDate, endDate } = getDateRange(dateFilter)
         console.log('📅 ExitLink - Using date range:', { startDate, endDate, filter: dateFilter })
-        response = await trafficAPI.getExitLinks(projectId, startDate, endDate)
+        
+        // Get filter parameters
+        const filterParams = getFilterParams()
+        console.log('🔍 ExitLink - Filter context state:', filters)
+        console.log('🔍 ExitLink - Using filters:', filterParams)
+        
+        response = await trafficAPI.getExitLinks(projectId, startDate, endDate, filterParams)
       }
       
       console.log('✅ ExitLink - External links response:', response.data)
@@ -122,6 +147,10 @@ function ExitLink({ projectId }) {
     console.log('📅 ExitLink - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setShowDateDropdown(false)
+    
+    // Update URL parameters
+    setSearchParams({ period: newFilter })
+    
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`exitlink-filter-${projectId}`, newFilter)
     
@@ -188,7 +217,7 @@ function ExitLink({ projectId }) {
           background: 'white',
           border: '2px solid #e5e7eb',
           borderRadius: '8px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           zIndex: 1000,
           minWidth: '120px',
           overflow: 'hidden'
@@ -340,6 +369,23 @@ function ExitLink({ projectId }) {
           </div>
         )}
       </div>
+      {/* Add Filter Button */}
+      <AddFilterButton 
+        onFilterSelect={addFilter}
+        style={{ marginLeft: '35px',
+          marginTop:'10px'
+        }}
+      />
+
+      {/* Active Filters */}
+      {filters.length > 0 && (
+        <ActiveFilters 
+          filters={filters}
+          onRemoveFilter={removeFilter}
+          onClearAll={clearAllFilters}
+          style={{ marginLeft: '35px', marginTop: '10px' }}
+        />
+      )}
 
       {/* Exit Link Details Modal */}
       {selectedExit && (

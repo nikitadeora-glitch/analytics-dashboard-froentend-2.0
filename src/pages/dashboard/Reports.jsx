@@ -7,7 +7,10 @@ import { useSearchParams } from 'react-router-dom'
 function Reports({ projectId }) {
   const fetchIdRef = useRef(0) // Race condition protection
   const [loading, setLoading] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState('7')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    return searchParams.get('period') || '7'
+  })
   const [reportData, setReportData] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingData, setLoadingData] = useState(true)
@@ -15,7 +18,6 @@ function Reports({ projectId }) {
   const [periodChanging, setPeriodChanging] = useState(false) // NEW: Period change loading state
   const [error, setError] = useState(null)
   const [exportStatus, setExportStatus] = useState(null)
-  const [searchParams, setSearchParams] = useSearchParams()
   // URL me category store karne ke liye
   const [selectedCategoryKey, setSelectedCategoryKey] = useState(() => {
     return searchParams.get('category') || null
@@ -95,13 +97,26 @@ function Reports({ projectId }) {
       fetchReportData()
       loadProjectInfo()
     }
-  }, [projectId, selectedPeriod])
+  }, [projectId, searchParams])
 
   useEffect(() => {
+    const periodFromUrl = searchParams.get('period')
     const categoryFromUrl = searchParams.get('category')
+    
+    // Update period state if URL parameter changes
+    if (periodFromUrl && periodFromUrl !== selectedPeriod) {
+      console.log('🔄 Period state update from URL:', {
+        from: selectedPeriod,
+        to: periodFromUrl
+      })
+      setSelectedPeriod(periodFromUrl)
+      return // Exit early to prevent race condition
+    }
+    
+    // Update category if URL parameter changes
     if (categoryFromUrl && reportCategories.length > 0) {
       const category = reportCategories.find(cat => cat.title === categoryFromUrl)
-      if (category) {
+      if (category && (!selectedCategory || selectedCategory.title !== categoryFromUrl)) {
         setSelectedCategory(category)
         setSelectedCategoryKey(categoryFromUrl)
         // Also set the detail data if reportData is available
@@ -110,7 +125,7 @@ function Reports({ projectId }) {
         }
       }
     }
-  }, [searchParams, reportData])
+  }, [searchParams, reportCategories, selectedPeriod, selectedCategory])
 
   const loadProjectInfo = async () => {
     try {
@@ -126,6 +141,7 @@ function Reports({ projectId }) {
     console.log('🚀 fetchReportData() called!', {
       fetchId,
       selectedPeriod,
+      searchParamsPeriod: searchParams.get('period'),
       timestamp: new Date().toISOString()
     })
     
@@ -136,16 +152,23 @@ function Reports({ projectId }) {
     }
     
     // IMPORTANT: Clear old data immediately to prevent old data flash
-    if (selectedCategory) {
-      console.log('🧹 Clearing old detail data for period change...')
-      setDetailData(null) // Clear old data immediately
-    }
+    console.log('🧹 Clearing all old data for period change...')
+    setReportData(null) // Clear report data immediately
+    setSummaryData(null) // Clear summary data immediately
+    setDetailData(null) // Clear detail data immediately
     
     setLoadingData(true)
     setError(null)
     try {
-      // Use IST-aware date range calculation
-      const { startDate, endDate } = createISTDateRange(parseInt(selectedPeriod))
+      // Use IST-aware date range calculation - ensure we use the latest period
+      const currentPeriod = searchParams.get('period') || selectedPeriod
+      console.log('📅 Using period for API call:', {
+        selectedPeriod,
+        searchParamsPeriod: searchParams.get('period'),
+        finalPeriod: currentPeriod
+      })
+      
+      const { startDate, endDate } = createISTDateRange(parseInt(currentPeriod))
       
       console.log('📅 Reports.jsx - IST Date range:', { startDate, endDate, selectedPeriod })
       console.log('🔗 API Base URL:', import.meta.env.VITE_API_URL)
@@ -155,7 +178,7 @@ function Reports({ projectId }) {
           console.error('❌ Summary API Error:', err)
           return { data: null }
         }),
-        analyticsAPI.getSummary(projectId, selectedPeriod).catch(err => {
+        analyticsAPI.getSummary(projectId, currentPeriod, startDate, endDate).catch(err => {
           console.error('❌ Analytics API Error:', err)
           return { data: null }
         }),
@@ -231,7 +254,7 @@ function Reports({ projectId }) {
       }
       
       console.log('✅ Data successfully updated:', {
-        period: selectedPeriod,
+        period: currentPeriod,
         visitorsCount: visitorsData.length,
         pagesCount: pagesData.length,
         trafficCount: trafficData.length,
@@ -295,10 +318,8 @@ function Reports({ projectId }) {
     const now = new Date()
     const istNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}))
     
-    // Calculate start date (days ago from IST midnight)
-    const startOfDayIST = new Date(istNow)
-    startOfDayIST.setHours(0, 0, 0, 0)
-    const startDate = new Date(startOfDayIST.getTime() - (days - 1) * 24 * 60 * 60 * 1000)
+    // Calculate start date (days ago from current time)
+    const startDate = new Date(istNow.getTime() - days * 24 * 60 * 60 * 1000)
     
     // End date is current IST time
     const endDate = istNow
@@ -306,6 +327,15 @@ function Reports({ projectId }) {
     // Convert to UTC for API calls
     const startDateUTC = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000))
     const endDateUTC = new Date(endDate.getTime() - (endDate.getTimezoneOffset() * 60000))
+    
+    console.log('🗓️ Date Range Debug:', {
+      days,
+      now: now.toISOString(),
+      istNow: istNow.toISOString(),
+      startDate: startDateUTC.toISOString(),
+      endDate: endDateUTC.toISOString(),
+      daysDiff: Math.round((endDateUTC - startDateUTC) / (24 * 60 * 60 * 1000))
+    })
     
     return {
       startDate: startDateUTC.toISOString(),
@@ -1448,8 +1478,8 @@ function Reports({ projectId }) {
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                  gap: '12px',
-                  marginBottom: '16px'
+                  gap: '16px',
+                  marginBottom: '20px'
                 }}>
                   <div style={{
                     padding: '12px',
@@ -2506,8 +2536,12 @@ function Reports({ projectId }) {
                       timestamp: new Date().toISOString()
                     })
                     
-                    setSelectedPeriod(newPeriod)
-                    console.log('✅ setSelectedPeriod called with:', newPeriod)
+                    // Update URL parameter instead of just state
+                    const newSearchParams = new URLSearchParams(searchParams)
+                    newSearchParams.set('period', newPeriod)
+                    setSearchParams(newSearchParams)
+                    
+                    console.log('✅ URL parameter updated with period:', newPeriod)
                     
                     // ❌ DON'T call fetchReportData() here - useEffect will handle it
                     // This prevents double API calls and race conditions

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -7,6 +7,9 @@ import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Globe } from 'lucide-react'
 import { Skeleton, Box } from '@mui/material'
 import { formatUrl } from '../../utils/urlUtils'
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -30,13 +33,17 @@ function VisitorMap({ projectId }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState(null)
-  const [dateRange, setDateRange] = useState('7') // Default 7 days
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { getFilterParams, filters, removeFilter, clearAllFilters } = useFilters()
+
+  // Read dateRange from URL parameters, default to '7' days
+  const dateRange = searchParams.get('dateRange') || '7'
 
   useEffect(() => {
     loadMap()
     loadProjectInfo()
-  }, [projectId, dateRange])
+  }, [projectId, searchParams, filters])
 
   const loadProjectInfo = async () => {
     try {
@@ -50,7 +57,21 @@ function VisitorMap({ projectId }) {
   const loadMap = async () => {
     setLoading(true)
     try {
-      const response = await visitorsAPI.getMapView(projectId, parseInt(dateRange))
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🗺️ VisitorMap - Filter params:', filterParams)
+      
+      // Combine date range with filter parameters
+      const params = {
+        days: parseInt(dateRange),
+        ...filterParams
+      }
+      
+      console.log('🗺️ VisitorMap - Final params:', params)
+      console.log('🗺️ VisitorMap - Making API call to getMapView')
+      
+      const response = await visitorsAPI.getMapView(projectId, params)
+      console.log('🗺️ VisitorMap - API response:', response.data)
       setLocations(response.data)
     } catch (error) {
       console.error('Error loading map:', error)
@@ -69,7 +90,10 @@ function VisitorMap({ projectId }) {
           <div style={{ display: 'flex', gap: '10px' }}>
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              onChange={(e) => {
+                const newDateRange = e.target.value
+                setSearchParams({ dateRange: newDateRange })
+              }}
               style={{
                 padding: '8px 12px',
                 borderRadius: '6px',
@@ -100,6 +124,24 @@ function VisitorMap({ projectId }) {
           </div>
         )}
       </div>
+      {/* Add Filter Button */}
+      <AddFilterButton 
+        onFilterSelect={(filterData) => {
+          console.log('🗺️ VisitorMap - Filter selected:', filterData)
+          // Filter will be automatically added to context by FilterValueInput
+        }}
+        style={{ marginLeft: '35px',
+          marginTop:'10px'
+        }}
+      />
+
+      {/* Active Filters */}
+      <ActiveFilters 
+        filters={filters}
+        onRemoveFilter={removeFilter}
+        onClearAll={clearAllFilters}
+        style={{ marginLeft: '35px', marginBottom: '10px' }}
+      />
 
       <div className="content">
         {/* Interactive Real World Map */}

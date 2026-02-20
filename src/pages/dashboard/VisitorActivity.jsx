@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Skeleton, Box, Grid } from '@mui/material'
 import { Calendar, ChevronDown, Smartphone, Monitor, Globe, ExternalLink, X } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
 import VisitorDetail from './VisitorDetail'
+
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
+import { useFilters } from '../../contexts/FilterContext'
 
 // Globe Icon Component
 function NotoGlobeShowingAsiaAustralia(props) {
@@ -13,12 +18,19 @@ function NotoGlobeShowingAsiaAustralia(props) {
 }
 
 function VisitorActivity({ projectId }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
   const [project, setProject] = useState(null)
   const [error, setError] = useState(null)
   const [displayCount, setDisplayCount] = useState(10)
   const [dateFilter, setDateFilter] = useState(() => {
+    // Get date filter from URL parameter first, then fallback to localStorage
+    const urlFilter = searchParams.get('dateFilter')
+    if (urlFilter) {
+      return urlFilter
+    }
     // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`visitor-activity-filter-${projectId}`)
     return savedFilter || '7'  // Default to 7 days
@@ -30,7 +42,15 @@ function VisitorActivity({ projectId }) {
   useEffect(() => {
     loadVisitors()
     loadProjectInfo()
-  }, [projectId, dateFilter])
+  }, [projectId, dateFilter, filters])
+
+  // Sync state with URL parameters
+  useEffect(() => {
+    const urlFilter = searchParams.get('dateFilter')
+    if (urlFilter && urlFilter !== dateFilter) {
+      setDateFilter(urlFilter)
+    }
+  }, [searchParams])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -95,12 +115,17 @@ function VisitorActivity({ projectId }) {
       
       console.log('🔄 VisitorActivity - Loading data with filter:', dateFilter)
       
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🔍 VisitorActivity - Filter context state:', filters)
+      console.log('🔍 VisitorActivity - Using filters:', filterParams)
+      
       let response
       // Always use date filtering - removed 'all' option
       const { startDate, endDate } = getDateRange(dateFilter)
       console.log('📅 VisitorActivity - Using date range:', { startDate, endDate, filter: dateFilter })
-      console.log('🔄 VisitorActivity - Making API call with date range:', { startDate, endDate })
-      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      console.log('🔄 VisitorActivity - Making API call with date range and filters:', { startDate, endDate, filterParams })
+      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate, filterParams)
       console.log('📊 VisitorActivity - API response received:', response.data?.length, 'visitors')
       
       setVisitors(response.data || [])
@@ -129,6 +154,10 @@ function VisitorActivity({ projectId }) {
     setDateFilter(newFilter)
     setDisplayCount(10) // Reset display count when filter changes
     setShowDateDropdown(false)
+    
+    // Update URL parameter
+    setSearchParams({ dateFilter: newFilter })
+    
     // Save filter to localStorage so it persists on page reload
     localStorage.setItem(`visitor-activity-filter-${projectId}`, newFilter)
     
@@ -444,6 +473,26 @@ function VisitorActivity({ projectId }) {
           </div>
         )}
       </div>
+           {/* Add Filter Button */}
+                            <AddFilterButton 
+                              onFilterSelect={(filter) => {
+                                console.log('🔍 VisitorActivity - Adding filter:', filter)
+                                addFilter(filter)
+                              }}
+                              style={{ marginLeft: '35px',
+                                marginTop:'10px'
+                              }}
+                            />
+                            
+                            {/* Active Filters */}
+                            {filters.length > 0 && (
+                              <ActiveFilters 
+                                filters={filters}
+                                onRemoveFilter={removeFilter}
+                                onClearAll={clearAllFilters}
+                                style={{ marginLeft: '35px', marginTop: '10px' }}
+                              />
+                            )}
 
       <div className="content">
         <div className="chart-container" style={{

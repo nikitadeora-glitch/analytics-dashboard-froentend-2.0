@@ -27,6 +27,15 @@ body {
     position: relative;
 }
 
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
 .sidebar h2 {
     font-size: 18px;
     margin-bottom: 30px;

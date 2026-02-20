@@ -1,35 +1,54 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { trafficAPI, projectsAPI } from '../../api/api'
 import { Skeleton } from '@mui/material'
 import { Calendar, ChevronDown } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 
+
 function TrafficSourceDetailView({ projectId }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [chartData, setChartData] = useState([])
   const [sourceInfo, setSourceInfo] = useState(null)
   const [project, setProject] = useState(null)
-  const [period, setPeriod] = useState('1')
+  const [period, setPeriod] = useState(() => {
+    // Read period from URL parameters first, then fallback to location state or default
+    const urlPeriod = searchParams.get('period')
+    if (urlPeriod) {
+      return urlPeriod
+    }
+    return location.state?.sourceInfo?.period || '30'
+  })
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
-  // Get traffic source info from location state
+  // Get traffic source info from location state and sync with URL
   useEffect(() => {
     if (location.state?.sourceInfo) {
       const info = location.state.sourceInfo
       console.log('🔄 Received sourceInfo:', info)
       setSourceInfo(info)
-      const receivedPeriod = info.period || '30'
-      setPeriod(receivedPeriod)
-      console.log('📅 Setting period to:', receivedPeriod)
-      loadChartData(info, receivedPeriod)
+      
+      // Use URL period if available, otherwise use info period, then default
+      const urlPeriod = searchParams.get('period')
+      const finalPeriod = urlPeriod || info.period || '30'
+      
+      setPeriod(finalPeriod)
+      console.log('📅 Setting period to:', finalPeriod)
+      
+      // Update URL if no period parameter exists
+      if (!urlPeriod) {
+        setSearchParams({ period: finalPeriod })
+      }
+      
+      loadChartData(info, finalPeriod)
     } else {
       // If no source info, redirect back
       navigate(-1)
     }
-  }, [location.state, navigate])
+  }, [location.state, navigate, searchParams, setSearchParams])
 
   useEffect(() => {
     if (projectId) {
@@ -154,10 +173,21 @@ function TrafficSourceDetailView({ projectId }) {
     }
   }
 
+  // Update URL when period changes
+  useEffect(() => {
+    const currentPeriod = searchParams.get('period')
+    if (currentPeriod !== period) {
+      setSearchParams({ period })
+    }
+  }, [period, searchParams, setSearchParams])
+
   const handlePeriodChange = (newPeriod) => {
     console.log('📅 Period changing to:', newPeriod)
     setPeriod(newPeriod)
     setShowPeriodDropdown(false)
+    
+    // Update URL parameter
+    setSearchParams({ period: newPeriod })
     
     if (sourceInfo) {
       const updatedSource = { ...sourceInfo, period: newPeriod }
@@ -167,7 +197,10 @@ function TrafficSourceDetailView({ projectId }) {
   }
 
   const handleBack = () => {
-    navigate(-1)
+    // Always navigate back to traffic sources page with current period
+    navigate(`/dashboard/project/${projectId}/traffic`, { 
+      state: { period } 
+    })
   }
 
   if (loading) {
@@ -245,7 +278,7 @@ function TrafficSourceDetailView({ projectId }) {
             </div>
           )}
         </div>
-
+               
         <div className="content">
           <div className="chart-container">
             <Skeleton variant="rectangular" width="100%" height={400} animation="wave" />
@@ -292,6 +325,8 @@ function TrafficSourceDetailView({ projectId }) {
             </div>
           )}
         </div>
+       
+
         <div className="content">
           <div className="chart-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
@@ -430,6 +465,8 @@ function TrafficSourceDetailView({ projectId }) {
           </div>
         )}
       </div>
+          
+      
 
       <div className="content">
         {/* Summary Stats */}

@@ -125,21 +125,28 @@ export const authAPI = {
 export const visitorsAPI = {
   getActivity: (projectId, limit = 1000) => 
     api.get(`/visitors/${projectId}/activity?limit=${limit}`),
-  getActivityView: (projectId, limit = null, startDate = null, endDate = null) => {
+  getActivityView: (projectId, limit = null, startDate = null, endDate = null, filters = {}) => {
     let url = `/visitors/${projectId}/activity-view`
-    const params = []
+    const params = new URLSearchParams()
     
     if (startDate && endDate) {
-      params.push(`start_date=${encodeURIComponent(startDate)}`)
-      params.push(`end_date=${encodeURIComponent(endDate)}`)
+      params.append('start_date', startDate)
+      params.append('end_date', endDate)
     }
     
     if (limit !== null) {
-      params.push(`limit=${limit}`)
+      params.append('limit', limit)
     }
     
-    if (params.length > 0) {
-      url += `?${params.join('&')}`
+    // Add filter parameters
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        params.append(key, filters[key])
+      }
+    })
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`
     }
     
     // Add cache-busting timestamp for 1-day data to prevent browser caching
@@ -153,20 +160,13 @@ export const visitorsAPI = {
   },
   getPath: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/path/${visitorId}`),
-  getMap: (projectId) => 
-    api.get(`/visitors/${projectId}/map`),
-  getMapView: (projectId, days = 30) => 
-    api.get(`/visitors/${projectId}/map-view?days=${days}`),
-  getVisitorsByLocation: (projectId, lat, lng, days = 30) => 
-    api.get(`/visitors/${projectId}/visitors-at-location`, { params: { lat, lng, days } }),
-  getAllSessions: (projectId, visitorId, startDate = null, endDate = null) => {
+  getVisitorSessions: (projectId, visitorId, limit = null, startDate = null, endDate = null) => {
     let url = `/visitors/${projectId}/visitor-sessions/${visitorId}`
     const params = []
     
-    if (startDate && endDate) {
-      params.push(`start_date=${encodeURIComponent(startDate)}`)
-      params.push(`end_date=${encodeURIComponent(endDate)}`)
-    }
+    if (limit !== null) params.push(`limit=${limit}`)
+    if (startDate) params.push(`start_date=${encodeURIComponent(startDate)}`)
+    if (endDate) params.push(`end_date=${encodeURIComponent(endDate)}`)
     
     if (params.length > 0) {
       url += `?${params.join('&')}`
@@ -177,20 +177,13 @@ export const visitorsAPI = {
   },
   getVisitorDetail: (projectId, visitorId) => 
     api.get(`/visitors/${projectId}/visitor-detail/${visitorId}`),
-  getVisitorDetailByIP: (projectId, ipAddress) => 
-    api.get(`/visitors/${projectId}/visitor-detail-by-ip/${ipAddress}`),
-  getVisitorsByPage: (projectId, pageUrl) => 
-    api.get(`/visitors/${projectId}/by-page`, { params: { page_url: pageUrl } }),
-  getBulkSessions: (projectId, visitorIds) => 
-    api.post(`/visitors/${projectId}/bulk-sessions`, visitorIds),
-  getGeographicData: (projectId, startDate = null, endDate = null) => {
+  getGeographicData: (projectId, limit = null, startDate = null, endDate = null) => {
     let url = `/visitors/${projectId}/geographic-data`
     const params = []
     
-    if (startDate && endDate) {
-      params.push(`start_date=${encodeURIComponent(startDate)}`)
-      params.push(`end_date=${encodeURIComponent(endDate)}`)
-    }
+    if (limit !== null) params.push(`limit=${limit}`)
+    if (startDate) params.push(`start_date=${encodeURIComponent(startDate)}`)
+    if (endDate) params.push(`end_date=${encodeURIComponent(endDate)}`)
     
     if (params.length > 0) {
       url += `?${params.join('&')}`
@@ -198,7 +191,32 @@ export const visitorsAPI = {
     
     console.log('🌍 VisitorsAPI - Getting geographic data:', url)
     return api.get(url)
-  }
+  },
+  getCountries: () => 
+    api.get('/visitors/countries'),
+  getCountryCities: () => 
+    api.get('/visitors/country-cities'),
+  getMapView: (projectId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    
+    // Add days parameter if provided
+    if (params.days) {
+      queryParams.append('days', params.days)
+    } else {
+      queryParams.append('days', 30) // default
+    }
+    
+    // Add filter parameters
+    Object.keys(params).forEach(key => {
+      if (key !== 'days') {
+        queryParams.append(key, params[key])
+      }
+    })
+    
+    return api.get(`/visitors/${projectId}/map-view?${queryParams.toString()}`)
+  },
+  getVisitorsByLocation: (projectId, latitude, longitude, days = 30) => 
+    api.get(`/visitors/${projectId}/visitors-at-location?lat=${latitude}&lng=${longitude}&days=${days}`)
 };
 
 export const projectsAPI = {
@@ -227,7 +245,7 @@ export const analyticsAPI = {
 export const pagesAPI = {
   getPagesOverview: (projectId, limit = 10) => 
     api.get(`/pages/${projectId}/pages-overview?limit=${limit}`),
-  getMostVisited: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
+  getMostVisited: (projectId, limit = 10, startDate = null, endDate = null, offset = 0, filters = {}) => {
     let url = `/pages/${projectId}/most-visited`
     const params = []
     
@@ -238,6 +256,13 @@ export const pagesAPI = {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
       params.push(`end_date=${encodeURIComponent(endDate)}`)
     }
+    
+    // Add filter parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.push(`${key}=${encodeURIComponent(value)}`)
+      }
+    })
     
     if (params.length > 0) {
       url += `?${params.join('&')}`
@@ -251,7 +276,7 @@ export const pagesAPI = {
     }
     return api.get(url)
   },
-  getEntryPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
+  getEntryPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0, filters = {}) => {
     let url = `/pages/${projectId}/entry-pages`
     const params = []
     
@@ -262,6 +287,13 @@ export const pagesAPI = {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
       params.push(`end_date=${encodeURIComponent(endDate)}`)
     }
+    
+    // Add filter parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.push(`${key}=${encodeURIComponent(value)}`)
+      }
+    })
     
     if (params.length > 0) {
       url += `?${params.join('&')}`
@@ -275,7 +307,7 @@ export const pagesAPI = {
     }
     return api.get(url)
   },
-  getExitPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0) => {
+  getExitPages: (projectId, limit = 10, startDate = null, endDate = null, offset = 0, filters = {}) => {
     let url = `/pages/${projectId}/exit-pages`
     const params = []
     
@@ -286,6 +318,13 @@ export const pagesAPI = {
       params.push(`start_date=${encodeURIComponent(startDate)}`)
       params.push(`end_date=${encodeURIComponent(endDate)}`)
     }
+    
+    // Add filter parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.push(`${key}=${encodeURIComponent(value)}`)
+      }
+    })
     
     if (params.length > 0) {
       url += `?${params.join('&')}`
@@ -306,12 +345,28 @@ export const pagesAPI = {
 export const trafficAPI = {
   getTrafficOverview: (projectId) => 
     api.get(`/traffic/${projectId}/traffic-overview`),
-  getSources: (projectId, startDate, endDate) => {
+  getSources: (projectId, startDate, endDate, filterParams = {}) => {
     let url = `/traffic/${projectId}/sources`
+    const params = new URLSearchParams()
+    
     if (startDate && endDate) {
-      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+      params.append('start_date', startDate)
+      params.append('end_date', endDate)
     }
+    
+    // Add filter parameters
+    Object.keys(filterParams).forEach(key => {
+      if (filterParams[key] !== undefined && filterParams[key] !== '') {
+        params.append(key, filterParams[key])
+      }
+    })
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`
+    }
+    
     console.log('🌐 TrafficAPI - Making request to:', url)
+    console.log('🌐 TrafficAPI - Filter params:', filterParams)
     return api.get(url)
   },
   getSourceDetail: (projectId, sourceType, startDate, endDate) => {
@@ -326,11 +381,26 @@ export const trafficAPI = {
     api.get(`/traffic/${projectId}/keywords?limit=${limit}`),
   getReferrers: (projectId) => 
     api.get(`/traffic/${projectId}/referrers`),
-  getExitLinks: (projectId, startDate, endDate) => {
+  getExitLinks: (projectId, startDate, endDate, filters = {}) => {
     let url = `/traffic/${projectId}/exit-links`
+    const params = new URLSearchParams()
+    
     if (startDate && endDate) {
-      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
+      params.append('start_date', startDate)
+      params.append('end_date', endDate)
     }
+    
+    // Add filter parameters
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        params.append(key, filters[key])
+      }
+    })
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`
+    }
+    
     console.log('🚪 TrafficAPI - Getting exit links:', url)
     return api.get(url)
   }

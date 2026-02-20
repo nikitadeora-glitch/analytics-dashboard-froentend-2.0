@@ -15,6 +15,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import { useEffect, useState, createContext, useContext } from 'react'
 import { tokenManager } from './api/api'
 import api from './api/api'
+import { FilterProvider } from './contexts/FilterContext'
 
 // Create Auth Context
 export const AuthContext = createContext()
@@ -175,7 +176,9 @@ function App() {
   return (
     <Provider store={store}>
       <AuthProvider>
-        <AppContent />
+        <FilterProvider>
+          <AppContent />
+        </FilterProvider>
       </AuthProvider>
     </Provider>
   )

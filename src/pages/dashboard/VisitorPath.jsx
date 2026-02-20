@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { visitorsAPI, projectsAPI } from '../../api/api'
 import { Filter, Download, ExternalLink, ChevronRight, X, Globe, Calendar, ChevronDown, Smartphone, Monitor } from 'lucide-react'
 import { formatUrl } from '../../utils/urlUtils'
+import { useFilters } from '../../contexts/FilterContext'
+
+import AddFilterButton from '../../components/AddFilterButton'
+import ActiveFilters from '../../components/ActiveFilters'
 
 // Format time spent like PagesSessionView
 const formatTimeSpent = (seconds) => {
@@ -30,6 +34,8 @@ const formatTimeSpent = (seconds) => {
 
 function VisitorPath({ projectId }) {
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { filters, addFilter, removeFilter, clearAllFilters, getFilterParams } = useFilters()
   const [visitors, setVisitors] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedReferrer, setSelectedReferrer] = useState(null)
@@ -40,9 +46,8 @@ function VisitorPath({ projectId }) {
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [dateFilter, setDateFilter] = useState(() => {
-    // Get saved filter from localStorage, default to '7' (7 days)
-    const savedFilter = localStorage.getItem(`visitor-path-filter-${projectId}`)
-    return savedFilter || '7'
+    // Get date filter from URL parameters, default to '7' (7 days)
+    return searchParams.get('dateFilter') || '7'
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [error, setError] = useState(null)
@@ -56,7 +61,15 @@ function VisitorPath({ projectId }) {
     if (location.state?.selectedVisitorId) {
       loadVisitorSessions(location.state.selectedVisitorId)
     }
-  }, [projectId, location.state, dateFilter])
+  }, [projectId, location.state, searchParams, filters])
+
+  // Update dateFilter state when searchParams change
+  useEffect(() => {
+    const urlDateFilter = searchParams.get('dateFilter')
+    if (urlDateFilter && urlDateFilter !== dateFilter) {
+      setDateFilter(urlDateFilter)
+    }
+  }, [searchParams])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -133,7 +146,12 @@ function VisitorPath({ projectId }) {
       const { startDate, endDate } = getDateRange(dateFilter)
       console.log('📅 VisitorPath - Using date range:', { startDate, endDate, filter: dateFilter })
       console.log('🔄 VisitorPath - Making API call with date range:', { startDate, endDate })
-      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate)
+      
+      // Get filter parameters
+      const filterParams = getFilterParams()
+      console.log('🔍 VisitorPath - Applying filters:', filterParams)
+      
+      response = await visitorsAPI.getActivityView(projectId, null, startDate, endDate, filterParams)
       console.log('📊 VisitorPath - API response received:', response.data?.length, 'visitors')
       
       const newVisitors = response.data || []
@@ -186,8 +204,8 @@ function VisitorPath({ projectId }) {
     console.log('📅 VisitorPath - Date filter changing from:', dateFilter, 'to:', newFilter)
     setDateFilter(newFilter)
     setShowDateDropdown(false)
-    // Save filter to localStorage so it persists on page reload
-    localStorage.setItem(`visitor-path-filter-${projectId}`, newFilter)
+    // Update URL parameters
+    setSearchParams({ dateFilter: newFilter })
     setDisplayCount(10) // Reset display count when filter changes
     console.log('🔄 VisitorPath - Triggering data reload with new filter')
     const { startDate, endDate } = getDateRange(newFilter)
@@ -385,6 +403,7 @@ function VisitorPath({ projectId }) {
           </div>
         )}
       </div>
+      
 
       <div className="content">
         <div className="chart-container">
@@ -854,6 +873,21 @@ function VisitorPath({ projectId }) {
           </div>
         )}
       </div>
+      
+      {/* Active Filters */}
+      <ActiveFilters 
+        filters={filters}
+        onRemoveFilter={removeFilter}
+        onClearAll={clearAllFilters}
+      />
+      
+      {/* Add Filter Button */}
+      <AddFilterButton 
+        onFilterSelect={addFilter}
+        style={{ marginLeft: '35px',
+          marginTop:'10px'
+        }}
+      />
 
       {/* Referrer Details Modal */}
       {selectedReferrer && (
