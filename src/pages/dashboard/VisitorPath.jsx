@@ -164,6 +164,43 @@ function VisitorPath({ projectId }) {
       setHasMore(false)
       
       console.log(`✅ Loaded ${newVisitors.length} visitors for ${dateFilter} days`)
+      
+      // Debug: Show available session durations when filters are applied and no results found
+      if (filters.length > 0 && newVisitors.length === 0) {
+        console.log('🔍 No visitors found with current filters. Available session durations in date range:')
+        
+        // Check if session length filter is applied
+        const sessionLengthFilter = filters.find(f => f.option.id === 'session_length')
+        if (sessionLengthFilter) {
+          console.log('📊 Session length filter detected:', sessionLengthFilter.value)
+          console.log('💡 SUGGESTION: Available sessions are 0.3-0.9 minutes (18-54 seconds)')
+          console.log('💡 Try these realistic ranges:')
+          console.log('   - 0.3-0.5 minutes (18-30 seconds)')
+          console.log('   - 0.5-0.7 minutes (30-42 seconds)')  
+          console.log('   - 0.7-0.9 minutes (42-54 seconds)')
+          console.log('   - 0.3+ minutes (all sessions)')
+        }
+        // Make a call without session length filter to see what's available
+        const filterParamsWithoutSession = { ...filterParams }
+        delete filterParamsWithoutSession.engagement_session_length_min
+        delete filterParamsWithoutSession.engagement_session_length_max
+        delete filterParamsWithoutSession.engagement_session_length_operator
+        
+        visitorsAPI.getActivityView(projectId, null, startDate, endDate, filterParamsWithoutSession)
+          .then(response => {
+            const allVisitors = response.data || []
+            const sessionDurations = allVisitors
+              .filter(v => v.session_duration !== null && v.session_duration !== undefined)
+              .map(v => v.session_duration)
+              .sort((a, b) => a - b)
+            
+            console.log('📊 Available session durations:', sessionDurations.slice(0, 10))
+            if (sessionDurations.length > 0) {
+              console.log(`📈 Range: ${sessionDurations[0]}s - ${sessionDurations[sessionDurations.length - 1]}s`)
+            }
+          })
+          .catch(err => console.log('Error fetching unfiltered data:', err))
+      }
     } catch (error) {
       console.error('Error loading visitors:', error)
       setError('Failed to load visitor paths. Please try again.')
@@ -1548,7 +1585,7 @@ function VisitorPath({ projectId }) {
                                 color: page.time_spent && Number(page.time_spent) > 0 ? '#10b981' : '#4dc92eff',
                                 marginBottom: '1px'
                               }}>
-                                {formatTimeSpent(page.time_spent || Math.floor(Math.random() * 300) + 30)}
+                                {formatTimeSpent(page.time_spent || 0)}
                               </div>
                             </div>
                           </div>
@@ -1591,8 +1628,35 @@ function VisitorPath({ projectId }) {
             </>
           ) : (
             <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
-              <p style={{ fontSize: '16px', fontWeight: '500' }}>No visitor data yet</p>
-              <p style={{ fontSize: '14px' }}>Start tracking visitors to see their paths</p>
+              <p style={{ fontSize: '16px', fontWeight: '500' }}>
+                {filters.length > 0 ? 'No visitors match your filters' : 'No visitor data yet'}
+              </p>
+              <p style={{ fontSize: '14px' }}>
+                {filters.length > 0 
+                  ? 'Try adjusting your filters or date range to see more results' 
+                  : 'Start tracking visitors to see their paths'
+                }
+              </p>
+              {filters.length > 0 && (
+                <button
+                  onClick={clearAllFilters}
+                  style={{
+                    marginTop: '16px',
+                    padding: '8px 16px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                >
+                  Clear All Filters
+                </button>
+              )}
             </div>
           )}
         </div>

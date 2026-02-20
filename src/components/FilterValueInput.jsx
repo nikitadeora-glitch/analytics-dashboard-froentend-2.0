@@ -44,7 +44,16 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
 
     // Set filter value based on type
     if (filterOption.option.type === 'range') {
-      filterData.value = { min: rangeValue.min, max: rangeValue.max, operator }
+      // Convert minutes to seconds for session_length filter
+      let minInSeconds = rangeValue.min
+      let maxInSeconds = rangeValue.max
+      
+      if (filterOption.option.id === 'session_length') {
+        if (minInSeconds) minInSeconds = parseFloat(minInSeconds) * 60
+        if (maxInSeconds) maxInSeconds = parseFloat(maxInSeconds) * 60
+      }
+      
+      filterData.value = { min: minInSeconds, max: maxInSeconds, operator }
     } else if (filterOption.option.type === 'number') {
       filterData.value = { value: value, operator }
     } else {
@@ -61,14 +70,17 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
 
   const getDisplayValue = () => {
     if (filterOption.option.type === 'range') {
+      const isSessionLength = filterOption.option.id === 'session_length'
+      const unit = isSessionLength ? ' min' : ''
+      
       if (rangeValue.min && rangeValue.max) {
-        return `${rangeValue.min} - ${rangeValue.max}`
+        return `${rangeValue.min}${unit} - ${rangeValue.max}${unit}`
       } else if (rangeValue.min) {
-        return `≥ ${rangeValue.min}`
+        return `≥ ${rangeValue.min}${unit}`
       } else if (rangeValue.max) {
-        return `≤ ${rangeValue.max}`
+        return `≤ ${rangeValue.max}${unit}`
       }
-      return 'Range'
+      return `Range (${isSessionLength ? 'minutes' : 'value'})`
     } else if (filterOption.option.type === 'number') {
       return `${operator} ${value}`
     }
@@ -149,13 +161,14 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
         )
 
       case 'range':
+        const isSessionLength = filterOption.option.id === 'session_length'
         return (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <input
               type="number"
               value={rangeValue.min}
               onChange={(e) => setRangeValue(prev => ({ ...prev, min: e.target.value }))}
-              placeholder="Min"
+              placeholder={`Min ${isSessionLength ? '(min)' : ''}`}
               style={{
                 flex: 1,
                 padding: '10px 12px',
@@ -171,7 +184,7 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
               type="number"
               value={rangeValue.max}
               onChange={(e) => setRangeValue(prev => ({ ...prev, max: e.target.value }))}
-              placeholder="Max"
+              placeholder={`Max ${isSessionLength ? '(min)' : ''}`}
               style={{
                 flex: 1,
                 padding: '10px 12px',

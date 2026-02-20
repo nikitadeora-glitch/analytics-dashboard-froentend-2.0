@@ -69,6 +69,9 @@ export const FilterProvider = ({ children }) => {
       } else if (filter.category.id === 'system' && filter.option.id === 'device') {
         // Special case: device should not have category prefix
         key = 'device'
+      } else if (filter.option.id === 'exit_link') {
+        // Special case: exit_link should map to engagement_exit_link
+        key = 'engagement_exit_link'
       } else {
         key = `${filter.category.id}_${filter.option.id}`
       }
