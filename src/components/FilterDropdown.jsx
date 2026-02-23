@@ -23,9 +23,9 @@ const FilterDropdown = ({ isOpen, onClose, onSelectFilter, buttonRef }) => {
       icon: Globe,
       options: [
         { id: 'traffic_sources', name: 'Traffic Sources ', type: 'select' },
-        { id: 'utm_campaign', name: 'UTM Campaign', type: 'text' },
-        { id: 'utm_source', name: 'UTM Source', type: 'text' },
-        { id: 'utm_medium', name: 'UTM Medium', type: 'text' },
+        { id: 'utm_campaign', name: 'UTM Campaign', type: 'select' },
+        { id: 'utm_source', name: 'UTM Source', type: 'select' },
+        { id: 'utm_medium', name: 'UTM Medium', type: 'select' },
         
       ]
     },

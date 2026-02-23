@@ -196,6 +196,12 @@ export const visitorsAPI = {
     api.get('/visitors/countries'),
   getCountryCities: () => 
     api.get('/visitors/country-cities'),
+  getUtmSources: (projectId) => 
+    api.get(`/visitors/${projectId}/utm-sources`),
+  getUtmMediums: (projectId) => 
+    api.get(`/visitors/${projectId}/utm-mediums`),
+  getUtmCampaigns: (projectId) => 
+    api.get(`/visitors/${projectId}/utm-campaigns`),
   getMapView: (projectId, params = {}) => {
     const queryParams = new URLSearchParams()
     

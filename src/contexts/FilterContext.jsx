@@ -72,6 +72,15 @@ export const FilterProvider = ({ children }) => {
       } else if (filter.option.id === 'exit_link') {
         // Special case: exit_link should map to engagement_exit_link
         key = 'engagement_exit_link'
+      } else if (filter.category.id === 'traffic' && filter.option.id === 'utm_campaign') {
+        // Special case: traffic utm_campaign should map to utm_campaign
+        key = 'utm_campaign'
+      } else if (filter.category.id === 'traffic' && filter.option.id === 'utm_source') {
+        // Special case: traffic utm_source should map to utm_source
+        key = 'utm_source'
+      } else if (filter.category.id === 'traffic' && filter.option.id === 'utm_medium') {
+        // Special case: traffic utm_medium should map to utm_medium
+        key = 'utm_medium'
       } else {
         key = `${filter.category.id}_${filter.option.id}`
       }

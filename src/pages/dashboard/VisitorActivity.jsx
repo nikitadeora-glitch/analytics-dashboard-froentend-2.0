@@ -702,6 +702,40 @@ function VisitorActivity({ projectId }) {
                         </div>
                       </div>
 
+                      {/* UTM Parameters */}
+                      {(visitor.utm_source || visitor.utm_medium || visitor.utm_campaign) && (
+                        <div>
+                          <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
+                            UTM Parameters:
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            color: '#8b5cf6',
+                            wordBreak: 'break-word',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {visitor.utm_source && (
+                              <span style={{ marginRight: '8px' }}>
+                                Source: {visitor.utm_source}
+                              </span>
+                            )}
+                            {visitor.utm_medium && (
+                              <span style={{ marginRight: '8px' }}>
+                                Medium: {visitor.utm_medium}
+                              </span>
+                            )}
+                            {visitor.utm_campaign && (
+                              <span>
+                                Campaign: {visitor.utm_campaign}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Visit Page - Clickable */}
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>

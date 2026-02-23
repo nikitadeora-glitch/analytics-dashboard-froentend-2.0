@@ -9,12 +9,23 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
   const [rangeValue, setRangeValue] = useState({ min: '', max: '' })
   const [countries, setCountries] = useState([])
   const [loadingCountries, setLoadingCountries] = useState(false)
+  const [utmSources, setUtmSources] = useState([])
+  const [utmMediums, setUtmMediums] = useState([])
+  const [utmCampaigns, setUtmCampaigns] = useState([])
+  const [loadingUtmValues, setLoadingUtmValues] = useState(false)
   const { addFilter } = useFilters()
 
   // Fetch countries when component opens for country_city filter
   useEffect(() => {
     if (isOpen && filterOption?.option?.id === 'country_city' && countries.length === 0) {
       fetchCountries()
+    }
+  }, [isOpen, filterOption])
+
+  // Fetch UTM values when component opens for UTM filters
+  useEffect(() => {
+    if (isOpen && filterOption?.option?.id && filterOption.option.id.startsWith('utm_')) {
+      fetchUtmValues()
     }
   }, [isOpen, filterOption])
 
@@ -29,6 +40,36 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
       setCountries([])
     } finally {
       setLoadingCountries(false)
+    }
+  }
+
+  const fetchUtmValues = async () => {
+    try {
+      setLoadingUtmValues(true)
+      const projectId = window.location.pathname.split('/')[3] // Get project ID from URL
+      
+      if (!projectId) return
+      
+      const [sourcesResponse, mediumsResponse, campaignsResponse] = await Promise.all([
+        visitorsAPI.getUtmSources(projectId),
+        visitorsAPI.getUtmMediums(projectId),
+        visitorsAPI.getUtmCampaigns(projectId)
+      ])
+      
+      setUtmSources(sourcesResponse.data.utm_sources || [])
+      setUtmMediums(mediumsResponse.data.utm_mediums || [])
+      setUtmCampaigns(campaignsResponse.data.utm_campaigns || [])
+      
+      console.log('🎯 Loaded UTM sources:', sourcesResponse.data.utm_sources)
+      console.log('🎯 Loaded UTM mediums:', mediumsResponse.data.utm_mediums)
+      console.log('🎯 Loaded UTM campaigns:', campaignsResponse.data.utm_campaigns)
+    } catch (error) {
+      console.error('❌ Error fetching UTM values:', error)
+      setUtmSources([])
+      setUtmMediums([])
+      setUtmCampaigns([])
+    } finally {
+      setLoadingUtmValues(false)
     }
   }
 
@@ -253,6 +294,60 @@ const FilterValueInput = ({ isOpen, onClose, filterOption, onApplyFilter }) => {
                 { value: 'Desktop', label: 'Desktop' },
                 { value: 'Mobile', label: 'Mobile' },
                 { value: 'Tablet', label: 'Tablet' }
+              ]
+            case 'utm_source':
+              if (loadingUtmValues) {
+                return [
+                  { value: '', label: 'Loading UTM sources...' }
+                ]
+              }
+              if (utmSources.length === 0) {
+                return [
+                  { value: '', label: 'No UTM sources available' }
+                ]
+              }
+              return [
+                { value: '', label: '' },
+                ...utmSources.map(source => ({
+                  value: source,
+                  label: source
+                }))
+              ]
+            case 'utm_medium':
+              if (loadingUtmValues) {
+                return [
+                  { value: '', label: 'Loading UTM mediums...' }
+                ]
+              }
+              if (utmMediums.length === 0) {
+                return [
+                  { value: '', label: 'No UTM mediums available' }
+                ]
+              }
+              return [
+                { value: '', label: '' },
+                ...utmMediums.map(medium => ({
+                  value: medium,
+                  label: medium
+                }))
+              ]
+            case 'utm_campaign':
+              if (loadingUtmValues) {
+                return [
+                  { value: '', label: 'Loading UTM campaigns...' }
+                ]
+              }
+              if (utmCampaigns.length === 0) {
+                return [
+                  { value: '', label: 'No UTM campaigns available' }
+                ]
+              }
+              return [
+                { value: '', label: '' },
+                ...utmCampaigns.map(campaign => ({
+                  value: campaign,
+                  label: campaign
+                }))
               ]
             default:
               return []
