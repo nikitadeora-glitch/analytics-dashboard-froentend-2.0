@@ -640,7 +640,7 @@ export const visitorsAPI = {
 
 
 
-  getVisitorSessions: (projectId, visitorId, limit = null, startDate = null, endDate = null) => {
+  getVisitorSessions: (projectId, visitorId, limit = null, startDate = null, endDate = null, filterParams = {}) => {
 
 
 
@@ -667,33 +667,28 @@ export const visitorsAPI = {
     if (endDate) params.push(`end_date=${encodeURIComponent(endDate)}`)
 
 
-
-
-
+    
+    // Add filter parameters
+    Object.keys(filterParams).forEach(key => {
+      if (filterParams[key] !== undefined && filterParams[key] !== null) {
+        params.push(`${key}=${encodeURIComponent(filterParams[key])}`)
+      }
+    })
 
 
     if (params.length > 0) {
 
 
-
       url += `?${params.join('&')}`
-
 
 
     }
 
 
-
-
-
-
-
     console.log('🔍 VisitorsAPI - Getting visitor sessions:', url)
 
 
-
     return api.get(url)
-
 
 
   },
@@ -1504,33 +1499,35 @@ export const trafficAPI = {
 
 
 
-  getSourceDetail: (projectId, sourceType, startDate, endDate) => {
-
-
+  getSourceDetail: (projectId, sourceType, startDate, endDate, filterParams = {}) => {
 
     let url = `/traffic/${projectId}/source-detail/${sourceType}`
 
-
-
+    // Build query parameters
+    const queryParams = new URLSearchParams()
+    
     if (startDate && endDate) {
-
-
-
-      url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`
-
-
-
+      queryParams.append('start_date', startDate)
+      queryParams.append('end_date', endDate)
     }
 
+    // Add filter parameters
+    Object.keys(filterParams).forEach(key => {
+      if (filterParams[key] !== undefined && filterParams[key] !== null && filterParams[key] !== '') {
+        queryParams.append(key, filterParams[key])
+      }
+    })
 
+    // Add query string to URL if we have parameters
+    const queryString = queryParams.toString()
+    if (queryString) {
+      url += `?${queryString}`
+    }
 
-    console.log('🌐 TrafficAPI - Getting source detail:', url)
-
-
+    console.log('🌐 TrafficAPI - Getting source detail with filters:', url)
+    console.log('🔍 Filter parameters used:', filterParams)
 
     return api.get(url)
-
-
 
   },
 

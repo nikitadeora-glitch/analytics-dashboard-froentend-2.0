@@ -47,12 +47,13 @@ const processSessionJourney = (sessionData, visit) => {
 }
 
 // Optimized helper - uses visit data directly without heavy API calls
-const processSingleVisitorSessionOptimized = async (visit, projectId) => {
+const processSingleVisitorSessionOptimized = async (visit, projectId, filterParams = {}) => {
   try {
     console.log(`🔍 Processing visitor ${visit.visitor_id}, session ${visit.session_id}`)
+    console.log('🔍 Using filter params for visitor sessions:', filterParams)
     
-    // Get session journey directly from the visitor sessions API
-    const pathResponse = await visitorsAPI.getVisitorSessions(projectId, visit.visitor_id)
+    // Get session journey directly from the visitor sessions API with filter parameters
+    const pathResponse = await visitorsAPI.getVisitorSessions(projectId, visit.visitor_id, filterParams)
     const sessions = pathResponse.data?.sessions || []
     
     console.log(`📊 Found ${sessions.length} sessions for visitor ${visit.visitor_id}`)
@@ -141,7 +142,7 @@ const processSingleVisitorSession = async (visit, projectId, allVisitorsData) =>
 // Async thunk for fetching initial session details
 export const fetchSessionDetails = createAsyncThunk(
   'session/fetchSessionDetails',
-  async ({ projectId, selectedPageSessions, limit = 20 }, { rejectWithValue }) => {
+  async ({ projectId, selectedPageSessions, limit = 20, filterParams = {} }, { rejectWithValue }) => {
     try {
       console.log('🔍 SessionSlice - fetchSessionDetails called with:', {
         projectId,
@@ -151,7 +152,8 @@ export const fetchSessionDetails = createAsyncThunk(
           url: selectedPageSessions?.url,
           visitsCount: selectedPageSessions?.visits?.length
         },
-        limit
+        limit,
+        filterParams
       })
 
       if (!selectedPageSessions?.visits?.length) {
@@ -163,13 +165,14 @@ export const fetchSessionDetails = createAsyncThunk(
       const allVisits = selectedPageSessions.visits
       console.log('📊 SessionSlice - Using ALL visit data from Pages.jsx (already date filtered)')
       console.log(`📊 Total visits available: ${allVisits.length}`)
+      console.log('🔍 SessionSlice - Filter params received:', filterParams)
 
       // Process only the first chunk (limit) of visits
       const visitsToProcess = allVisits.slice(0, limit)
       console.log(`📥 SessionSlice - Processing ${visitsToProcess.length} out of ${allVisits.length} total visits`)
       
       const detailsPromises = visitsToProcess.map(visit =>
-        processSingleVisitorSessionOptimized(visit, projectId)
+        processSingleVisitorSessionOptimized(visit, projectId, filterParams)
       )
 
       const results = await Promise.allSettled(detailsPromises)
@@ -195,7 +198,7 @@ export const fetchSessionDetails = createAsyncThunk(
 // Async thunk for fetching more session details (pagination)
 export const fetchMoreSessionDetails = createAsyncThunk(
   'session/fetchMoreSessionDetails',
-  async ({ projectId, selectedPageSessions, limit }, { rejectWithValue, getState }) => {
+  async ({ projectId, selectedPageSessions, limit, filterParams = {} }, { rejectWithValue, getState }) => {
     try {
       const { currentLimit } = getState().session
 
@@ -206,6 +209,7 @@ export const fetchMoreSessionDetails = createAsyncThunk(
       // Use ALL visits data from Pages.jsx - already date filtered by backend
       const allVisits = selectedPageSessions.visits
       console.log(`📊 Total visits available: ${allVisits.length}`)
+      console.log('🔍 SessionSlice - Filter params for fetchMore:', filterParams)
 
       const newVisits = allVisits.slice(currentLimit, limit)
       
@@ -218,7 +222,7 @@ export const fetchMoreSessionDetails = createAsyncThunk(
 
       // Use optimized processing - no heavy API calls
       const detailsPromises = newVisits.map(visit =>
-        processSingleVisitorSessionOptimized(visit, projectId)
+        processSingleVisitorSessionOptimized(visit, projectId, filterParams)
       )
 
       const results = await Promise.allSettled(detailsPromises)

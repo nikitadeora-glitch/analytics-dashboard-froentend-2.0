@@ -181,14 +181,20 @@ function TrafficSourcesSimple({ projectId }) {
   }
 
   const handleSourceClick = (stdSource, data) => {
-    console.log('🖱️ Clicked source:', stdSource.name, 'Data:', data)
+    console.log('🖱️ CLICK DETECTED! Clicked source:', stdSource.name, 'Data:', data)
+    console.log('🖱️ hasData check:', data.count > 0)
 
     if (data.count === 0) {
       console.log('❌ No data for this source, not navigating')
       return // Don't navigate if no data
     }
 
+    console.log('✅ Proceeding with navigation...')
     const { startDate, endDate } = getDateRange(period)
+    
+    // Get current filters to pass to detail view
+    const filterParams = getFilterParams()
+    console.log('🔍 Passing filters to detail view:', filterParams)
     
     const sourceInfo = {
       name: stdSource.name,
@@ -199,12 +205,14 @@ function TrafficSourcesSimple({ projectId }) {
       period: period,
       startDate: startDate,
       endDate: endDate,
-      projectId: projectId
+      projectId: projectId,
+      filterParams: filterParams // Only pass serializable filter parameters
     }
 
     console.log('✅ Navigating to detail with sourceInfo:', sourceInfo)
     console.log('📅 Period being passed:', period)
     console.log('📅 Date range being passed:', { startDate, endDate })
+    console.log('🔍 Filter parameters being passed:', filterParams)
 
     navigate('detail', {
       state: { sourceInfo }

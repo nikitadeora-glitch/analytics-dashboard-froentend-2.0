@@ -5,7 +5,7 @@ import { Skeleton, Box } from '@mui/material'
 import { Calendar, ChevronDown, Smartphone, Monitor, Globe, ExternalLink, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import VisitorDetail from './VisitorDetail'
-
+import { useFilters } from '../../contexts/FilterContext'
 
 // Globe Icon Component
 export function NotoGlobeShowingAsiaAustralia(props) {
@@ -75,6 +75,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { sessionDetails, loading, loadingMore, error, hasMore, currentLimit } = useSelector(state => state.session)
+  const { getFilterParams } = useFilters()
 
   // Local state for pagination
   const [loadCount, setLoadCount] = useState(0)
@@ -103,16 +104,21 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
 
   useEffect(() => {
     if (selectedPageSessions) {
-      // Reset load count and fetch data - no date filtering needed (already filtered by backend)
+      // Reset load count and fetch data with filters
       setLoadCount(0)
+      
+      // Get current filter parameters
+      const filterParams = getFilterParams()
       
       console.log('📅 PagesSessionView - Loading data with period:', period)
       console.log('📊 Total visits from Pages.jsx:', selectedPageSessions.visits?.length)
+      console.log('🔍 PagesSessionView - Using filter params:', filterParams)
       
       dispatch(fetchSessionDetails({ 
         projectId, 
         selectedPageSessions, 
-        limit: 20  // Start with 20 sessions chunk
+        limit: 20,  // Start with 20 sessions chunk
+        filterParams  // Pass filter parameters
       }))
     }
 
@@ -120,7 +126,7 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
     return () => {
       dispatch(clearSessionDetails())
     }
-  }, [dispatch, projectId, selectedPageSessions, period])
+  }, [dispatch, projectId, selectedPageSessions, period, getFilterParams])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -179,13 +185,18 @@ function PagesSessionView({ projectId, selectedPageSessions, pageType, onBack, p
     // Load 20 more sessions at a time (chunked loading)
     const newLimit = currentLimit + 20
 
+    // Get current filter parameters
+    const filterParams = getFilterParams()
+
     console.log(`📥 Loading more sessions: ${currentLimit} → ${newLimit}`)
     console.log(`📊 Total available sessions: ${selectedPageSessions?.visits?.length}`)
+    console.log('🔍 PagesSessionView - Using filter params for load more:', filterParams)
 
     dispatch(fetchMoreSessionDetails({
       projectId,
       selectedPageSessions,
-      limit: newLimit
+      limit: newLimit,
+      filterParams  // Pass filter parameters
     }))
 
     setLoadCount(prev => prev + 1)

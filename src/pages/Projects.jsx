@@ -2395,44 +2395,15 @@ function Projects() {
 
                     }}
 
-
-
                     onMouseEnter={(e) => {
-
-
-
                       if (!copied) e.currentTarget.style.background = '#2563eb'
-
-
-
                     }}
-
-
-
                     onMouseLeave={(e) => {
-
-
-
                       if (!copied) e.currentTarget.style.background = '#3b82f6'
-
-
-
                     }}
-
-
-
                   >
-
-
-
                     {copied ? (
-
-
-
                       <>
-
-
-
                         <Check size={14} />
 
 

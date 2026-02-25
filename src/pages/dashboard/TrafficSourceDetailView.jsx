@@ -123,12 +123,17 @@ function TrafficSourceDetailView({ projectId }) {
       const finalEndDate = source.endDate || endDate
       console.log('📅 Final date range:', { finalStartDate, finalEndDate })
 
-      // Get real data from API
+      // Get filters from source if available, otherwise use empty object
+      const filterParams = source.filterParams || {}
+      console.log('🔍 Using filter parameters:', filterParams)
+
+      // Get real data from API with filters
       const response = await trafficAPI.getSourceDetail(
         source.projectId || projectId, 
         source.type, 
         finalStartDate, 
-        finalEndDate
+        finalEndDate,
+        filterParams // Pass filters to API
       )
 
       console.log('📊 Source detail API response:', response)
