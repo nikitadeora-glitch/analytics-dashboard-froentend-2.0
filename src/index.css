@@ -32,8 +32,10 @@ body {
 }
 
 .sidebar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
 }
 
 .sidebar h2 {
@@ -290,6 +292,7 @@ td {
         grid-template-columns: 1fr;
         gap: 10px;
     }
+
     .session-col {
         display: flex;
         justify-content: space-between;
@@ -297,6 +300,7 @@ td {
         padding: 8px 0;
         border-bottom: 1px solid #f1f5f9;
     }
+
     .session-col:before {
         content: attr(data-label);
         font-weight: 600;

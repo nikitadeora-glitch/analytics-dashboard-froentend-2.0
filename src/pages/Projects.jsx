@@ -8,27 +8,15 @@ import { useNavigate } from 'react-router-dom'
 
 import { projectsAPI } from '../api/api'
 
-
-
 import { Plus, BarChart2, Download, Code, Copy, Check, Trash2, TrendingUp } from 'lucide-react'
-
-
 
 import { Skeleton, Box, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 
-
-
 import LineChart from '../components/LineChart'
 
-
-
-
-
-
+import axios from "axios";
 
 function Projects() {
-
-
 
   const [projects, setProjects] = useState([])
 
@@ -56,21 +44,48 @@ function Projects() {
 
   const [copied, setCopied] = useState(false)
 
-
+// State for storing the exporting status
 
   const [exporting, setExporting] = useState(false)
 
-
+// State for storing the success message
 
   const [successMessage, setSuccessMessage] = useState(null)
 
+  const [scriptStatus, setScriptStatus] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(false);
 
+  const fetchScriptStatus = async (projectId) => {
+    console.log(" fetchScriptStatus called for project:", projectId);
+    try {
+      setLoadingStatus(true);
+      
+      const apiUrl = `${import.meta.env.VITE_API_URL}/projects/${projectId}/script-status`;
+      console.log(" API URL:", apiUrl);
+
+      const response = await axios.get(
+        apiUrl,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      console.log(" API Response:", response.data);
+      setScriptStatus(response.data);
+    } catch (error) {
+      console.error(" Error fetching script status:", error);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
 
   const navigate = useNavigate()
 
+// Cache for projects data
 
-
-
+// State for storing the last fetch timestamp
 
 
 
@@ -2460,7 +2475,60 @@ function Projects() {
 
                 </div>
 
+                {/* Script Status UI */}
+                <div style={{ marginTop: "15px" }}>
+                  {console.log("🔍 Rendering script status UI - loadingStatus:", loadingStatus, "scriptStatus:", scriptStatus)}
+                  {loadingStatus && <p>Checking installation...</p>}
 
+                  {scriptStatus && (
+                    <>
+                      <div
+                        style={{
+                          padding: "10px",
+                          borderRadius: "8px",
+                          backgroundColor:
+                            scriptStatus.script_installed ? "#e6fffa" : "#fff5f5",
+                          color: scriptStatus.script_installed ? "#065f46" : "#991b1b",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {scriptStatus.script_installed
+                          ? "✅ Script Installed Successfully"
+                          : "❌ No visitor detected, check installation"}
+                      </div>
+
+                      {!scriptStatus.script_installed && (
+                        <div style={{ marginTop: "10px", fontSize: "14px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+                          <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>Installation Instructions:</h4>
+                          <p style={{ margin: "5px 0", color: "#666" }}>
+                            <strong>Step 1:</strong> Copy the tracking code above
+                          </p>
+                          <p style={{ margin: "5px 0", color: "#666" }}>
+                            <strong>Step 2:</strong> Paste it before the closing &lt;/head&gt; tag on your website
+                          </p>
+                          <p style={{ margin: "5px 0", color: "#666" }}>
+                            <strong>Step 3:</strong> Save and refresh your website
+                          </p>
+                          <p style={{ margin: "10px 0 0 0", color: "#999", fontSize: "12px" }}>
+                            <em>Note: It may take a few minutes for data to appear after installation</em>
+                          </p>
+                        </div>
+                      )}
+
+                      {scriptStatus.script_installed && (
+                        <div style={{ marginTop: "10px", fontSize: "14px" }}>
+                          <p>
+                            <strong>Total Visits:</strong> {scriptStatus.total_visits}
+                          </p>
+                          <p>
+                            <strong>First Visit:</strong>{" "}
+                            {new Date(scriptStatus.first_visit_date).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
 
               </div>
 
@@ -3938,7 +4006,10 @@ function Projects() {
 
 
 
-                          onClick={() => handleShowTrackingCode(project)}
+                          onClick={() => {
+                            handleShowTrackingCode(project);
+                            fetchScriptStatus(project.id); // 🔥 yaha call hoga
+                          }}
 
 
 
