@@ -2488,13 +2488,7 @@ function Projects() {
 
                       {scriptStatus.script_installed && (
                         <div style={{ marginTop: "10px", fontSize: "14px" }}>
-                          <p>
-                            <strong>Total Visits:</strong> {scriptStatus.total_visits}
-                          </p>
-                          <p>
-                            <strong>First Visit:</strong>{" "}
-                            {new Date(scriptStatus.first_visit_date).toLocaleString()}
-                          </p>
+                      
                         </div>
                       )}
                     </>

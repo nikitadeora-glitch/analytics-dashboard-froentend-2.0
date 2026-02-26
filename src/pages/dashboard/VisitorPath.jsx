@@ -32,6 +32,35 @@ const formatTimeSpent = (seconds) => {
   }
 }
 
+// Helper function to calculate time spent for page journey - same as PagesSessionView
+const calculateTimeSpent = (page, nextPage, sessionDuration, journey, currentIndex) => {
+  let timeSpent = Number(page.time_spent) || 0
+
+  if (timeSpent === 0) {
+    if (journey && journey.length > 1) {
+      const currentTs = page.viewed_at || page.timestamp || page.visited_at || page.created_at || page.time
+      const currentPageTime = currentTs ? new Date(currentTs).getTime() : NaN
+
+      if (nextPage && !isNaN(currentPageTime)) {
+        const nextTs = nextPage.viewed_at || nextPage.timestamp || nextPage.visited_at || nextPage.created_at || nextPage.time
+        const nextPageTime = nextTs ? new Date(nextTs).getTime() : NaN
+
+        if (!isNaN(nextPageTime)) {
+          const diff = Math.floor((nextPageTime - currentPageTime) / 1000)
+          timeSpent = (diff > 0 && diff < 1800) ? diff : 45
+        }
+      } else if (currentIndex === journey.length - 1) {
+        timeSpent = Math.min(60, sessionDuration || 45)
+      }
+    } else {
+      timeSpent = sessionDuration || 60
+    }
+    if (timeSpent === 0) timeSpent = 30
+  }
+
+  return timeSpent
+}
+
 function VisitorPath({ projectId }) {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -740,7 +769,16 @@ function VisitorPath({ projectId }) {
                         borderRadius: '2px'
                       }} />
 
-                      {session.page_journey.map((page, pageIdx) => (
+                      {session.page_journey.map((page, pageIdx) => {
+                        const calculatedTimeSpent = calculateTimeSpent(
+                          page, 
+                          session.page_journey[pageIdx + 1], 
+                          session.session_duration, 
+                          session.page_journey, 
+                          pageIdx
+                        )
+                        
+                        return (
                         <div
                           key={pageIdx}
                           style={{
@@ -852,7 +890,7 @@ function VisitorPath({ projectId }) {
                                   color: '#10b981',
                                   marginBottom: '4px'
                                 }}>
-                                  ⏱️ {page.time_spent || 0}s
+                                  ⏱️ {formatTimeSpent(calculatedTimeSpent)}
                                 </div>
                                 <div style={{
                                   fontSize: '10px',
@@ -864,7 +902,8 @@ function VisitorPath({ projectId }) {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   ) : (
                     <div style={{
@@ -1029,11 +1068,10 @@ function VisitorPath({ projectId }) {
                   key={sessionIdx}
                   style={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    border: '3px solid #e2e8f0',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    transition: 'all 0.3s'
+                    padding: '14px',
+                    border: '2px solid #e2e8f0',
+                    transition: 'all 0.3s',
+                    overflowX: 'hidden'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#3b82f6'
@@ -1043,29 +1081,29 @@ function VisitorPath({ projectId }) {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#e2e8f0'
                     e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    e.currentTarget.style.boxShadow = 'none'
                   }}
                 >
                   {/* Session Header */}
-                  <div style={{
+                  <div className="session-card-header" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '16px',
-                    paddingBottom: '12px',
+                    marginBottom: '20px',
+                    paddingBottom: '16px',
                     borderBottom: '2px solid #e2e8f0'
                   }}>
                     <div>
                       <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                        🔢 Session #{session.session_id}
+                         Session #{session.session_id}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <span>📅 {formatDate(session.visited_at)}</span>
+                        <span>{formatDate(session.visited_at)}</span>
                         <span>•</span>
-                        <span>🕐 {formatTime(session.visited_at)}</span>
+                        <span>{formatTime(session.visited_at)}</span>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="header-right" style={{ textAlign: 'right' }}>
                       <div style={{
                         fontSize: '16px',
                         fontWeight: '700',
@@ -1076,16 +1114,16 @@ function VisitorPath({ projectId }) {
                         gap: '6px',
                         justifyContent: 'flex-end'
                       }}>
-                        📄 {session.page_count} {session.page_count === 1 ? 'Page' : 'Pages'}
+                        {session.page_count} {session.page_count === 1 ? 'Page' : 'Pages'}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        ⏱️ Duration: {session.session_duration ? `${Math.floor(session.session_duration / 60)}m ${session.session_duration % 60}s` : 'N/A'}
+                         Duration: {session.session_duration ? `${Math.floor(session.session_duration / 60)}m ${session.session_duration % 60}s` : 'N/A'}
                       </div>
                     </div>
                   </div>
 
                   {/* Session Details Grid */}
-                  <div style={{
+                  <div className="entry-exit-grid" style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '16px',
@@ -1123,14 +1161,14 @@ function VisitorPath({ projectId }) {
                   </div>
 
                   {/* Device & Browser Info */}
-                  <div style={{
+                  <div className="device-stats-grid-container" style={{
                     background: 'white',
                     padding: '16px',
                     borderRadius: '12px',
                     marginBottom: '20px',
                     border: '2px solid #e2e8f0'
                   }}>
-                    <div style={{
+                    <div className="device-stats-grid" style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(4, 1fr)',
                       gap: '16px',
@@ -1166,13 +1204,13 @@ function VisitorPath({ projectId }) {
                   {/* Page Journey Timeline */}
                   <div>
                     <h4 style={{
-                      fontSize: '14px',
+                      fontSize: '16px',
                       fontWeight: '700',
                       color: '#1e293b',
-                      marginBottom: '12px',
+                      marginBottom: '16px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '8px'
                     }}>
                       📍 Page Journey Timeline
                     </h4>
@@ -1195,24 +1233,24 @@ function VisitorPath({ projectId }) {
                             key={pageIdx}
                             style={{
                               position: 'relative',
-                              marginBottom: '12px'
+                              marginBottom: '20px'
                             }}
                           >
                             {/* Timeline dot with number */}
                             <div style={{
                               position: 'absolute',
                               left: '-32px',
-                              top: '10px',
-                              width: '24px',
-                              height: '24px',
+                              top: '14px',
+                              width: '26px',
+                              height: '26px',
                               background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
                               borderRadius: '50%',
-                              border: '3px solid white',
-                              boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
+                              border: '4px solid white',
+                              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '10px',
+                              fontSize: '11px',
                               fontWeight: '700',
                               color: 'white',
                               zIndex: 1
@@ -1220,11 +1258,11 @@ function VisitorPath({ projectId }) {
                               {pageIdx + 1}
                             </div>
 
-                            <div style={{
+                            <div className="timeline-card" style={{
                               background: 'white',
-                              padding: '10px',
-                              borderRadius: '8px',
-                              border: '1px solid #e2e8f0',
+                              padding: '16px',
+                              borderRadius: '12px',
+                              border: '2px solid #e2e8f0',
                               transition: 'all 0.2s'
                             }}
                               onMouseEnter={(e) => {
@@ -1237,9 +1275,9 @@ function VisitorPath({ projectId }) {
                                 e.currentTarget.style.transform = 'translateX(0)'
                                 e.currentTarget.style.boxShadow = 'none'
                               }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <div style={{ width: '100%' }}>
-                                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', marginBottom: '3px', wordBreak: 'break-word' }}>
+                              <div className="timeline-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                <div className="timeline-info-left" style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', marginBottom: '6px' }}>
                                     📄 {page.title || 'Untitled Page'}
                                   </div>
                                   <a
@@ -1247,23 +1285,21 @@ function VisitorPath({ projectId }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{
-                                      fontSize: '10px',
+                                      fontSize: '12px',
                                       color: '#3b82f6',
                                       textDecoration: 'none',
                                       wordBreak: 'break-all',
                                       overflowWrap: 'anywhere',
-                                      lineHeight: '1.4',
                                       display: 'block',
-                                      maxWidth: '100%',
-                                      whiteSpace: 'normal'
+                                      lineHeight: '1.4',
+                                      maxWidth: '100%'
                                     }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    title={page.url}
                                   >
-                                    {formatUrl(page.url)}
+                                    {page.url} <ExternalLink size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
                                   </a>
                                 </div>
-                                <div style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
+                                <div className="timeline-info-right" style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
+                                  {/* Time Spent - Secondary */}
                                   <div style={{
                                     fontSize: '20px',
                                     fontWeight: '700',
@@ -1274,7 +1310,13 @@ function VisitorPath({ projectId }) {
                                     justifyContent: 'flex-end',
                                     gap: '6px'
                                   }}>
-                                    ⏱️ {page.time_spent || 0}s
+                                    ⏱️ {formatTimeSpent(calculateTimeSpent(
+                                      page, 
+                                      session.page_journey[pageIdx + 1], 
+                                      session.session_duration, 
+                                      session.page_journey, 
+                                      pageIdx
+                                    ))}
                                   </div>
                                   <div style={{
                                     fontSize: '12px',
@@ -1283,25 +1325,6 @@ function VisitorPath({ projectId }) {
                                     marginBottom: '4px'
                                   }}>
                                     Time Spent
-                                  </div>
-                                  <div style={{
-                                    fontSize: '13px',
-                                    color: '#3b82f6',
-                                    fontWeight: '600',
-                                    background: '#eff6ff',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
-                                    border: '1px solid #dbeafe'
-                                  }}>
-                                    🕐 {new Date(page.viewed_at).toLocaleTimeString('en-US', {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      second: '2-digit',
-                                      hour12: true
-                                    })}
-                                  </div>
-                                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                                    Visited at
                                   </div>
                                 </div>
                               </div>
@@ -1485,8 +1508,17 @@ function VisitorPath({ projectId }) {
                         
 
                         {visitor.page_views_list.map((page, pidx) => {
+                          const calculatedTimeSpent = calculateTimeSpent(
+                            page, 
+                            visitor.page_views_list[pidx + 1], 
+                            visitor.session_duration, 
+                            visitor.page_views_list, 
+                            pidx
+                          )
+                          
                           console.log('🔍 Page data:', page);
                           console.log('🔍 time_spent:', page.time_spent);
+                          console.log('🔍 calculated time_spent:', calculatedTimeSpent);
                           console.log('🔍 time_spent type:', typeof page.time_spent);
                           return (
                           <div
@@ -1582,10 +1614,10 @@ function VisitorPath({ projectId }) {
                               <div style={{
                                 fontSize: '11px',
                                 fontWeight: '700',
-                                color: page.time_spent && Number(page.time_spent) > 0 ? '#10b981' : '#4dc92eff',
+                                color: calculatedTimeSpent && Number(calculatedTimeSpent) > 0 ? '#10b981' : '#4dc92eff',
                                 marginBottom: '1px'
                               }}>
-                                {formatTimeSpent(page.time_spent || 0)}
+                                {formatTimeSpent(calculatedTimeSpent)}
                               </div>
                             </div>
                           </div>
