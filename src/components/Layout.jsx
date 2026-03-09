@@ -1,4 +1,4 @@
-import { Plus, FolderOpen, BarChart2, LogOut, Menu, X, Trash2 } from 'lucide-react'
+import { Plus, FolderOpen, BarChart2, Menu, X, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import analyticImage from '../assets/analytic.png'
@@ -6,7 +6,7 @@ import { useAuth } from '../App'
 import AIChat from './AIChat/AIChat'
 
 function Layout() {
-  const { logout, user } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -25,12 +25,6 @@ function Layout() {
   useEffect(() => {
     setIsSidebarOpen(false)
   }, [location.pathname])
-
-  const handleLogout = () => {
-    logout()
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
 
   return (
     <div className="app">
@@ -190,23 +184,6 @@ function Layout() {
                 >
                   <Trash2 size={18} />
                   Deleted Projects
-                </div>
-              </div>
-
-              {/* Logout Button at Bottom */}
-              <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                <div
-                  className="menu-item"
-                  onClick={handleLogout}
-                  style={{
-                    color: '#f1ededff',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                    paddingTop: '16px',
-                    marginTop: '16px'
-                  }}
-                >
-                  <LogOut size={18} />
-                  Logout
                 </div>
               </div>
             </div>

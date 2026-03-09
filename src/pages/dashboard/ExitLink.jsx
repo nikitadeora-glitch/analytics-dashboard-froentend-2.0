@@ -20,9 +20,9 @@ function ExitLink({ projectId }) {
     if (urlFilter) {
       return urlFilter
     }
-    // Get saved filter from localStorage, default to '7' (7 days)
+    // Get saved filter from localStorage, default to '60' (60 days) to capture older data
     const savedFilter = localStorage.getItem(`exitlink-filter-${projectId}`)
-    return savedFilter || '7'
+    return savedFilter || '60'
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
 

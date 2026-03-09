@@ -32,6 +32,7 @@ function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Load user data from localStorage on initial mount
   useEffect(() => {
@@ -49,6 +50,22 @@ function AuthProvider({ children }) {
   }, [])
 
   const checkAuth = async () => {
+    // Don't check auth if user is logging out
+    if (isLoggingOut || window.isLoggingOut) {
+      console.log('🚫 Skipping auth check during logout')
+      setLoading(false)
+      return
+    }
+    
+    // Don't auto-redirect if user just logged out
+    if (sessionStorage.getItem('justLoggedOut') === 'true') {
+      console.log('🚫 User just logged out, skipping auto-redirect')
+      sessionStorage.removeItem('justLoggedOut')
+      setIsAuthenticated(false)
+      setLoading(false)
+      return
+    }
+    
     const token = tokenManager.getToken()
     console.log('🔐 Checking authentication:', token ? 'Token found' : 'No token')
     console.log('🔐 Current URL:', window.location.pathname)
@@ -95,39 +112,6 @@ function AuthProvider({ children }) {
         
         setLoading(false)
         return
-        
-        // Optional: Validate with backend (commented out for faster refresh)
-        /*
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000)
-        
-        const response = await api.get('/me')
-        
-        clearTimeout(timeoutId)
-        
-        if (response.status === 200) {
-          console.log('✅ Token validated successfully')
-          tokenManager.setToken(token)
-          setIsAuthenticated(true)
-        } else if (response.status === 401) {
-          console.log('⚠️ Token valid but got 401 - possible server issue')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          const retryResponse = await api.get('/me')
-          if (retryResponse.status === 200) {
-            console.log('✅ Token validated successfully on retry')
-            tokenManager.setToken(token)
-            setIsAuthenticated(true)
-          } else {
-            console.log('❌ Token validation failed:', retryResponse.status)
-            tokenManager.removeToken()
-            setIsAuthenticated(false)
-          }
-        } else {
-          console.log('❌ Token validation failed:', response.status)
-          tokenManager.removeToken()
-          setIsAuthenticated(false)
-        }
-        */
       } catch (error) {
         console.error('❌ Token validation error:', error)
         // If there's an error decoding the token, remove it
@@ -141,7 +125,8 @@ function AuthProvider({ children }) {
     setLoading(false)
   }
 
-  const login = (token, userData = null) => {
+  const login = (token, userData) => {
+    console.log('🔐 Logging in user...')
     tokenManager.setToken(token)
     setIsAuthenticated(true)
     if (userData) {
@@ -153,20 +138,39 @@ function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    console.log('🚪 Logging out user...')
+    setIsLoggingOut(true) // Set logout flag to prevent re-authentication
     tokenManager.removeToken()
     setIsAuthenticated(false)
     setUser(null)
-    // Clear user data from localStorage
+    // Clear all authentication-related data from localStorage
     localStorage.removeItem('user')
-    console.log('🗑️ Cleared user data from localStorage')
+    localStorage.removeItem('auth_token')
+    // Add logout flag to session storage to prevent auto-redirect
+    sessionStorage.setItem('justLoggedOut', 'true')
+    // Add global flag as backup
+    window.isLoggingOut = true
+    console.log('🗑️ Cleared all auth data from localStorage')
+    console.log('🔐 Authentication state set to false')
+    
+    // Reset logout flag after a short delay
+    setTimeout(() => {
+      setIsLoggingOut(false)
+      window.isLoggingOut = false
+    }, 3000)
   }
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    // Only check auth if not logging out and not just logged out
+    if (!isLoggingOut && sessionStorage.getItem('justLoggedOut') !== 'true') {
+      checkAuth()
+    } else {
+      setLoading(false)
+    }
+  }, [isLoggingOut]) // Add isLoggingOut dependency
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, checkAuth, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, login, logout, checkAuth, user, isLoggingOut }}>
       {children}
     </AuthContext.Provider>
   )
@@ -192,6 +196,8 @@ function AppContent() {
     return null
   }
 
+  console.log('🔄 AppContent rendering - isAuthenticated:', isAuthenticated)
+
   return (
     <>
       <CookiePopup />
@@ -199,7 +205,7 @@ function AppContent() {
         <Routes>
           {/* Auth routes - redirect to dashboard if already authenticated */}
           <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
-          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />

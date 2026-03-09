@@ -1,10 +1,12 @@
-import { BarChart3, FileText, TrendingUp, Activity, ArrowLeft, BarChart2, ChevronDown, ChevronRight, Users, Route as RouteIcon, Map, Eye, LogOut, Menu, X, MessageCircle } from 'lucide-react'
+import { BarChart3, FileText, TrendingUp, Activity, ArrowLeft, BarChart2, ChevronDown, ChevronRight, Users, Route as RouteIcon, Map, Eye, LogOut, Menu, X, MessageCircle, Search } from 'lucide-react'
 
 import { useState, useEffect } from 'react'
 
 import { useParams, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../App'
+
+import { authAPI } from '../api/api'
 
 import analyticImage from '../assets/analytic.png'
 
@@ -34,6 +36,8 @@ import Reports from './dashboard/Reports'
 
 import HourlyView from './dashboard/HourlyView'
 
+import Seo from './dashboard/Seo'
+
 import AIChat from '../components/AIChat/AIChat'
 
 
@@ -42,7 +46,7 @@ function Dashboard() {
 
   const { projectId } = useParams()
 
-  const { user } = useAuth()
+  const { logout, user, isLoggingOut } = useAuth()
 
   const navigate = useNavigate()
 
@@ -114,18 +118,40 @@ function Dashboard() {
 
 
 
-  const handleLogout = () => {
-
-    // Clear any stored auth tokens
-
-    localStorage.removeItem('token')
-
+  const handleLogout = async () => {
+    console.log('🚪 Logout button clicked')
+    console.log('📍 Current location:', location.pathname)
+    
+    // Prevent multiple logout attempts
+    if (isLoggingOut) {
+      console.log('🚫 Already logging out, ignoring click')
+      return
+    }
+    
+    try {
+      // Call backend logout API first (optional)
+      console.log('📡 Calling backend logout API...')
+      await authAPI.logout()
+      console.log('✅ Backend logout successful')
+    } catch (error) {
+      console.warn('⚠️ Backend logout failed:', error)
+      // Continue with frontend logout even if backend fails
+    }
+    
+    console.log('🧹 Clearing frontend auth state...')
+    
+    // Clear localStorage immediately
     localStorage.removeItem('user')
-
-    // Navigate to login page
-
-    navigate('/login')
-
+    localStorage.removeItem('auth_token')
+    console.log('🗑️ Cleared localStorage')
+    
+    // Call auth context logout
+    logout()
+    console.log('✅ Auth context logout called')
+    
+    // Force redirect to login page immediately
+    console.log('🔄 Force redirect to /login')
+    window.location.replace('/login')
   }
 
 
@@ -165,6 +191,8 @@ function Dashboard() {
     },
 
     { path: 'reports', label: 'Reports', icon: FileText },
+
+    { path: 'seo', label: 'SEO', icon: Search },
 
     { path: 'ai-chat', label: 'AI Assistant', icon: MessageCircle }
 
@@ -605,6 +633,8 @@ function Dashboard() {
           <Route path="visitor/:visitorId" element={<VisitorDetail />} />
 
           <Route path="reports" element={<Reports projectId={projectId} />} />
+
+          <Route path="seo" element={<Seo projectId={projectId} />} />
 
           <Route path="ai-chat" element={<AIChat userId={userId}/>} /> 
 

@@ -8,11 +8,17 @@ import backgroundImage from '../assets/analytic.png'
 
 import { useEffect } from "react"
 
-
-
 function Login() {
-  const { login } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log('🔄 User already authenticated, redirecting to dashboard')
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
   
   // Debug environment variables
   console.log('🔍 Environment Debug:');

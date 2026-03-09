@@ -2165,32 +2165,35 @@ export const aiInsightsAPI = {
 
 
 
-export const tokenManager = {
+export const seoAPI = {
 
+  getConnectUrl: (projectId) =>
+    api.get(`/seo/${projectId}/connect-url`),
 
+  getSites: (projectId) =>
+    api.get(`/seo/${projectId}/sites`),
 
-  getToken,
+  selectSite: (projectId, siteUrl) =>
+    api.post(`/seo/${projectId}/select-site`, { site_url: siteUrl }),
 
+  getOverview: (projectId, range = '7d') =>
+    api.get(`/seo/${projectId}/overview?range=${range}`),
 
-
-  setToken,
-
-
-
-  removeToken,
-
-
-
-  isAuthenticated: () => !!getToken()
-
-
+  debugConfig: () =>
+    api.get('/seo/debug-config')
 
 };
 
+export const tokenManager = {
 
+  getToken,
 
+  setToken,
 
+  removeToken,
 
+  isAuthenticated: () => !!getToken()
 
+};
 
 export default api;
