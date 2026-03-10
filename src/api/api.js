@@ -927,7 +927,11 @@ export const projectsAPI = {
 
 
 
-  checkScriptStatus: (id) => api.get(`/projects/${id}/script-status`)
+  checkScriptStatus: (id) => api.get(`/projects/${id}/script-status`),
+
+
+
+  getSwitcher: () => api.get('/projects/switcher')
 
 
 

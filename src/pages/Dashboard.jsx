@@ -1,4 +1,4 @@
-import { BarChart3, FileText, TrendingUp, Activity, ArrowLeft, BarChart2, ChevronDown, ChevronRight, Users, Route as RouteIcon, Map, Eye, LogOut, Menu, X, MessageCircle, Search } from 'lucide-react'
+import { BarChart3, FileText, TrendingUp, Activity, ArrowLeft, BarChart2, ChevronDown, ChevronRight, Users, Route as RouteIcon, Map, Eye, LogOut, Menu, X, MessageCircle, Search, Globe } from 'lucide-react'
 
 import { useState, useEffect } from 'react'
 
@@ -6,7 +6,7 @@ import { useParams, Routes, Route, useNavigate, useLocation } from 'react-router
 
 import { useAuth } from '../App'
 
-import { authAPI } from '../api/api'
+import { authAPI, projectsAPI } from '../api/api'
 
 import analyticImage from '../assets/analytic.png'
 
@@ -40,6 +40,9 @@ import Seo from './dashboard/Seo'
 
 import AIChat from '../components/AIChat/AIChat'
 
+import ProjectSwitcher from '../components/ProjectSwitcher'
+
+
 
 
 function Dashboard() {
@@ -57,6 +60,8 @@ function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const [showAIChat, setShowAIChat] = useState(false)
+
+  const [currentProject, setCurrentProject] = useState(null)
 
 
 
@@ -115,6 +120,38 @@ function Dashboard() {
     setIsSidebarOpen(false)
 
   }, [location.pathname])
+
+
+
+  // Fetch current project data
+
+  useEffect(() => {
+
+    if (projectId) {
+
+      fetchCurrentProject()
+
+    }
+
+  }, [projectId])
+
+
+
+  const fetchCurrentProject = async () => {
+
+    try {
+
+      const response = await projectsAPI.getOne(projectId)
+
+      setCurrentProject(response.data)
+
+    } catch (error) {
+
+      console.error('Error fetching current project:', error)
+
+    }
+
+  }
 
 
 
@@ -405,35 +442,29 @@ function Dashboard() {
             }}
 
           >
-
             <ArrowLeft size={18} color="#60a5fa" />
-
             <span style={{ fontWeight: '600', fontSize: '14px' }}>Back to Projects</span>
-
           </div>
-
-
-
+          {/* Project Switcher */}
           <div style={{
-
-            fontSize: '11px',
-
-            fontWeight: '600',
-
-            color: '#cbd5e1',
-
-            marginBottom: '12px',
-
-            letterSpacing: '0.5px'
-
+            marginBottom: '20px',
+         
+            position: 'relative'
           }}>
-
-            ANALYTICS
-
+            <ProjectSwitcher
+              currentProjectId={projectId}
+              currentProjectName={currentProject?.name}
+            />
           </div>
-
-
-
+          <div style={{
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#cbd5e1',
+            marginBottom: '12px',
+            letterSpacing: '0.5px'
+          }}>
+            ANALYTICS
+          </div>
           <div style={{ flex: 1 }}>
 
             {menuItems.map((item, idx) => (
