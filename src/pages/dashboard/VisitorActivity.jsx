@@ -33,7 +33,7 @@ function VisitorActivity({ projectId }) {
     }
     // Get saved filter from localStorage, default to '7' (7 days)
     const savedFilter = localStorage.getItem(`visitor-activity-filter-${projectId}`)
-    return savedFilter || '7'  // Default to 7 days
+    return savedFilter || '1'  // Default to 1 day
   })
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [showVisitorModal, setShowVisitorModal] = useState(false)
@@ -209,6 +209,39 @@ function VisitorActivity({ projectId }) {
 
     // Format using browser's locale (converts UTC to Local/IST)
     return date.toLocaleString('en-IN', options)
+  }
+
+  // Helper function to map event types to user-friendly labels
+  const getEventLabel = (eventType) => {
+    const eventLabels = {
+      'add_to_cart': 'Add to Cart',
+      'add_to_cart_form': 'Add to Cart',
+      'cart_updated': 'Cart Updated',
+      'remove_from_cart_click': 'Remove From Cart',
+      'add_to_cart_click': 'Add to Cart'
+    }
+    return eventLabels[eventType] || eventType
+  }
+
+  // Helper function to check if events are duplicates (same action within 2 seconds)
+  const isDuplicateEvent = (events, currentEvent, currentIndex) => {
+    if (currentEvent.event_type !== 'add_to_cart_click' && 
+        currentEvent.event_type !== 'add_to_cart_form' && 
+        currentEvent.event_type !== 'add_to_cart') {
+      return false
+    }
+    
+    // Look for previous add_to_cart events within 2 seconds
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const prevEvent = events[i]
+      if ((prevEvent.event_type === 'add_to_cart_click' || 
+           prevEvent.event_type === 'add_to_cart_form' || 
+           prevEvent.event_type === 'add_to_cart') &&
+          Math.abs(new Date(currentEvent.timestamp) - new Date(prevEvent.timestamp)) < 2000) {
+        return true
+      }
+    }
+    return false
   }
 
   // Handle IP address click - get visitor ID and show modal
@@ -750,16 +783,18 @@ function VisitorActivity({ projectId }) {
                             flexWrap: 'wrap',
                             gap: '4px'
                           }}>
-                            {visitor.events.map((event, index) => (
-                              <span key={index} style={{ 
-                                backgroundColor: '#fef3c7',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                border: '1px solid #fbbf24'
-                              }}>
-                                {event.event_type}
-                              </span>
-                            ))}
+                            {visitor.events
+                              .filter((event, index) => !isDuplicateEvent(visitor.events, event, index))
+                              .map((event, index) => (
+                                <span key={index} style={{ 
+                                  backgroundColor: '#fef3c7',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #fbbf24'
+                                }}>
+                                  {getEventLabel(event.event_type)}
+                                </span>
+                              ))}
                           </div>
                         </div>
                       )}
