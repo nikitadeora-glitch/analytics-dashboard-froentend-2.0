@@ -124,6 +124,75 @@ const calculateTimeSpent = (page, nextPage, sessionDuration, journey, currentInd
 
 
 
+// Helper function to map event types to user-friendly labels
+  const getEventLabel = (eventType) => {
+    const eventLabels = {
+      'add_to_cart': 'Add to Cart',
+      'add_to_cart_form': 'Add to Cart',
+      'cart_updated': 'Cart Updated',
+      'remove_from_cart_click': 'Remove From Cart',
+      'add_to_cart_click': 'Add to Cart'
+    }
+    return eventLabels[eventType] || eventType
+  }
+
+  // Helper function to check if events are duplicates (same action within 2 seconds)
+  const isDuplicateEvent = (events, currentEvent, currentIndex) => {
+    if (currentEvent.event_type !== 'add_to_cart_click' && 
+        currentEvent.event_type !== 'add_to_cart_form' && 
+        currentEvent.event_type !== 'add_to_cart') {
+      return false
+    }
+    
+    // Look for previous add_to_cart events within 2 seconds
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const prevEvent = events[i]
+      if ((prevEvent.event_type === 'add_to_cart_click' || 
+           prevEvent.event_type === 'add_to_cart_form' || 
+           prevEvent.event_type === 'add_to_cart') &&
+          Math.abs(new Date(currentEvent.timestamp) - new Date(prevEvent.timestamp)) < 2000) {
+        return true
+      }
+    }
+    return false
+  }
+
+  // Helper function to match events to pages and group them
+  const matchEventsToPages = (pageViewsList, eventsList) => {
+    if (!pageViewsList || !eventsList) return []
+    
+    const pagesWithEvents = pageViewsList.map((page, index) => {
+      const pageUrl = page.url
+      const pageViewedAt = new Date(page.viewed_at)
+      
+      // Find events that occurred on this page
+      const pageEvents = eventsList.filter(event => {
+        if (event.url !== pageUrl) return false
+        
+        const eventTime = new Date(event.timestamp)
+        
+        // For first page, include events from page view time onwards
+        if (index === 0) {
+          return eventTime >= pageViewedAt
+        }
+        
+        // For other pages, include events between this page view and next page view
+        const nextPageViewedAt = pageViewsList[index + 1] ? 
+          new Date(pageViewsList[index + 1].viewed_at) : 
+          new Date(pageViewedAt.getTime() + 300000) // 5 minutes window for last page
+        
+        return eventTime >= pageViewedAt && eventTime < nextPageViewedAt
+      })
+      
+      return {
+        ...page,
+        events: pageEvents.filter((event, idx) => !isDuplicateEvent(pageEvents, event, idx))
+      }
+    })
+    
+    return pagesWithEvents
+  }
+
 function VisitorPath({ projectId }) {
 
   const location = useLocation()
@@ -1556,6 +1625,12 @@ function VisitorPath({ projectId }) {
 
                         )
 
+                        // Get events for this page in detailed session view
+                        const sessionEvents = session.events || []
+                        const pagesWithEvents = matchEventsToPages(session.page_journey, sessionEvents)
+                        const currentPageWithEvents = pagesWithEvents[pageIdx]
+                        const pageEvents = currentPageWithEvents?.events || []
+
                         
 
                         return (
@@ -1695,6 +1770,35 @@ function VisitorPath({ projectId }) {
                                   {page.url} <ExternalLink size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
 
                                 </a>
+
+                                {/* Events for this page in detailed view */}
+                                {pageEvents.length > 0 && (
+                                  <div style={{ marginTop: '8px' }}>
+                                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px', fontWeight: '600' }}>
+                                      Events on this page:
+                                    </div>
+                                    <div style={{
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      color: '#815306ff',
+                                      display: 'flex',
+                                      flexWrap: 'wrap',
+                                      gap: '4px'
+                                    }}>
+                                      {pageEvents.map((event, eventIdx) => (
+                                        <span key={eventIdx} style={{ 
+                                          backgroundColor: '#fef3c7',
+                                          padding: '2px 6px',
+                                          borderRadius: '4px',
+                                          border: '1px solid #fbbf24',
+                                          fontSize: '10px'
+                                        }}>
+                                          {getEventLabel(event.event_type)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
 
                               </div>
 
@@ -2458,9 +2562,15 @@ function VisitorPath({ projectId }) {
 
 
 
-                        {session.page_journey.map((page, pageIdx) => (
+                        {session.page_journey.map((page, pageIdx) => {
 
-                          <div
+                          // Get events for this page in modal session view
+                          const sessionEvents = session.events || []
+                          const pagesWithEvents = matchEventsToPages(session.page_journey, sessionEvents)
+                          const currentPageWithEvents = pagesWithEvents[pageIdx]
+                          const pageEvents = currentPageWithEvents?.events || []
+
+                          return (<div
 
                             key={pageIdx}
 
@@ -2596,6 +2706,35 @@ function VisitorPath({ projectId }) {
 
                                   </a>
 
+                                  {/* Events for this page in modal view */}
+                                  {pageEvents.length > 0 && (
+                                    <div style={{ marginTop: '8px' }}>
+                                      <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px', fontWeight: '600' }}>
+                                        Events on this page:
+                                      </div>
+                                      <div style={{
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        color: '#815306ff',
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: '4px'
+                                      }}>
+                                        {pageEvents.map((event, eventIdx) => (
+                                          <span key={eventIdx} style={{ 
+                                            backgroundColor: '#fef3c7',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            border: '1px solid #fbbf24',
+                                            fontSize: '10px'
+                                          }}>
+                                            {getEventLabel(event.event_type)}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
                                 </div>
 
                                 <div className="timeline-info-right" style={{ textAlign: 'right', marginLeft: '16px', minWidth: '140px' }}>
@@ -2603,55 +2742,30 @@ function VisitorPath({ projectId }) {
                                   {/* Time Spent - Secondary */}
 
                                   <div style={{
-
                                     fontSize: '20px',
-
                                     fontWeight: '700',
-
                                     color: '#10b981',
-
                                     marginBottom: '6px',
-
                                     display: 'flex',
-
                                     alignItems: 'center',
-
                                     justifyContent: 'flex-end',
-
                                     gap: '6px'
-
                                   }}>
-
-                                    ⏱️ {formatTimeSpent(calculateTimeSpent(
-
+                                    ⏱️ {formatTimeSpent(
                                       page, 
-
                                       session.page_journey[pageIdx + 1], 
-
                                       session.session_duration, 
-
                                       session.page_journey, 
-
                                       pageIdx
-
-                                    ))}
-
+                                    )}
                                   </div>
-
                                   <div style={{
-
                                     fontSize: '12px',
-
                                     color: '#64748b',
-
                                     fontWeight: '600',
-
                                     marginBottom: '4px'
-
                                   }}>
-
                                     Time Spent
-
                                   </div>
 
                                 </div>
@@ -2662,9 +2776,9 @@ function VisitorPath({ projectId }) {
 
                           </div>
 
-                        ))}
+                        )})}
 
-                      </div>
+                    </div>
 
                     ) : (
 
@@ -2903,7 +3017,6 @@ function VisitorPath({ projectId }) {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-
                       <a
 
                         href={visitor.entry_page}
@@ -2982,6 +3095,10 @@ function VisitorPath({ projectId }) {
 
                     </div>
 
+                    
+
+                    
+
                   </div>
 
                   
@@ -3042,6 +3159,11 @@ function VisitorPath({ projectId }) {
 
                           console.log('🔍 time_spent type:', typeof page.time_spent);
 
+                          // Get events for this page using the matching function
+                          const pagesWithEvents = matchEventsToPages(visitor.page_views_list, visitor.events || [])
+                          const currentPageWithEvents = pagesWithEvents[pidx]
+                          const pageEvents = currentPageWithEvents?.events || []
+
                           return (
 
                           <div
@@ -3060,7 +3182,7 @@ function VisitorPath({ projectId }) {
 
                               gap: '8px',
 
-                              marginBottom: '6px',
+                              marginBottom: pageEvents.length > 0 ? '12px' : '6px',
 
                               padding: '4px 50px',
 
@@ -3210,9 +3332,36 @@ function VisitorPath({ projectId }) {
 
                               </div>
 
+                              {/* Events for this page */}
+                              {pageEvents.length > 0 && (
+                                <div style={{ marginTop: '6px' }}>
+                                  <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
+                                    Events on this page:
+                                  </div>
+                                  <div style={{
+                                    fontSize: '10px',
+                                    fontWeight: '600',
+                                    color: '#815306',
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '3px'
+                                  }}>
+                                    {pageEvents.map((event, eventIdx) => (
+                                      <span key={eventIdx} style={{ 
+                                        backgroundColor: '#FEF3C7',
+                                        padding: '5px 4px',
+                                        borderRadius: '3px',
+                                        
+                                        fontSize: '11px'
+                                      }}>
+                                        {getEventLabel(event.event_type)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
                             </div>
-
-
 
                             {/* Time Spent */}
 
