@@ -287,115 +287,34 @@ api.interceptors.response.use(
 
 
       if (token) {
-
-
-
         try {
-
-
-
-          // Check if token is expired
-
-
-
+          // Check if token is expired by decoding it
           const payload = JSON.parse(atob(token.split('.')[1]))
-
-
-
           const now = Date.now() / 1000
-
-
-
-
-
-
-
-          if (payload.exp < now) {
-
-
-
-            console.log('❌ Token expired - removing and redirecting to login');
-
-
-
+          
+          // Add 5-minute buffer before expiration
+          if (payload.exp < now - 300) {
+            console.log('❌ Token expired or expiring soon - removing and redirecting to login')
             removeToken();
-
-
-
+            
             // Only redirect if we're not already on login page
-
-
-
             if (window.location.pathname !== '/login') {
-
-
-
               window.location.href = '/login';
-
-
-
             }
-
-
-
-          } else {
-
-
-
-            console.log('⚠️ Token valid but got 401 - possible server issue');
-
-
-
-            // Token is valid but server returned 401, might be server restart
-
-
-
-            // Try once more after a short delay
-
-
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-
-
-            return api(originalRequest);
-
-
-
+            return;
           }
-
-
-
+          
+          console.log('✅ Token is valid and not expiring soon');
+          
         } catch (decodeError) {
-
-
-
           console.error('❌ Failed to decode token:', decodeError);
-
-
-
           removeToken();
-
-
-
+          
           if (window.location.pathname !== '/login') {
-
-
-
             window.location.href = '/login';
-
-
-
           }
-
-
-
+          return;
         }
-
-
-
-      } else {
-
 
 
         console.log('🔐 No token found - redirecting to login');
