@@ -131,7 +131,9 @@ const calculateTimeSpent = (page, nextPage, sessionDuration, journey, currentInd
       'add_to_cart_form': 'Add to Cart',
       'cart_updated': 'Cart Updated',
       'remove_from_cart_click': 'Remove From Cart',
-      'add_to_cart_click': 'Add to Cart'
+      'add_to_cart_click': 'Add to Cart',
+      'checkout': 'Checkout',
+      'checkout_start': 'Checkout'
     }
     return eventLabels[eventType] || eventType
   }
@@ -161,19 +163,42 @@ const calculateTimeSpent = (page, nextPage, sessionDuration, journey, currentInd
   const matchEventsToPages = (pageViewsList, eventsList) => {
     if (!pageViewsList || !eventsList) return []
     
+    console.log('🔍 matchEventsToPages - Page views:', pageViewsList.length, 'Events:', eventsList.length)
+    console.log('🔍 All events:', eventsList.map(e => ({ type: e.event_type, url: e.url, time: e.timestamp })))
+    
     const pagesWithEvents = pageViewsList.map((page, index) => {
       const pageUrl = page.url
       const pageViewedAt = new Date(page.viewed_at)
       
+      console.log(`🔍 Processing page ${index + 1}: ${pageUrl} at ${pageViewedAt}`)
+      
       // Find events that occurred on this page
       const pageEvents = eventsList.filter(event => {
-        if (event.url !== pageUrl) return false
+        console.log(`🔍 Checking event ${event.event_type} on ${event.url} against page ${pageUrl}`)
+        
+        // Special handling for checkout events - match them to the last page if no exact URL match
+        if (event.event_type === 'checkout_start') {
+          // If this is the last page and the checkout event happened after this page view
+          if (index === pageViewsList.length - 1) {
+            const eventTime = new Date(event.timestamp)
+            const shouldInclude = eventTime >= pageViewedAt
+            console.log(`🔍 Checkout event matched to last page: ${shouldInclude}`)
+            return shouldInclude
+          }
+        }
+        
+        if (event.url !== pageUrl) {
+          console.log(`❌ URL mismatch: ${event.url} != ${pageUrl}`)
+          return false
+        }
         
         const eventTime = new Date(event.timestamp)
         
         // For first page, include events from page view time onwards
         if (index === 0) {
-          return eventTime >= pageViewedAt
+          const shouldInclude = eventTime >= pageViewedAt
+          console.log(`🔍 First page - Event time ${eventTime} >= Page time ${pageViewedAt}: ${shouldInclude}`)
+          return shouldInclude
         }
         
         // For other pages, include events between this page view and next page view
@@ -181,8 +206,12 @@ const calculateTimeSpent = (page, nextPage, sessionDuration, journey, currentInd
           new Date(pageViewsList[index + 1].viewed_at) : 
           new Date(pageViewedAt.getTime() + 300000) // 5 minutes window for last page
         
-        return eventTime >= pageViewedAt && eventTime < nextPageViewedAt
+        const shouldInclude = eventTime >= pageViewedAt && eventTime < nextPageViewedAt
+        console.log(`🔍 Event time ${eventTime} in range ${pageViewedAt} to ${nextPageViewedAt}: ${shouldInclude}`)
+        return shouldInclude
       })
+      
+      console.log(`🔍 Page ${index + 1} matched events:`, pageEvents.map(e => e.event_type))
       
       return {
         ...page,
@@ -1774,9 +1803,7 @@ function VisitorPath({ projectId }) {
                                 {/* Events for this page in detailed view */}
                                 {pageEvents.length > 0 && (
                                   <div style={{ marginTop: '8px' }}>
-                                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px', fontWeight: '600' }}>
-                                      Events on this page:
-                                    </div>
+                                   
                                     <div style={{
                                       fontSize: '11px',
                                       fontWeight: '600',
@@ -2709,9 +2736,7 @@ function VisitorPath({ projectId }) {
                                   {/* Events for this page in modal view */}
                                   {pageEvents.length > 0 && (
                                     <div style={{ marginTop: '8px' }}>
-                                      <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px', fontWeight: '600' }}>
-                                        Events on this page:
-                                      </div>
+                                      
                                       <div style={{
                                         fontSize: '11px',
                                         fontWeight: '600',
@@ -3151,15 +3176,7 @@ function VisitorPath({ projectId }) {
 
                           
 
-                          console.log('🔍 Page data:', page);
-
-                          console.log('🔍 time_spent:', page.time_spent);
-
-                          console.log('🔍 calculated time_spent:', calculatedTimeSpent);
-
-                          console.log('🔍 time_spent type:', typeof page.time_spent);
-
-                          // Get events for this page using the matching function
+                                                    // Get events for this page using the matching function
                           const pagesWithEvents = matchEventsToPages(visitor.page_views_list, visitor.events || [])
                           const currentPageWithEvents = pagesWithEvents[pidx]
                           const pageEvents = currentPageWithEvents?.events || []
@@ -3335,9 +3352,7 @@ function VisitorPath({ projectId }) {
                               {/* Events for this page */}
                               {pageEvents.length > 0 && (
                                 <div style={{ marginTop: '6px' }}>
-                                  <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>
-                                    Events on this page:
-                                  </div>
+                                  
                                   <div style={{
                                     fontSize: '10px',
                                     fontWeight: '600',
