@@ -2371,6 +2371,10 @@ function Reports({ projectId }) {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+          }
         `}
       </style>
       <div className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
@@ -2414,6 +2418,41 @@ function Reports({ projectId }) {
                 {exportStatus === 'success' ? 'Export successful!' : 'Export failed. Please try again.'}
               </div>
             )}
+
+            <select
+              className="btn"
+              style={{
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                color: '#475569',
+                cursor: 'pointer',
+                minWidth: '150px'
+              }}
+              value={selectedPeriod}
+              onChange={(e) => {
+                const newPeriod = e.target.value
+                console.log(' Period filter changed:', {
+                  from: selectedPeriod,
+                  to: newPeriod,
+                  timestamp: new Date().toISOString()
+                })
+                
+                // Update URL parameter instead of just state
+                const newSearchParams = new URLSearchParams(searchParams)
+                newSearchParams.set('period', newPeriod)
+                setSearchParams(newSearchParams)
+                
+                console.log(' URL parameter updated with period:', newPeriod)
+                
+                // DON'T call fetchReportData() here - useEffect will handle it
+                // This prevents double API calls and race conditions
+              }}
+            >
+              <option value="1">Last 1 Day</option>
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="60">Last 60 Days</option>
+            </select>
 
             <button className="btn btn-primary" onClick={handleExportCSV} disabled={loading}>
               <Download size={16} />
@@ -2485,96 +2524,223 @@ function Reports({ projectId }) {
           </div>
         ) : (
           <>
-            {/* Period Controls */}
+            
+            {/* Stats Overview - Graph Layout */}
             <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
-              padding: '16px',
               background: 'white',
-              borderRadius: '8px',
+              borderRadius: '12px',
+              padding: '12px',
+              marginBottom: '20px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-              <div>
-                <h3 style={{ fontSize: '16px', color: '#1e293b', margin: 0, marginBottom: '4px' }}>
-                  Analytics Period
-                </h3>
-                <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-                  Select the time period for your analytics data
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <button
-                  className="btn"
-                  onClick={refreshData}
-                  disabled={loadingData}
-                  style={{
-                    background: 'white',
-                    border: '1px solid #e2e8f0',
-                    color: '#475569'
-                  }}
-                >
-                  <RefreshCw size={16} style={{ marginRight: '6px' }} />
-                  Refresh Data
-                </button>
-                <select
-                  className="btn"
-                  style={{
-                    background: 'white',
-                    border: '1px solid #e2e8f0',
-                    color: '#475569',
-                    cursor: 'pointer',
-                    minWidth: '150px'
-                  }}
-                  value={selectedPeriod}
-                  onChange={(e) => {
-                    const newPeriod = e.target.value
-                    console.log('🔄 Period filter changed:', {
-                      from: selectedPeriod,
-                      to: newPeriod,
-                      timestamp: new Date().toISOString()
-                    })
-                    
-                    // Update URL parameter instead of just state
-                    const newSearchParams = new URLSearchParams(searchParams)
-                    newSearchParams.set('period', newPeriod)
-                    setSearchParams(newSearchParams)
-                    
-                    console.log('✅ URL parameter updated with period:', newPeriod)
-                    
-                    // ❌ DON'T call fetchReportData() here - useEffect will handle it
-                    // This prevents double API calls and race conditions
-                  }}
-                >
-                  <option value="1">Last 1 Day</option>
-                  <option value="7">Last 7 Days</option>
-                  <option value="30">Last 30 Days</option>
-                  <option value="60">Last 60 Days</option>
-                </select>
-              </div>
-            </div>
+              <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#1e293b', fontWeight: '600' }}>
+                Analytics Overview
+              </h3>
+              
+              {/* Bar Chart */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}>
+                {/* Total Visits Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '120px',
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Total Visits
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    height: '40px',
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min((summaryData?.total_visits || 0) / Math.max(summaryData?.total_visits || 1, 1) * 100, 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '12px',
+                      transition: 'width 0.8s ease'
+                    }}>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Stats Overview */}
-            <div className="stats-grid" style={{ marginBottom: '10px' }}>
-              <div className="stat-card">
-                <h3>Total Visits</h3>
-                <div className="value">{summaryData?.total_visits?.toLocaleString() || 0}</div>
+                {/* Unique Visitors Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '120px',
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Unique Visitors
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    height: '40px',
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min((summaryData?.unique_visitors || 0) / Math.max(summaryData?.total_visits || 1, 1) * 100, 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #10b981, #34d399)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '12px',
+                      transition: 'width 0.8s ease'
+                    }}>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Visitors Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '120px',
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Live Visitors
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    height: '40px',
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min((summaryData?.live_visitors || 0) / Math.max(summaryData?.total_visits || 1, 1) * 100, 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '12px',
+                      transition: 'width 0.8s ease',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Avg Session Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '120px',
+                    fontSize: '14px',
+                    color: '#64748b',
+                    fontWeight: '500'
+                  }}>
+                    Avg. Session
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    height: '40px',
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(
+                        (summaryData?.total_visits > 0 
+                          ? Math.round((summaryData.total_visits / summaryData.unique_visitors) * 10) / 10 
+                          : 0) / Math.max(summaryData?.total_visits || 1, 1) * 100, 
+                        100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: '12px',
+                      transition: 'width 0.8s ease'
+                    }}>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="stat-card">
-                <h3>Unique Visitors</h3>
-                <div className="value">{summaryData?.unique_visitors?.toLocaleString() || 0}</div>
-              </div>
-              <div className="stat-card live">
-                <h3>Live Visitors</h3>
-                <div className="value">{summaryData?.live_visitors || 0}</div>
-              </div>
-              <div className="stat-card">
-                <h3>Avg. Session</h3>
-                <div className="value">
-                  {summaryData?.total_visits > 0
-                    ? Math.round((summaryData.total_visits / summaryData.unique_visitors) * 10) / 10
-                    : 0}
+              {/* Summary Stats */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+                marginTop: '14px',
+                paddingTop: '20px',
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#3b82f6',
+                    marginBottom: '4px'
+                  }}>
+                    {(summaryData?.total_visits || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Total Visits
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#10b981',
+                    marginBottom: '4px'
+                  }}>
+                    {(summaryData?.unique_visitors || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Unique Visitors
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#f59e0b',
+                    marginBottom: '4px'
+                  }}>
+                    {summaryData?.live_visitors || 0}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Live Now
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#8b5cf6',
+                    marginBottom: '4px'
+                  }}>
+                    {summaryData?.total_visits > 0
+                      ? Math.round((summaryData.total_visits / summaryData.unique_visitors) * 10) / 10
+                      : 0}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Avg. Session
+                  </div>
                 </div>
               </div>
             </div>

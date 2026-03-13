@@ -166,12 +166,12 @@ function TrafficSourcesSimple({ projectId }) {
       matchingSources: matchingSources.length,
       totalCount,
       validBounceRates: validBounceRates.length,
-      avgBounceRate: avgBounceRate !== null ? Math.round(avgBounceRate) : null
+      avgBounceRate: avgBounceRate !== null ? avgBounceRate.toFixed(1) : null
     })
 
     return {
       count: totalCount,
-      bounceRate: avgBounceRate !== null ? Math.round(avgBounceRate) : null
+      bounceRate: avgBounceRate !== null ? parseFloat(avgBounceRate.toFixed(1)) : null
     }
   }
 
