@@ -38,7 +38,6 @@ import HourlyView from './dashboard/HourlyView'
 
 import Seo from './dashboard/Seo'
 
-import AIChat from '../components/AIChat/AIChat'
 
 import ProjectSwitcher from '../components/ProjectSwitcher'
 
@@ -231,7 +230,6 @@ function Dashboard() {
 
     { path: 'seo', label: 'SEO', icon: Search },
 
-    { path: 'ai-chat', label: 'AI Assistant', icon: MessageCircle }
 
   ]
 
@@ -667,25 +665,11 @@ function Dashboard() {
 
           <Route path="seo" element={<Seo projectId={projectId} />} />
 
-          <Route path="ai-chat" element={<AIChat userId={userId}/>} /> 
+ 
 
         </Routes>  
 
     
-
-
-
-      {/* Floating AI Chatbox */}
-
-      <AIChat
-
-        projectId={projectId} 
-
-        userId={userId}
-
-        onClose={() => setShowAIChat(false)}
-
-      />
 
 
 
